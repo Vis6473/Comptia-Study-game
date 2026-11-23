@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Net+ Patch Bay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: single centered column, a "patch panel" of game modes; T568B pair colours are the accent system. */
+:root{
+  --bg:#EDF1F3; --surface:#FFFFFF; --surface-2:#F5F8F9; --ink:#13222C; --muted:#5A6A75; --line:#D2DBE0;
+  --orange:#D9621A; --green:#2C8452; --blue:#1F68AA; --brown:#7A5230;
+  --ok:#2C8452; --ok-bg:#E3F2E9; --bad:#C2362B; --bad-bg:#FBE6E3;
+  --accent:var(--orange); --on-accent:#FFFFFF;
+  --f-display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1920; --surface:#16242D; --surface-2:#1B2C36; --ink:#E4EDF1; --muted:#8EA2AD; --line:#273A46;
+  --orange:#F08A45; --green:#4DB97E; --blue:#5BA2E0; --brown:#C08B5E;
+  --ok:#4DB97E; --ok-bg:#16352A; --bad:#EE6E62; --bad-bg:#3A1F1E; --on-accent:#1A0E05; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1920; --surface:#16242D; --surface-2:#1B2C36; --ink:#E4EDF1; --muted:#8EA2AD; --line:#273A46;
+  --orange:#F08A45; --green:#4DB97E; --blue:#5BA2E0; --brown:#C08B5E;
+  --ok:#4DB97E; --ok-bg:#16352A; --bad:#EE6E62; --bad-bg:#3A1F1E; --on-accent:#1A0E05; color-scheme:dark}
+
+*{box-sizing:border-box}
+html{color-scheme:light}
+@media (prefers-color-scheme: dark){html{color-scheme:dark}}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:920px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+.label{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* T568B stripe */
+.cable{display:grid;grid-template-columns:repeat(8,1fr);height:6px;border-radius:0 0 4px 4px;overflow:hidden}
+.cable i{display:block}
+.cable i.w{background:repeating-linear-gradient(90deg,var(--c) 0 8px,var(--surface) 8px 14px)}
+.cable i:not(.w){background:var(--c)}
+
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:18px 14px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.brand .jack{width:30px;height:26px;border:2.5px solid var(--ink);border-radius:4px;position:relative}
+.brand .jack::after{content:"";position:absolute;left:7px;right:7px;bottom:-2.5px;height:7px;border:2.5px solid var(--ink);border-bottom:0;background:var(--bg)}
+.brand h1{font-size:22px;letter-spacing:.01em}
+.brand small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.hud{display:flex;gap:18px;align-items:center;font-family:var(--f-mono);font-size:13px;flex-wrap:wrap}
+.hud b{font-weight:600;color:var(--ink)}
+.hud span{color:var(--muted)}
+.xpbar{width:90px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:6px}
+.xpbar i{display:block;height:100%;background:var(--accent)}
+
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:24px;scrollbar-width:none}
+nav.tabs a{flex:none;padding:10px 12px;text-decoration:none;color:var(--muted);font-weight:500;font-size:14px;border-bottom:3px solid transparent;margin-bottom:-1px}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs a:hover{color:var(--ink)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.stack{display:flex;flex-direction:column;gap:20px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* Home */
+.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:stretch}
+.hero h2{font-size:clamp(26px,4.6vw,38px);margin-bottom:10px}
+.hero p{color:var(--muted);max-width:52ch;margin:0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.stats div{background:var(--surface);padding:14px 16px}
+.stats b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums}
+.domains{display:flex;flex-direction:column;gap:12px}
+.dom{display:grid;grid-template-columns:2.2em 1fr 3.2em 4.4em;gap:12px;align-items:center;font-size:14px}
+.dom .num{font-family:var(--f-mono);color:var(--muted)}
+.dom .name{min-width:0}
+.dom .meter{grid-column:2/3;height:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.dom .meter i{display:block;height:100%}
+.dom .w,.dom .acc{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.dom .w{color:var(--muted)}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.mode{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
+.mode::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--c)}
+.mode:hover{border-color:var(--c);transform:translateY(-2px)}
+.mode h3{font-size:19px}
+.mode p{margin:0;color:var(--muted);font-size:14px}
+.mode .best{margin-top:auto;padding-top:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:15px;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.chip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Quiz */
+.qhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.progress{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:18px}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.qtext{font-size:clamp(18px,2.6vw,22px);font-weight:500;margin:0 0 18px;max-width:62ch}
+.opts{display:grid;gap:10px}
+.opt{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:center;text-align:left;padding:12px 14px;border:1px solid var(--line);background:var(--surface-2);border-radius:8px;font-size:15px}
+.opt kbd{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:4px;text-align:center;padding:2px 0;background:var(--surface);color:var(--muted)}
+.opt:hover:not([disabled]){border-color:var(--blue)}
+.opt[disabled]{cursor:default}
+.opt.right{background:var(--ok-bg);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-bg);border-color:var(--bad)}
+.opt.dim{opacity:.55}
+.explain{margin-top:16px;padding:14px 16px;border-left:4px solid var(--c,var(--blue));background:var(--surface-2);border-radius:0 8px 8px 0;font-size:15px}
+.explain b{font-family:var(--f-display);font-size:16px;display:block;margin-bottom:2px}
+.verdict-ok{--c:var(--ok)} .verdict-bad{--c:var(--bad)}
+.result{text-align:center;padding-block:12px}
+.result .big{font-family:var(--f-display);font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+
+/* Blitz */
+.timer{height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin-block:6px 18px}
+.timer i{display:block;height:100%;background:var(--green);transition:width .1s linear}
+.timer.low i{background:var(--bad)}
+.blitz-q{font-family:var(--f-display);font-size:clamp(24px,4vw,32px);margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2 .opt{grid-template-columns:1fr;text-align:center;font-family:var(--f-mono);font-size:17px;padding:16px 10px}
+.flash-ok{animation:fo .35s} .flash-bad{animation:fb .35s}
+@keyframes fo{from{box-shadow:0 0 0 4px var(--ok)}to{box-shadow:0 0 0 0 transparent}}
+@keyframes fb{from{box-shadow:0 0 0 4px var(--bad)}to{box-shadow:0 0 0 0 transparent}}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.p{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+
+/* OSI */
+.osi{display:grid;grid-template-columns:1fr 1.1fr;gap:20px}
+.item-card{display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:180px;padding:22px;border:2px dashed var(--line);border-radius:var(--r);background:var(--surface-2)}
+.item-card .it{font-family:var(--f-display);font-size:clamp(24px,4vw,30px)}
+.layers{display:flex;flex-direction:column;gap:6px}
+.layer{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);text-align:left}
+.layer .n{font-family:var(--f-mono);font-weight:600;width:28px;height:28px;display:grid;place-items:center;border-radius:6px;background:var(--lc);color:#fff;font-size:14px}
+.layer .pdu{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.layer:hover:not([disabled]){border-color:var(--lc)}
+.layer.right{background:var(--ok-bg);border-color:var(--ok)}
+.layer.wrong{background:var(--bad-bg);border-color:var(--bad)}
+
+/* Subnet */
+.ipline{font-family:var(--f-mono);font-size:clamp(24px,5vw,40px);font-weight:600;letter-spacing:.01em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ipline span{color:var(--accent)}
+.answer{display:flex;gap:10px;flex-wrap:wrap}
+.answer input{flex:1 1 220px;min-width:0;font-family:var(--f-mono);font-size:18px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--ink)}
+.answer input:focus{outline:3px solid var(--blue);outline-offset:1px}
+.bits{font-family:var(--f-mono);font-size:13px;overflow-x:auto;white-space:pre;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:12px;line-height:1.7}
+.bits .n{color:var(--blue);font-weight:600} .bits .h{color:var(--orange);font-weight:600}
+.cheat{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px;font-family:var(--f-mono);font-size:13px}
+.cheat div{padding:6px 8px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;display:flex;justify-content:space-between;gap:6px}
+.cheat div span{color:var(--muted)}
+
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+footer{margin-top:36px;font-size:13px;color:var(--muted)}
+
+@media (max-width:720px){
+  .hero,.osi{grid-template-columns:1fr}
+  .dom{grid-template-columns:2em 1fr 3em 4em;gap:8px}
+  .panel{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="cable" aria-hidden="true">
+    <i class="w" style="--c:var(--orange)"></i><i style="--c:var(--orange)"></i>
+    <i class="w" style="--c:var(--green)"></i><i style="--c:var(--blue)"></i>
+    <i class="w" style="--c:var(--blue)"></i><i style="--c:var(--green)"></i>
+    <i class="w" style="--c:var(--brown)"></i><i style="--c:var(--brown)"></i>
+  </div>
+  <header class="top">
+    <a class="brand" href="#home">
+      <div class="jack" aria-hidden="true"></div>
+      <div><h1>Net+ Patch Bay</h1><small>COMPTIA NETWORK+ · N10-009</small></div>
+    </a>
+    <div class="hud" id="hud"></div>
+  </header>
+  <nav class="tabs" id="tabs">
+    <a href="#home">Home</a>
+    <a href="#quiz">Exam Quiz</a>
+    <a href="#ports">Port Blitz</a>
+    <a href="#osi">OSI Stack</a>
+    <a href="#subnet">Subnet Sprint</a>
+    <a href="#review">Review</a>
+  </nav>
+  <main id="app" aria-live="polite"></main>
+  <footer>Progress is saved in this browser only. Questions are original practice items written against the N10-009 objectives, not real exam questions.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------- Content ---------------- */
+const DOMAINS = {
+  1:{name:"Networking Concepts", w:23, c:"var(--orange)"},
+  2:{name:"Network Implementation", w:20, c:"var(--green)"},
+  3:{name:"Network Operations", w:19, c:"var(--blue)"},
+  4:{name:"Network Security", w:14, c:"var(--brown)"},
+  5:{name:"Network Troubleshooting", w:24, c:"var(--muted)"}
+};
+
+// [domain, question, correct, [wrong x3], explanation]
+const Q = [
+ [1,"Which OSI layer handles logical addressing and routing between networks?","Layer 3, Network",["Layer 2, Data Link","Layer 4, Transport","Layer 5, Session"],"The Network layer uses logical (IP) addresses and routers make forwarding decisions here. Layer 2 uses MAC addresses within a single segment."],
+ [1,"A Windows host shows the address 169.254.33.10. What kind of address is this?","APIPA (link-local) address",["RFC 1918 private address","Loopback address","Carrier-grade NAT address"],"169.254.0.0/16 is APIPA. A host assigns itself one when it cannot reach a DHCP server."],
+ [1,"Which range is one of the RFC 1918 private IPv4 blocks?","172.16.0.0/12",["172.32.0.0/12","192.169.0.0/16","100.64.0.0/10"],"Private blocks are 10.0.0.0/8, 172.16.0.0/12 (172.16–172.31) and 192.168.0.0/16. 100.64.0.0/10 is reserved for carrier-grade NAT."],
+ [1,"An IPv6 address begins with FE80. What type of address is it?","Link-local",["Global unicast","Unique local","Multicast"],"FE80::/10 is link-local and is never routed. Global unicast starts with 2000::/3, unique local with FC00::/7 (usually FD), and multicast with FF00::/8."],
+ [1,"Which protocol resolves a known IPv4 address to a MAC address?","ARP",["DNS","RARP","NDP"],"ARP maps IPv4 addresses to MAC addresses on the local segment. NDP does this job in IPv6."],
+ [1,"In IPv6, which protocol replaces ARP for address resolution and router discovery?","Neighbor Discovery Protocol (NDP)",["DHCPv6","ICMPv4","IGMP"],"NDP uses ICMPv6 messages (Neighbor Solicitation and Advertisement, Router Solicitation and Advertisement)."],
+ [1,"Which DNS record maps a hostname to an IPv6 address?","AAAA",["A","CNAME","PTR"],"An A record maps a name to IPv4 and AAAA maps it to IPv6. CNAME is an alias and PTR is used for reverse lookups."],
+ [1,"Which DNS record tells other servers where to deliver email for a domain?","MX",["TXT","SRV","NS"],"MX (mail exchanger) records list mail servers and their priorities. TXT records often hold SPF, DKIM and DMARC data."],
+ [1,"Which DNS record type is used for reverse lookups, IP to name?","PTR",["A","SOA","CNAME"],"PTR records live in the in-addr.arpa (IPv4) or ip6.arpa (IPv6) zones."],
+ [1,"A company manages its own OS and applications on rented virtual machines, while the provider manages the hardware. Which cloud model is this?","IaaS",["SaaS","PaaS","DaaS"],"With IaaS you manage the OS and everything above it. With PaaS the provider also manages the OS and runtime. With SaaS you only use the application."],
+ [1,"Which topology connects every node directly to every other node?","Full mesh",["Star","Hub-and-spoke","Bus"],"A full mesh needs n(n−1)/2 links. It gives the most redundancy and costs the most."],
+ [1,"Which transport protocol is connectionless and does not guarantee delivery?","UDP",["TCP","SCTP","GRE"],"UDP has no handshake and no retransmission, which keeps latency low for DNS queries, VoIP and streaming. TCP uses a three-way handshake and acknowledgments."],
+ [1,"What is the correct order of the TCP three-way handshake?","SYN, SYN-ACK, ACK",["SYN, ACK, SYN-ACK","ACK, SYN, FIN","SYN, SYN, ACK"],"The client sends SYN, the server replies SYN-ACK, and the client confirms with ACK. FIN and RST tear connections down."],
+ [1,"Software-defined networking (SDN) separates which two functions?","Control plane and data plane",["Access layer and core layer","Layer 2 and Layer 3","Management VLAN and user VLAN"],"In SDN a central controller runs the control plane, and switches forward traffic in the data (forwarding) plane. The application and management planes sit above them."],
+ [1,"Which frequency band did Wi-Fi 6E add?","6 GHz",["5 GHz","2.4 GHz","60 GHz"],"Wi-Fi 6E is 802.11ax extended into 6 GHz, which has many clean channels and a shorter range."],
+ [1,"Which IPv4 address range is reserved for multicast?","224.0.0.0 – 239.255.255.255",["240.0.0.0 – 255.255.255.255","127.0.0.0 – 127.255.255.255","192.0.2.0 – 192.0.2.255"],"Class D (224.0.0.0/4) is multicast. Class E (240.0.0.0/4) is experimental, and 127.0.0.0/8 is loopback."],
+ [1,"What is the PDU called at the Transport layer when TCP is used?","Segment",["Packet","Frame","Bit"],"From the top down: data, segment (L4, or datagram for UDP), packet (L3), frame (L2), bits (L1)."],
+ [1,"Which technology carries Layer 2 frames over a Layer 3 network and is common in data centers?","VXLAN",["802.1Q","PPP","MPLS"],"VXLAN wraps Ethernet frames in UDP (port 4789) and uses a 24-bit VNI, which allows about 16 million segments compared with 4,094 VLANs."],
+ [1,"Which fiber type uses a laser and a small core to cover the longest distances?","Single-mode fiber",["Multimode fiber","Cat 6a","Twinaxial"],"Single-mode has a core of about 9 µm and reaches many kilometres. Multimode has a 50 or 62.5 µm core and is used for shorter runs inside buildings."],
+ [1,"What is the maximum supported distance for 10GBASE-T over Cat 6a?","100 meters",["55 meters","185 meters","500 meters"],"Cat 6a supports 10 Gbps to 100 m. Plain Cat 6 supports 10 Gbps only to about 55 m."],
+ [1,"Which security model assumes no user or device is trusted by default, even inside the network?","Zero trust",["Defense in depth","Implicit trust","Perimeter security"],"Zero trust verifies every request explicitly, applies least privilege and assumes a breach has already happened."],
+ [1,"Which IPv6 address is the loopback?","::1",["FE80::1","::","FF02::1"],"::1 is loopback. :: is the unspecified address and FF02::1 is the all-nodes multicast group."],
+
+ [2,"Which routing protocol is link-state and calculates paths using cost and Dijkstra's algorithm?","OSPF",["RIP","BGP","EIGRP"],"OSPF is a link-state protocol that builds a full topology map and runs SPF (Dijkstra). RIP is distance-vector and uses hop count. BGP is path-vector."],
+ [2,"Which protocol exchanges routes between autonomous systems on the internet?","BGP",["OSPF","RIP","IS-IS"],"BGP is the path-vector exterior gateway protocol that runs between ISPs and large organizations."],
+ [2,"A router learns the same prefix from OSPF, RIP and a static route. Which route is installed with default administrative distances?","The static route (AD 1)",["The OSPF route (AD 110)","The RIP route (AD 120)","All three, load-balanced"],"Lower AD is more trusted: connected 0, static 1, eBGP 20, EIGRP 90, OSPF 110, RIP 120."],
+ [2,"What does IEEE 802.1Q define?","VLAN tagging on trunk links",["Port-based authentication","Link aggregation","Spanning Tree Protocol"],"802.1Q adds a 4-byte tag with a 12-bit VLAN ID. 802.1X is port authentication, 802.3ad is LACP and 802.1D is STP."],
+ [2,"Which protocol stops Layer 2 switching loops by blocking redundant paths?","Spanning Tree Protocol",["LACP","VTP","HSRP"],"STP elects a root bridge and puts redundant ports into blocking. RSTP (802.1w) converges much faster."],
+ [2,"How much power can an 802.3af PoE switch port supply?","15.4 W",["30 W","60 W","90 W"],"802.3af (PoE) supplies 15.4 W, 802.3at (PoE+) 30 W, and 802.3bt (PoE++) 60 W for Type 3 or about 90–100 W for Type 4."],
+ [2,"Which wireless security standard replaces the pre-shared key handshake with SAE?","WPA3",["WPA2","WEP","WPS"],"WPA3-Personal uses Simultaneous Authentication of Equals, which resists offline dictionary attacks on captured handshakes."],
+ [2,"In the 2.4 GHz band in North America, which channels do not overlap?","1, 6 and 11",["1, 5 and 9","2, 7 and 12","1, 4, 8 and 11"],"Each 2.4 GHz channel is 22 MHz wide with 5 MHz spacing, so only 1, 6 and 11 avoid overlapping."],
+ [2,"Which protocol bundles several physical links into one logical link?","LACP (802.3ad)",["STP","CDP","VRRP"],"LACP negotiates link aggregation (port channels, EtherChannel), which adds bandwidth and redundancy."],
+ [2,"On an 802.1Q trunk, how is native VLAN traffic sent?","Untagged",["Double-tagged","Tagged with VLAN 4095","Encrypted"],"Frames on the native VLAN cross the trunk without a tag. Both ends must agree on the native VLAN."],
+ [2,"Which protocols provide default gateway redundancy by sharing a virtual IP address?","VRRP and HSRP",["OSPF and BGP","STP and RSTP","DHCP and DNS"],"First-hop redundancy protocols (FHRP) let two routers share a virtual gateway IP and MAC, so hosts keep working if one router fails."],
+ [2,"Which technique lets many internal hosts share one public IP by tracking port numbers?","PAT (NAT overload)",["Static NAT","Port mirroring","Port forwarding"],"PAT maps many private addresses to one public address and keeps sessions apart by source port."],
+ [2,"What is the usual MTU of a jumbo frame?","About 9000 bytes",["1500 bytes","576 bytes","65,535 bytes"],"Standard Ethernet MTU is 1500 bytes. Jumbo frames (about 9000) cut overhead on storage networks, and every device in the path must support them."],
+ [2,"Which antenna sends signal in one focused direction, such as for a building-to-building link?","Yagi (directional)",["Omnidirectional","Dipole","Isotropic"],"Directional antennas such as Yagi or parabolic dishes concentrate gain in one direction. Omnidirectional antennas radiate all the way around."],
+ [2,"Which device is needed for hosts in different VLANs to talk to each other?","A router or Layer 3 switch",["An unmanaged switch","A hub","A media converter"],"Each VLAN is its own broadcast domain and IP subnet, so traffic between them must be routed, for example with SVIs or router-on-a-stick."],
+ [2,"What is the main purpose of a wireless site survey?","Find coverage, interference and the best AP placement",["Encrypt wireless traffic","Assign IP addresses to clients","Block rogue devices automatically"],"A survey measures signal strength (heat maps), noise and channel use so access points can be placed and tuned."],
+
+ [3,"Which service collects log messages centrally, traditionally on UDP 514?","Syslog",["SNMP","NetFlow","NTP"],"Syslog severities run from 0 (Emergency) to 7 (Debug). A SIEM often collects and correlates these logs."],
+ [3,"What does SNMPv3 add over SNMPv2c?","Authentication and encryption",["Support for traps","Community strings","UDP transport"],"v1 and v2c send community strings in plaintext. v3 adds user-based authentication and privacy (encryption)."],
+ [3,"Which metric defines the maximum amount of data loss, measured in time, that a business can accept?","RPO",["RTO","MTTR","MTBF"],"The recovery point objective sets how often you must back up. The recovery time objective is how long you can be down."],
+ [3,"Which disaster recovery site has equipment and current data and is ready to take over almost immediately?","Hot site",["Cold site","Warm site","Colocation cage"],"A hot site is fully equipped and synchronized. A warm site has hardware but needs data restored. A cold site is space and power only."],
+ [3,"What is the correct order of the DHCP lease process?","Discover, Offer, Request, Acknowledge",["Request, Offer, Discover, Acknowledge","Offer, Discover, Acknowledge, Request","Discover, Request, Offer, Acknowledge"],"Remember DORA. The client broadcasts Discover from UDP 68 to server port 67."],
+ [3,"A printer must always get the same IP address from DHCP. What should you configure?","A DHCP reservation",["A larger scope","A shorter lease time","An exclusion range"],"A reservation ties an IP to the client's MAC address. An exclusion keeps addresses out of the pool entirely."],
+ [3,"Which document sets a provider's committed uptime and response times?","SLA",["MOU","NDA","AUP"],"A service level agreement defines measurable commitments such as 99.99% uptime and the penalties for missing them."],
+ [3,"Why do administrators record a network performance baseline?","To have a normal reference point for spotting anomalies",["To meet encryption rules","To assign VLANs automatically","To replace documentation"],"Without a baseline you cannot tell whether 70% utilization or 30 ms latency is normal."],
+ [3,"Which technology reports who talked to whom, over which ports, and how much data was sent?","NetFlow",["Syslog","SNMP traps","Port security"],"NetFlow, sFlow and IPFIX export flow records for traffic analysis and capacity planning."],
+ [3,"How can you copy traffic from one switch port to an analyzer on another port?","Port mirroring (SPAN)",["Port security","Port forwarding","Port aggregation"],"SPAN copies frames to a monitor port. A network TAP does the same job in hardware."],
+ [3,"Which IPv6 feature lets hosts configure their own address from router advertisements without a DHCP server?","SLAAC",["APIPA","DHCPv6 relay","EUI-48"],"Stateless address autoconfiguration combines the advertised prefix with an interface ID (EUI-64 or random)."],
+ [3,"You need to manage switches even if the production network goes down. What should you use?","Out-of-band management",["In-band SSH","A management VLAN only","SNMP traps"],"Out-of-band management uses a separate path, such as a console server or cellular modem, that does not depend on production links."],
+ [3,"What is MTTR?","Mean time to repair",["Mean time to reboot","Maximum transfer throughput rate","Minimum time to restore"],"MTTR is the average time to fix a failure. MTBF is the average time between failures."],
+ [3,"Which protocol synchronizes device clocks, which log correlation and Kerberos depend on?","NTP",["SNTP over TCP","PTP over HTTP","SMB"],"NTP uses UDP 123 and a hierarchy of strata. Stratum 0 is the reference clock."],
+ [3,"Before applying a router change in production, change management usually requires what?","An approved change request with a rollback plan",["A new IP scheme","Approval only after the change","Disabling logging"],"Changes are documented, reviewed, approved, scheduled in a maintenance window and include a backout plan."],
+
+ [4,"Hashing a file and comparing the result protects which part of the CIA triad?","Integrity",["Confidentiality","Availability","Non-repudiation"],"A changed hash shows the data was altered. Encryption protects confidentiality, and redundancy protects availability."],
+ [4,"An attacker fills a switch's CAM table so it floods frames out every port. What is this attack?","MAC flooding",["ARP poisoning","VLAN hopping","DNS poisoning"],"Once the MAC table is full the switch acts like a hub. Port security that limits MACs per port mitigates it."],
+ [4,"Which switch feature blocks rogue DHCP servers?","DHCP snooping",["Dynamic ARP inspection","BPDU guard","Port mirroring"],"DHCP snooping trusts only uplink ports to send DHCP offers and builds a binding table that DAI also uses."],
+ [4,"Which feature mitigates ARP spoofing on a switched network?","Dynamic ARP inspection",["DHCP snooping alone","Root guard","Storm control"],"DAI checks ARP packets against the DHCP snooping binding table and drops forged replies."],
+ [4,"In 802.1X, what role does the switch play?","Authenticator",["Supplicant","Authentication server","Certificate authority"],"The supplicant is the client, the authenticator is the switch or AP, and the authentication server is usually RADIUS."],
+ [4,"Which AAA protocol uses TCP 49 and encrypts the entire payload?","TACACS+",["RADIUS","LDAP","Kerberos"],"RADIUS uses UDP 1812/1813 and encrypts only the password. TACACS+ also separates authentication, authorization and accounting."],
+ [4,"An attacker sets up an AP with the same SSID as the corporate network to capture credentials. What is this?","Evil twin",["Bluejacking","War driving","Deauthentication"],"An evil twin copies a legitimate SSID. Deauth attacks are often used to push clients onto it."],
+ [4,"Where should a public-facing web server sit?","In a screened subnet (DMZ)",["On the internal user VLAN","On the management VLAN","Behind the core switch with no firewall"],"A screened subnet isolates internet-facing services, so a compromise does not reach the internal network directly."],
+ [4,"How do you reduce the risk of double-tagging VLAN hopping?","Change the native VLAN to an unused VLAN",["Enable jumbo frames","Turn on DTP on every port","Use VLAN 1 for users"],"Also disable DTP auto-trunking, set access ports to access mode and do not place users in the native VLAN."],
+ [4,"A fingerprint scan is which authentication factor?","Something you are",["Something you know","Something you have","Somewhere you are"],"Biometrics are something you are. Passwords are something you know. Tokens and smart cards are something you have."],
+ [4,"Which IPsec mode encrypts the entire original IP packet, including its header?","Tunnel mode",["Transport mode","Aggressive mode","Main mode"],"Tunnel mode adds a new outer IP header and is used for site-to-site VPNs. Transport mode protects only the payload. Main and aggressive are IKE phase 1 modes."],
+ [4,"Which principle gives users only the access their job requires?","Least privilege",["Separation of duties","Implicit deny","Defense in depth"],"Least privilege limits damage from compromised accounts. Implicit deny is the rule at the end of a firewall ACL."],
+ [4,"A decoy system that draws attackers in so their methods can be studied is called what?","Honeypot",["Bastion host","Jump box","Sinkhole"],"A honeypot is a decoy host, and a honeynet is a network of them."],
+ [4,"Phishing done over phone calls is called what?","Vishing",["Smishing","Whaling","Pharming"],"Vishing is voice, smishing is SMS, whaling targets executives, and pharming redirects users through poisoned DNS or hosts files."],
+ [4,"Which control keeps unknown devices off the network by checking their posture before granting access?","NAC",["IDS","DLP","WAF"],"Network access control often uses 802.1X and can quarantine devices that fail health checks."],
+
+ [5,"What is the first step in the CompTIA troubleshooting methodology?","Identify the problem",["Establish a theory of probable cause","Document findings","Implement the solution"],"The steps are: identify the problem, establish a theory, test the theory, plan the fix, implement or escalate, verify functionality, then document."],
+ [5,"You have a theory of probable cause. What is the next step?","Test the theory to determine the cause",["Escalate to a vendor","Document findings","Verify full system functionality"],"If the test does not confirm the theory, form a new theory or escalate."],
+ [5,"What is the final step of the troubleshooting methodology?","Document findings, actions, outcomes and lessons learned",["Verify full system functionality","Implement preventive measures","Close the ticket without notes"],"Documentation comes after you verify the fix and put preventive measures in place."],
+ [5,"Which tool finds the location of a break in a long fiber run?","OTDR",["Toner probe","Loopback plug","Multimeter"],"An optical time-domain reflectometer sends light pulses and measures reflections to find the distance to a fault."],
+ [5,"Which tool traces one unlabeled copper cable through a bundle to the patch panel?","Toner and probe",["OTDR","Spectrum analyzer","Light meter"],"The tone generator puts a signal on the cable and the probe picks it up by induction."],
+ [5,"A user can ping 8.8.8.8 but cannot open websites by name. What is the most likely problem?","DNS resolution",["Default gateway","Duplex mismatch","DHCP scope exhaustion"],"Reaching an IP proves routing works. Check DNS server settings with nslookup or dig."],
+ [5,"A host can reach devices on its own subnet but nothing remote. What should you check first?","The default gateway setting",["DNS server address","The NIC driver","The cable pinout"],"Traffic to other networks goes to the gateway, so a wrong or missing gateway blocks only remote traffic."],
+ [5,"A link shows late collisions and poor throughput. Which problem is most likely?","Duplex mismatch",["Wrong VLAN","DNS misconfiguration","Expired DHCP lease"],"When one side runs half duplex and the other full, late collisions and CRC errors rise. Set both sides the same, or both to auto."],
+ [5,"An interface shows a growing count of CRC errors. What is a likely cause?","A damaged cable or EMI",["A wrong subnet mask","An expired certificate","An incorrect DNS suffix"],"CRC errors mean frames were corrupted in transit, usually by a physical-layer problem such as cabling, interference or a bad transceiver."],
+ [5,"Which Windows command shows each router hop on the way to a destination?","tracert",["pathping -n only","ipconfig /all","netstat -r"],"Windows uses tracert and Linux uses traceroute. Pathping combines ping and tracert statistics."],
+ [5,"Which command shows the local ARP cache?","arp -a",["netstat -a","nslookup","route print"],"arp -a lists IP-to-MAC mappings. A wrong entry there can point to ARP spoofing."],
+ [5,"VoIP calls sound choppy even though bandwidth is fine. Which metric is the likely problem?","Jitter",["Throughput","MTU","Lease time"],"Jitter is variation in packet delay. Real-time voice and video need it low, usually under about 30 ms, plus QoS."],
+ [5,"Signal weakens over a long copper run. What is this called?","Attenuation",["Crosstalk","Latency","Reflection"],"Attenuation is loss of signal strength over distance. Crosstalk (NEXT, FEXT) is signal bleeding between pairs."],
+ [5,"After someone connects two switch ports with a patch cable, the network slows to a crawl. What is the likely cause?","A broadcast storm from a switching loop",["DHCP scope exhaustion","An expired certificate","An incorrect NTP server"],"Without STP, broadcasts loop forever. Enable STP and BPDU guard on access ports."],
+ [5,"Which Linux command shows interface IP addresses on a modern distribution?","ip addr",["ipconfig /all","show ip route","nbtstat"],"ip addr (or ip a) replaced ifconfig. On Windows, use ipconfig."],
+ [5,"Wireless clients far from the AP report slow speeds and disconnects. What is the most likely cause?","Low signal strength (RSSI)",["Duplex mismatch","Wrong VLAN on the trunk","DNS poisoning"],"As RSSI drops, clients fall back to lower data rates. Moving or adding APs or adjusting transmit power helps."],
+ [5,"Which tool measures actual throughput between two hosts?","iperf",["nslookup","arp","Wi-Fi analyzer"],"iperf runs a client and a server and pushes traffic between them to measure real bandwidth."],
+ [5,"Which command shows active TCP connections and listening ports?","netstat",["tracert","ipconfig","dig"],"netstat -an shows sockets numerically. On Linux, ss is the modern replacement."],
+ [5,"A new hire's PC gets 169.254.x.x while everyone else is fine. What should you check first?","The DHCP server or scope, and the PC's switch port or VLAN",["The DNS forwarders","The firewall's NAT rules","The NTP server"],"An APIPA address means DHCP failed. Common causes are an exhausted scope, a wrong access VLAN or a missing DHCP relay."]
+];
+
+const PORTS = [
+ ["FTP","20, 21","Data on 20, control on 21"],["SSH / SFTP / SCP","22","Secure shell and file transfer"],["Telnet","23","Unencrypted remote terminal"],
+ ["SMTP","25","Mail transfer between servers"],["DNS","53","UDP for queries, TCP for zone transfers"],["DHCP","67, 68","Server 67, client 68 (UDP)"],
+ ["TFTP","69","Trivial FTP over UDP, no authentication"],["HTTP","80","Unencrypted web"],["POP3","110","Download mail"],
+ ["NTP","123","Time sync over UDP"],["IMAP","143","Mailbox access"],["SNMP","161, 162","Agent queries 161, traps 162"],
+ ["LDAP","389","Directory lookups"],["HTTPS","443","Web over TLS"],["SMB","445","Windows file sharing"],
+ ["Syslog","514","Central logging over UDP"],["SMTPS (submission)","587","Client mail submission with TLS"],["LDAPS","636","LDAP over TLS"],
+ ["IMAPS","993","IMAP over TLS"],["POP3S","995","POP3 over TLS"],["Microsoft SQL Server","1433","Database"],
+ ["RADIUS","1812, 1813","Authentication 1812, accounting 1813"],["RDP","3389","Remote Desktop"],["SIP","5060, 5061","VoIP signaling (5061 with TLS)"],
+ ["TACACS+","49","Device AAA over TCP"]
+];
+
+const LAYERS = [
+ [7,"Application","Data","var(--orange)"],[6,"Presentation","Data","#C8873A"],[5,"Session","Data","#9A8A3A"],
+ [4,"Transport","Segment","var(--green)"],[3,"Network","Packet","var(--blue)"],[2,"Data Link","Frame","#6B5BB0"],[1,"Physical","Bits","var(--brown)"]
+];
+const OSI_ITEMS = [
+ ["Router",3,"Routers forward packets between networks using IP addresses."],
+ ["Switch (unmanaged)",2,"Switches forward frames using MAC address tables."],
+ ["Hub",1,"Hubs repeat electrical signals out every port with no addressing."],
+ ["MAC address",2,"Physical (hardware) addressing belongs to the Data Link layer."],
+ ["IP address",3,"Logical addressing is a Network layer job."],
+ ["TCP",4,"TCP gives reliable, connection-oriented transport."],
+ ["UDP",4,"UDP is the connectionless Transport layer protocol."],
+ ["HTTP",7,"HTTP is an application protocol that users' software calls directly."],
+ ["DNS",7,"DNS is an application-layer service, even though it runs over UDP/TCP 53."],
+ ["SMTP",7,"Mail protocols are Application layer."],
+ ["Frames",2,"The Layer 2 PDU is the frame."],
+ ["Packets",3,"The Layer 3 PDU is the packet."],
+ ["Segments",4,"The Layer 4 PDU is the segment (datagram for UDP)."],
+ ["Bits on the wire",1,"The Physical layer moves raw bits as voltage, light or radio."],
+ ["Fiber optic cable",1,"Cables, connectors and transceivers are Physical layer."],
+ ["Repeater",1,"A repeater regenerates the signal without reading addresses."],
+ ["Port numbers",4,"Source and destination ports identify applications at Transport."],
+ ["Flow control and windowing",4,"TCP windowing controls how much data is in flight."],
+ ["Data encryption and formatting",6,"Presentation handles translation, encryption and compression."],
+ ["Character encoding (ASCII, Unicode)",6,"Converting data formats is the Presentation layer's job."],
+ ["Data compression",6,"Compression is a Presentation layer function."],
+ ["Session setup, checkpointing, teardown",5,"The Session layer manages dialogs between hosts."],
+ ["RPC / NetBIOS session service",5,"Session-control protocols sit at Layer 5."],
+ ["ICMP",3,"ICMP (ping, unreachable messages) works alongside IP at Layer 3."],
+ ["OSPF",3,"Routing protocols build Layer 3 routing tables."],
+ ["VLANs",2,"VLANs split a Layer 2 broadcast domain."],
+ ["Network interface card (NIC)",2,"A NIC carries a MAC address and frames data. CompTIA places it at Layer 2."],
+ ["Wireless access point",2,"An AP bridges wireless frames to the wired LAN at Layer 2."],
+ ["Bridge",2,"Bridges filter frames by MAC address."],
+ ["Frame check sequence (CRC)",2,"The FCS trailer is added to every Layer 2 frame."],
+ ["IPsec",3,"IPsec protects IP packets at the Network layer."],
+ ["Voltage and signaling",1,"Electrical and optical signaling is Physical."]
+];
+
+/* ---------------- State ---------------- */
+const KEY = "netplus-patch-bay-v1";
+function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0};}
+function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});}}catch(e){}return d;}
+let S = load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function dayStr(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function bumpDay(){const t=dayStr(new Date());if(S.lastDay===t)return;const y=new Date();y.setDate(y.getDate()-1);S.streak=(S.lastDay===dayStr(y))?S.streak+1:1;S.lastDay=t;}
+function award(n){S.xp+=n;bumpDay();save();renderHud();}
+const level = () => Math.floor(S.xp/250)+1;
+
+/* ---------------- Helpers ---------------- */
+const $app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle = a => {a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const pct = (c,w) => (c+w)?Math.round(100*c/(c+w)):null;
+
+function renderHud(){
+  const into = S.xp%250;
+  document.getElementById("hud").innerHTML =
+    `<div><span>LVL</span> <b>${level()}</b><span class="xpbar" title="${into}/250 XP to next level"><i style="width:${into/2.5}%"></i></span></div>
+     <div><b>${S.xp}</b> <span>XP</span></div>
+     <div><b>${S.streak}</b> <span>day streak</span></div>`;
+}
+
+/* ---------------- Router ---------------- */
+let cleanup = null;
+const VIEWS = {home:viewHome,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet};
+function route(){
+  if(cleanup){cleanup();cleanup=null;}
+  const name = (location.hash||"#home").slice(1);
+  const v = VIEWS[name]?name:"home";
+  document.querySelectorAll("#tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+v?"page":"false"));
+  VIEWS[v]();
+}
+window.addEventListener("hashchange",route);
+
+/* ---------------- Home ---------------- */
+function viewHome(){
+  const doms = Object.entries(DOMAINS).map(([k,d])=>{
+    const r=S.dom[k]||{c:0,w:0};const a=pct(r.c,r.w);
+    return `<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${a===null?"—":a+"%"}</span>
+      <span class="meter" style="grid-column:2/3"><i style="width:${a||0}%;background:${d.c}"></i></span></div>`;}).join("");
+  let wsum=0,wacc=0;Object.entries(DOMAINS).forEach(([k,d])=>{const r=S.dom[k];if(r&&(r.c+r.w)){wsum+=d.w;wacc+=d.w*r.c/(r.c+r.w);}});
+  const ready = wsum?Math.round(100*wacc/wsum)+"%":"—";
+  const seen = Object.keys(S.qs).length;
+  $app.innerHTML = `<div class="stack">
+    <section class="hero">
+      <div class="panel" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <span class="label">Daily drill</span>
+        <h2>Short rounds that build exam recall.</h2>
+        <p>Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand. Anything you miss goes into your review queue.</p>
+        <div class="row"><a class="btn primary" href="#quiz">Start a 10-question quiz</a>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}</div>
+      </div>
+      <div class="stats">
+        <div><span class="label">Weighted accuracy</span><b>${ready}</b></div>
+        <div><span class="label">Questions seen</span><b>${seen}<span class="muted" style="font-size:16px"> / ${Q.length}</span></b></div>
+        <div><span class="label">Review queue</span><b>${S.review.length}</b></div>
+        <div><span class="label">Answers logged</span><b>${S.answered}</b></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="row" style="justify-content:space-between;margin-bottom:14px"><h3 style="font-size:18px">Exam domains</h3><span class="label">Exam weight · your accuracy</span></div>
+      <div class="domains">${doms}</div>
+    </section>
+    <section>
+      <div class="label" style="margin-bottom:10px">Training modes</div>
+      <div class="modes">
+        <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Exam Quiz</h3><p>10 multiple-choice questions with an explanation after each.</p><span class="best">${Q.length} questions in the bank</span></a>
+        <a class="mode" href="#ports" style="--c:var(--green)"><span class="label">60 seconds</span><h3>Port Blitz</h3><p>Match services to port numbers. A wrong answer costs 3 seconds.</p><span class="best">Best: ${S.best.ports}</span></a>
+        <a class="mode" href="#osi" style="--c:var(--blue)"><span class="label">12 items</span><h3>OSI Stack</h3><p>Place devices, protocols and PDUs on the correct layer.</p><span class="best">Best: ${S.best.osi}/12</span></a>
+        <a class="mode" href="#subnet" style="--c:var(--brown)"><span class="label">Endless</span><h3>Subnet Sprint</h3><p>Work out network, broadcast, host ranges and masks by hand.</p><span class="best">Best streak: ${S.best.subnet}</span></a>
+      </div>
+    </section>
+    <div class="row"><button class="btn small" id="reset" style="font-size:13px;padding:6px 12px">Reset progress</button><span id="resetMsg" class="muted small"></span></div>
+  </div>`;
+  let armed=false;
+  document.getElementById("reset").onclick=e=>{
+    if(!armed){armed=true;e.target.textContent="Click again to erase all progress";return;}
+    S=freshState();save();renderHud();viewHome();
+  };
+}
+
+/* ---------------- Quiz ---------------- */
+let quizDomain = "all";
+function viewQuizSetup(){
+  const chips = [["all","All domains"]].concat(Object.entries(DOMAINS).map(([k,d])=>[k,k+".0 "+d.name]))
+    .map(([k,l])=>`<button class="chip" data-d="${k}" aria-pressed="${quizDomain===k}">${esc(l)}</button>`).join("");
+  $app.innerHTML = `<div class="panel stack">
+    <div><span class="label">Exam Quiz</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
+    <div class="row">${chips}</div>
+    <p class="muted" style="margin:0">Questions you missed and questions you haven't seen come first. Press 1–4 to answer and Enter to continue.</p>
+    <div><button class="btn primary" id="go">Start 10 questions</button></div>
+  </div>`;
+  $app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{quizDomain=b.dataset.d;viewQuizSetup();});
+  document.getElementById("go").onclick=()=>startQuiz(buildPool(quizDomain),"Exam Quiz");
+}
+function buildPool(dom){
+  let ids = Q.map((_,i)=>i).filter(i=>dom==="all"||String(Q[i][0])===dom);
+  const prio = i => S.review.includes(i)?0:(!S.qs[i]?1:2+(pct(S.qs[i].c,S.qs[i].w)/100));
+  ids = shuffle(ids).sort((a,b)=>prio(a)-prio(b));
+  return shuffle(ids.slice(0,10));
+}
+function viewReview(){
+  if(!S.review.length){
+    $app.innerHTML=`<div class="panel empty"><h2 style="font-size:24px;color:var(--ink);margin-bottom:8px">Review queue is empty</h2><p>Questions you miss in the Exam Quiz show up here. Answer one correctly to clear it.</p><a class="btn primary" href="#quiz">Take a quiz</a></div>`;return;
+  }
+  startQuiz(shuffle(S.review).slice(0,15),"Review");
+}
+function startQuiz(pool,label){
+  const st={pool,i:0,correct:0,label,done:false};
+  const onKey=e=>{
+    if(e.target.tagName==="INPUT")return;
+    if(!st.done&&/^[1-4]$/.test(e.key)){const b=$app.querySelectorAll(".opt")[+e.key-1];if(b&&!b.disabled)b.click();}
+    else if(e.key==="Enter"){const n=document.getElementById("next");if(n){e.preventDefault();n.click();}}
+  };
+  document.addEventListener("keydown",onKey);
+  cleanup=()=>document.removeEventListener("keydown",onKey);
+  showQ(st);
+}
+function showQ(st){
+  if(st.i>=st.pool.length)return quizResult(st);
+  st.done=false;
+  const id=st.pool[st.i], [d,q,a,wr,ex]=Q[id];
+  const opts=shuffle([a,...wr]);
+  $app.innerHTML=`<div class="panel">
+    <div class="qhead"><span class="label">${esc(st.label)} · ${st.i+1} of ${st.pool.length}</span><span class="label" style="color:${DOMAINS[d].c}">${d}.0 ${DOMAINS[d].name}</span></div>
+    <div class="progress"><i style="width:${100*st.i/st.pool.length}%"></i></div>
+    <p class="qtext">${esc(q)}</p>
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-v="${esc(o)}"><kbd>${k+1}</kbd><span>${esc(o)}</span></button>`).join("")}</div>
+    <div id="fb"></div>
+  </div>`;
+  $app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    if(st.done)return;st.done=true;
+    const ok=b.dataset.v===a;
+    $app.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.v===a)x.classList.add("right");else if(x===b)x.classList.add("wrong");else x.classList.add("dim");});
+    const r=S.qs[id]||(S.qs[id]={c:0,w:0});const dr=S.dom[d]||(S.dom[d]={c:0,w:0});
+    S.answered++;
+    if(ok){r.c++;dr.c++;st.correct++;S.review=S.review.filter(x=>x!==id);award(10);}
+    else{r.w++;dr.w++;if(!S.review.includes(id))S.review.push(id);award(2);}
+    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(a)}</b>${esc(ex)}</div>
+      <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
+    document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
+    document.getElementById("next").focus({preventScroll:true});
+  });
+}
+function quizResult(st){
+  const p=Math.round(100*st.correct/st.pool.length);
+  const msg=p>=90?"Exam-ready on this set.":p>=72?"Solid. The real exam needs 720 on a 100–900 scale, so aim for 80% or better in practice.":"Your misses are now in the review queue. Clear them next.";
+  $app.innerHTML=`<div class="panel result stack">
+    <span class="label">${esc(st.label)} complete</span>
+    <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
+    <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
+  </div>`;
+  document.getElementById("again").onclick=()=>{ if(st.label==="Review"){viewReview();} else startQuiz(buildPool(quizDomain),"Exam Quiz"); };
+}
+
+/* ---------------- Port Blitz ---------------- */
+function viewPorts(){
+  const missed=Object.entries(S.missedPorts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n])=>n);
+  $app.innerHTML=`<div class="stack">
+    <div class="panel stack">
+      <div><span class="label">Port Blitz</span><h2 style="font-size:28px;margin-top:4px">60 seconds. As many ports as you can.</h2></div>
+      <p class="muted" style="margin:0">Each prompt is either "service → port" or "port → service". A wrong answer costs 3 seconds. Keys 1–4 work too.</p>
+      ${missed.length?`<p class="small" style="margin:0"><span class="label">Your trouble spots:</span> ${missed.map(esc).join(", ")}</p>`:""}
+      <div class="row"><button class="btn primary" id="start">Start blitz</button><span class="muted small mono">Best: ${S.best.ports}</span></div>
+    </div>
+    <div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Port reference</h3>
+      <div class="tbl-wrap"><table><thead><tr><th>Port</th><th>Service</th><th>Note</th></tr></thead><tbody>
+      ${PORTS.slice().sort((a,b)=>parseInt(a[1])-parseInt(b[1])).map(p=>`<tr><td class="p">${p[1]}</td><td>${esc(p[0])}</td><td class="muted">${esc(p[2])}</td></tr>`).join("")}
+      </tbody></table></div></div>
+  </div>`;
+  document.getElementById("start").onclick=runBlitz;
+}
+function runBlitz(){
+  const DUR=60000;let end=Date.now()+DUR,score=0,misses=[],cur=null,locked=false;
+  $app.innerHTML=`<div class="panel" id="bz">
+    <div class="qhead"><span class="label">Port Blitz</span><span class="mono" id="sc" style="font-size:18px;font-weight:600">0</span></div>
+    <div class="timer" id="tm"><i style="width:100%"></i></div>
+    <div class="blitz-q" id="bq"></div>
+    <div class="grid2" id="bo"></div>
+  </div>`;
+  const tm=document.getElementById("tm"),bz=document.getElementById("bz");
+  function next(){
+    locked=false;
+    const p=pick(PORTS);const dir=Math.random()<.5;
+    let others=shuffle(PORTS.filter(x=>x!==p&&x[1]!==p[1])).slice(0,3);
+    if(dir){cur={ans:p[1],q:`${p[0]} uses port…`,opts:shuffle([p[1],...others.map(o=>o[1])]),name:p[0]};}
+    else{cur={ans:p[0],q:`Port ${p[1]} is…`,opts:shuffle([p[0],...others.map(o=>o[0])]),name:p[0]};}
+    document.getElementById("bq").textContent=cur.q;
+    document.getElementById("bo").innerHTML=cur.opts.map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join("");
+    document.querySelectorAll("#bo .opt").forEach(b=>b.onclick=()=>answer(b));
+  }
+  function answer(b){
+    if(locked)return;locked=true;
+    const ok=b.dataset.v===cur.ans;
+    bz.classList.remove("flash-ok","flash-bad");void bz.offsetWidth;bz.classList.add(ok?"flash-ok":"flash-bad");
+    if(ok){score++;document.getElementById("sc").textContent=score;setTimeout(next,120);}
+    else{end-=3000;misses.push(cur.name);S.missedPorts[cur.name]=(S.missedPorts[cur.name]||0)+1;
+      document.querySelectorAll("#bo .opt").forEach(x=>{if(x.dataset.v===cur.ans)x.classList.add("right");else if(x===b)x.classList.add("wrong");});
+      setTimeout(next,700);}
+  }
+  const onKey=e=>{if(/^[1-4]$/.test(e.key)){const b=document.querySelectorAll("#bo .opt")[+e.key-1];if(b)b.click();}};
+  document.addEventListener("keydown",onKey);
+  const iv=setInterval(()=>{
+    const left=end-Date.now();
+    tm.firstElementChild.style.width=Math.max(0,100*left/DUR)+"%";tm.classList.toggle("low",left<10000);
+    if(left<=0)finish();
+  },100);
+  cleanup=()=>{clearInterval(iv);document.removeEventListener("keydown",onKey);};
+  function finish(){
+    cleanup();cleanup=null;
+    const best=score>S.best.ports;if(best)S.best.ports=score;award(score*3);
+    const uniq=[...new Set(misses)];
+    $app.innerHTML=`<div class="panel result stack">
+      <span class="label">Time</span><div class="big">${score}</div>
+      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+S.best.ports}</p>
+      ${uniq.length?`<div class="tbl-wrap" style="max-width:420px;margin:0 auto;text-align:left"><table><thead><tr><th>Missed</th><th>Port</th></tr></thead><tbody>${uniq.map(n=>{const p=PORTS.find(x=>x[0]===n);return `<tr><td>${esc(n)}</td><td class="p">${p[1]}</td></tr>`;}).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
+      <div class="row" style="justify-content:center"><button class="btn primary" id="again">Run it again</button><a class="btn" href="#home">Home</a></div>
+    </div>`;
+    document.getElementById("again").onclick=runBlitz;
+  }
+  next();
+}
+
+/* ---------------- OSI Stack ---------------- */
+function viewOsi(){
+  const items=shuffle(OSI_ITEMS).slice(0,12);let i=0,score=0,locked=false;
+  function render(){
+    if(i>=items.length)return done();
+    locked=false;const it=items[i];
+    $app.innerHTML=`<div class="panel">
+      <div class="qhead"><span class="label">OSI Stack · ${i+1} of ${items.length}</span><span class="mono">${score} correct</span></div>
+      <div class="progress"><i style="width:${100*i/items.length}%"></i></div>
+      <div class="osi">
+        <div class="item-card"><span class="label">Which layer?</span><div class="it">${esc(it[0])}</div><div id="why" class="muted small"></div><div id="nx"></div></div>
+        <div class="layers">${LAYERS.map(L=>`<button class="layer" data-l="${L[0]}" style="--lc:${L[3]}"><span class="n">${L[0]}</span><span>${L[1]}</span><span class="pdu">${L[2]}</span></button>`).join("")}</div>
+      </div>
+      <p class="muted small" style="margin:16px 0 0">Top to bottom: <b>A</b>ll <b>P</b>eople <b>S</b>eem <b>T</b>o <b>N</b>eed <b>D</b>ata <b>P</b>rocessing. Press 1–7 for the layer number.</p>
+    </div>`;
+    $app.querySelectorAll(".layer").forEach(b=>b.onclick=()=>{
+      if(locked)return;locked=true;
+      const ok=+b.dataset.l===it[1];if(ok)score++;
+      $app.querySelectorAll(".layer").forEach(x=>{x.disabled=true;if(+x.dataset.l===it[1])x.classList.add("right");else if(x===b)x.classList.add("wrong");});
+      document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(it[2])}`;
+      document.getElementById("nx").innerHTML=`<button class="btn primary" id="next">Next</button>`;
+      document.getElementById("next").onclick=()=>{i++;render();};
+      document.getElementById("next").focus({preventScroll:true});
+    });
+  }
+  function done(){
+    cleanup&&cleanup();cleanup=null;
+    const best=score>S.best.osi;if(best)S.best.osi=score;award(score*4);
+    $app.innerHTML=`<div class="panel result stack"><span class="label">OSI Stack complete</span><div class="big">${score}<span class="muted" style="font-size:32px"> / 12</span></div>
+      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+S.best.osi+"/12"}</p>
+      <div class="row" style="justify-content:center"><button class="btn primary" id="again">New stack</button><a class="btn" href="#home">Home</a></div></div>`;
+    document.getElementById("again").onclick=viewOsi;
+  }
+  const onKey=e=>{if(/^[1-7]$/.test(e.key)){const b=$app.querySelector(`.layer[data-l="${e.key}"]`);if(b&&!b.disabled)b.click();}else if(e.key==="Enter"){const n=document.getElementById("next");if(n){e.preventDefault();n.click();}}};
+  document.addEventListener("keydown",onKey);
+  cleanup=()=>document.removeEventListener("keydown",onKey);
+  render();
+}
+
+/* ---------------- Subnet Sprint ---------------- */
+const toIp = n => [24,16,8,0].map(s=>(n>>>s)&255).join(".");
+const maskOf = p => p===0?0:((0xFFFFFFFF<<(32-p))>>>0);
+function parseIp(s){const m=String(s).trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);if(!m)return null;const o=m.slice(1).map(Number);if(o.some(x=>x>255))return null;return ((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;}
+const ASK = {
+  network:{q:"Network address",kind:"ip"}, broadcast:{q:"Broadcast address",kind:"ip"},
+  first:{q:"First usable host",kind:"ip"}, last:{q:"Last usable host",kind:"ip"},
+  hosts:{q:"Number of usable hosts",kind:"num"}, mask:{q:"Subnet mask (dotted decimal)",kind:"ip"}
+};
+let subStreak=0;
+function makeProblem(){
+  const r=Math.random();
+  const p = r<.7? 20+Math.floor(Math.random()*11) : r<.92? 16+Math.floor(Math.random()*4) : 8+Math.floor(Math.random()*8);
+  const firsts=[10,172,192];const f=pick(firsts);
+  let ip;
+  if(f===10)ip=((10<<24)|(Math.floor(Math.random()*256)<<16)|(Math.floor(Math.random()*256)<<8)|Math.floor(Math.random()*256))>>>0;
+  else if(f===172)ip=((172<<24)|((16+Math.floor(Math.random()*16))<<16)|(Math.floor(Math.random()*256)<<8)|Math.floor(Math.random()*256))>>>0;
+  else ip=((192<<24)|(168<<16)|(Math.floor(Math.random()*256)<<8)|Math.floor(Math.random()*256))>>>0;
+  const mask=maskOf(p),net=(ip&mask)>>>0,bc=(net|(~mask>>>0))>>>0;
+  if(ip===net||ip===bc)ip=(net+1+Math.floor(Math.random()*Math.max(1,bc-net-1)))>>>0;
+  const ans={network:toIp(net),broadcast:toIp(bc),first:toIp(net+1),last:toIp(bc-1),hosts:String(Math.pow(2,32-p)-2),mask:toIp(mask)};
+  const type=pick(Object.keys(ASK));
+  return {ip,p,mask,net,bc,ans,type};
+}
+function working(P){
+  const p=P.p, oct=Math.min(3,Math.floor(p/8)), mOct=(P.mask>>>(24-8*oct))&255;
+  const block=256-mOct, ipOct=(P.ip>>>(24-8*oct))&255;
+  const bin=n=>{const b=n.toString(2).padStart(32,"0");let out="";for(let i=0;i<32;i++){out+=`<span class="${i<p?"n":"h"}">${b[i]}</span>`;if(i%8===7&&i<31)out+=".";}return out;};
+  const lines=[];
+  lines.push(`/${p} = ${toIp(P.mask)}  →  ${p} network bits, ${32-p} host bits`);
+  if(p%8!==0){
+    lines.push(`Interesting octet: #${oct+1} (mask ${mOct}). Block size = 256 − ${mOct} = ${block}`);
+    lines.push(`${ipOct} falls in the block starting at ${Math.floor(ipOct/block)*block} (${Math.floor(ipOct/block)} × ${block})`);
+  } else lines.push(`Mask ends on an octet boundary, so the host octets are all zero for the network and all 255 for broadcast.`);
+  lines.push(`Network ${P.ans.network} · Broadcast ${P.ans.broadcast}`);
+  lines.push(`Usable ${P.ans.first} – ${P.ans.last} · 2^${32-p} − 2 = ${P.ans.hosts} hosts`);
+  return `<div class="bits">IP   ${bin(P.ip)}\nMASK ${bin(P.mask)}\n<span class="muted">     blue = network bits, orange = host bits</span>\n\n${lines.map(esc).join("\n")}</div>`;
+}
+function viewSubnet(){
+  const P=makeProblem();let answered=false;
+  const cheat=[24,25,26,27,28,29,30].map(p=>`<div><b>/${p}</b><span>${(maskOf(p)&255)}</span><span>${Math.pow(2,32-p)-2}h</span></div>`).join("");
+  $app.innerHTML=`<div class="stack">
+    <div class="panel stack">
+      <div class="qhead"><span class="label">Subnet Sprint</span><span class="mono">Streak <b>${subStreak}</b> · Best ${S.best.subnet}</span></div>
+      <div class="ipline">${toIp(P.ip)}<span>/${P.p}</span></div>
+      <label for="sa" style="font-weight:600;font-size:17px">${ASK[P.type].q}?</label>
+      <form class="answer" id="sf" autocomplete="off">
+        <input id="sa" inputmode="${ASK[P.type].kind==="num"?"numeric":"decimal"}" placeholder="${ASK[P.type].kind==="num"?"e.g. 62":"e.g. 10.1.4.0"}" spellcheck="false">
+        <button class="btn primary" type="submit">Check</button>
+        <button class="btn" type="button" id="skip">Show answer</button>
+      </form>
+      <div id="sres"></div>
+    </div>
+    <div class="panel"><div class="label" style="margin-bottom:10px">Cheat sheet: last-octet mask and usable hosts</div><div class="cheat">${cheat}</div>
+      <p class="muted small" style="margin:12px 0 0">Block size = 256 − mask octet. Networks start at multiples of the block size, and the broadcast is the next network minus one.</p></div>
+  </div>`;
+  const inp=document.getElementById("sa");inp.focus({preventScroll:true});
+  function finish(ok,given){
+    if(answered)return;answered=true;
+    if(ok){subStreak++;if(subStreak>S.best.subnet)S.best.subnet=subStreak;award(8);}else{subStreak=0;save();bumpDay();}
+    document.getElementById("sres").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":given===null?"Answer":"Not quite"}: ${esc(P.ans[P.type])}</b></div>
+      <div style="margin-top:12px">${working(P)}</div>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" id="next">Next subnet</button></div>`;
+    inp.disabled=true;
+    document.getElementById("next").onclick=viewSubnet;document.getElementById("next").focus({preventScroll:true});
+  }
+  document.getElementById("sf").addEventListener("submit",e=>{
+    e.preventDefault();if(answered)return;
+    const v=inp.value.trim();if(!v)return;
+    let ok;
+    if(ASK[P.type].kind==="num")ok=v.replace(/,/g,"")===P.ans.hosts;
+    else{const n=parseIp(v);ok=n!==null&&toIp(n)===P.ans[P.type];}
+    finish(ok,v);
+  });
+  document.getElementById("skip").onclick=()=>finish(false,null);
+}
+
+/* ---------------- Boot ---------------- */
+renderHud();route();
+})();
+</script>
+</body>
+</html>
