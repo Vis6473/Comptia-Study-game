@@ -197,6 +197,22 @@ details.miss{border-top:1px solid var(--line);padding:10px 0}
 details.miss summary{cursor:pointer;font-weight:500}
 details.miss summary span{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-right:8px}
 details.miss .body{padding:8px 0 0 2px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+details.obj{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+details.obj+details.obj{margin-top:10px}
+details.obj summary{cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:baseline;padding:14px 16px;list-style:none}
+details.obj summary::-webkit-details-marker{display:none}
+details.obj summary .oc{font-family:var(--f-mono);font-weight:600;color:var(--orange)}
+details.obj summary .ot{font-weight:600;min-width:0}
+details.obj summary .chips{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
+.chip-s{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:2px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.chip-s.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.obj-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.srcs{display:flex;flex-wrap:wrap;gap:8px}
+.src{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;text-decoration:none;color:var(--ink);font-size:14px;background:var(--surface-2)}
+.src:hover{border-color:var(--blue)}
+.src small{color:var(--muted);font-size:12px}
+.note{padding:10px 12px;border-left:3px solid var(--blue);background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.note .nq{color:var(--muted)}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
@@ -289,7 +305,7 @@ body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px
   </header>
   <nav class="tabs" id="tabs">
     <a href="#home">Home</a>
-    <a href="#quiz">Exam Quiz</a>
+    <a href="#quiz">Quick Exams</a>
     <a href="#mock">Mock Exam</a>
     <a href="#ports">Port Blitz</a>
     <a href="#osi">OSI Stack</a>
@@ -315,137 +331,157 @@ const DOMAINS = {
 
 // [domain, question, correct, [wrong x3], explanation]
 const Q = [
- [1,"Which OSI layer handles logical addressing and routing between networks?","Layer 3, Network",["Layer 2, Data Link","Layer 4, Transport","Layer 5, Session"],"The Network layer uses logical (IP) addresses and routers make forwarding decisions here. Layer 2 uses MAC addresses within a single segment."],
- [1,"A Windows host shows the address 169.254.33.10. What kind of address is this?","APIPA (link-local) address",["RFC 1918 private address","Loopback address","Carrier-grade NAT address"],"169.254.0.0/16 is APIPA. A host assigns itself one when it cannot reach a DHCP server."],
- [1,"Which range is one of the RFC 1918 private IPv4 blocks?","172.16.0.0/12",["172.32.0.0/12","192.169.0.0/16","100.64.0.0/10"],"Private blocks are 10.0.0.0/8, 172.16.0.0/12 (172.16–172.31) and 192.168.0.0/16. 100.64.0.0/10 is reserved for carrier-grade NAT."],
- [1,"An IPv6 address begins with FE80. What type of address is it?","Link-local",["Global unicast","Unique local","Multicast"],"FE80::/10 is link-local and is never routed. Global unicast starts with 2000::/3, unique local with FC00::/7 (usually FD), and multicast with FF00::/8."],
- [1,"Which protocol resolves a known IPv4 address to a MAC address?","ARP",["DNS","RARP","NDP"],"ARP maps IPv4 addresses to MAC addresses on the local segment. NDP does this job in IPv6."],
- [1,"In IPv6, which protocol replaces ARP for address resolution and router discovery?","Neighbor Discovery Protocol (NDP)",["DHCPv6","ICMPv4","IGMP"],"NDP uses ICMPv6 messages (Neighbor Solicitation and Advertisement, Router Solicitation and Advertisement)."],
- [1,"Which DNS record maps a hostname to an IPv6 address?","AAAA",["A","CNAME","PTR"],"An A record maps a name to IPv4 and AAAA maps it to IPv6. CNAME is an alias and PTR is used for reverse lookups."],
- [1,"Which DNS record tells other servers where to deliver email for a domain?","MX",["TXT","SRV","NS"],"MX (mail exchanger) records list mail servers and their priorities. TXT records often hold SPF, DKIM and DMARC data."],
- [1,"Which DNS record type is used for reverse lookups, IP to name?","PTR",["A","SOA","CNAME"],"PTR records live in the in-addr.arpa (IPv4) or ip6.arpa (IPv6) zones."],
- [1,"A company manages its own OS and applications on rented virtual machines, while the provider manages the hardware. Which cloud model is this?","IaaS",["SaaS","PaaS","DaaS"],"With IaaS you manage the OS and everything above it. With PaaS the provider also manages the OS and runtime. With SaaS you only use the application."],
- [1,"Which topology connects every node directly to every other node?","Full mesh",["Star","Hub-and-spoke","Bus"],"A full mesh needs n(n−1)/2 links. It gives the most redundancy and costs the most."],
- [1,"Which transport protocol is connectionless and does not guarantee delivery?","UDP",["TCP","SCTP","GRE"],"UDP has no handshake and no retransmission, which keeps latency low for DNS queries, VoIP and streaming. TCP uses a three-way handshake and acknowledgments."],
- [1,"What is the correct order of the TCP three-way handshake?","SYN, SYN-ACK, ACK",["SYN, ACK, SYN-ACK","ACK, SYN, FIN","SYN, SYN, ACK"],"The client sends SYN, the server replies SYN-ACK, and the client confirms with ACK. FIN and RST tear connections down."],
- [1,"Software-defined networking (SDN) separates which two functions?","Control plane and data plane",["Access layer and core layer","Layer 2 and Layer 3","Management VLAN and user VLAN"],"In SDN a central controller runs the control plane, and switches forward traffic in the data (forwarding) plane. The application and management planes sit above them."],
- [1,"Which frequency band did Wi-Fi 6E add?","6 GHz",["5 GHz","2.4 GHz","60 GHz"],"Wi-Fi 6E is 802.11ax extended into 6 GHz, which has many clean channels and a shorter range."],
- [1,"Which IPv4 address range is reserved for multicast?","224.0.0.0 – 239.255.255.255",["240.0.0.0 – 255.255.255.255","127.0.0.0 – 127.255.255.255","192.0.2.0 – 192.0.2.255"],"Class D (224.0.0.0/4) is multicast. Class E (240.0.0.0/4) is experimental, and 127.0.0.0/8 is loopback."],
- [1,"What is the PDU called at the Transport layer when TCP is used?","Segment",["Packet","Frame","Bit"],"From the top down: data, segment (L4, or datagram for UDP), packet (L3), frame (L2), bits (L1)."],
- [1,"Which technology carries Layer 2 frames over a Layer 3 network and is common in data centers?","VXLAN",["802.1Q","PPP","MPLS"],"VXLAN wraps Ethernet frames in UDP (port 4789) and uses a 24-bit VNI, which allows about 16 million segments compared with 4,094 VLANs."],
- [1,"Which fiber type uses a laser and a small core to cover the longest distances?","Single-mode fiber",["Multimode fiber","Cat 6a","Twinaxial"],"Single-mode has a core of about 9 µm and reaches many kilometres. Multimode has a 50 or 62.5 µm core and is used for shorter runs inside buildings."],
- [1,"What is the maximum supported distance for 10GBASE-T over Cat 6a?","100 meters",["55 meters","185 meters","500 meters"],"Cat 6a supports 10 Gbps to 100 m. Plain Cat 6 supports 10 Gbps only to about 55 m."],
- [1,"Which security model assumes no user or device is trusted by default, even inside the network?","Zero trust",["Defense in depth","Implicit trust","Perimeter security"],"Zero trust verifies every request explicitly, applies least privilege and assumes a breach has already happened."],
- [1,"Which IPv6 address is the loopback?","::1",["FE80::1","::","FF02::1"],"::1 is loopback. :: is the unspecified address and FF02::1 is the all-nodes multicast group."],
+ [1,"Which OSI layer handles logical addressing and routing between networks?","Layer 3, Network",["Layer 2, Data Link","Layer 4, Transport","Layer 5, Session"],"The Network layer uses logical (IP) addresses and routers make forwarding decisions here. Layer 2 uses MAC addresses within a single segment.","1.1"],
+ [1,"A Windows host shows the address 169.254.33.10. What kind of address is this?","APIPA (link-local) address",["RFC 1918 private address","Loopback address","Carrier-grade NAT address"],"169.254.0.0/16 is APIPA. A host assigns itself one when it cannot reach a DHCP server.","1.7"],
+ [1,"Which range is one of the RFC 1918 private IPv4 blocks?","172.16.0.0/12",["172.32.0.0/12","192.169.0.0/16","100.64.0.0/10"],"Private blocks are 10.0.0.0/8, 172.16.0.0/12 (172.16–172.31) and 192.168.0.0/16. 100.64.0.0/10 is reserved for carrier-grade NAT.","1.7"],
+ [1,"An IPv6 address begins with FE80. What type of address is it?","Link-local",["Global unicast","Unique local","Multicast"],"FE80::/10 is link-local and is never routed. Global unicast starts with 2000::/3, unique local with FC00::/7 (usually FD), and multicast with FF00::/8.","1.8"],
+ [1,"Which protocol resolves a known IPv4 address to a MAC address?","ARP",["DNS","RARP","NDP"],"ARP maps IPv4 addresses to MAC addresses on the local segment. NDP does this job in IPv6.","1.4"],
+ [1,"In IPv6, which protocol replaces ARP for address resolution and router discovery?","Neighbor Discovery Protocol (NDP)",["DHCPv6","ICMPv4","IGMP"],"NDP uses ICMPv6 messages (Neighbor Solicitation and Advertisement, Router Solicitation and Advertisement).","1.8"],
+ [1,"Which DNS record maps a hostname to an IPv6 address?","AAAA",["A","CNAME","PTR"],"An A record maps a name to IPv4 and AAAA maps it to IPv6. CNAME is an alias and PTR is used for reverse lookups.","1.4"],
+ [1,"Which DNS record tells other servers where to deliver email for a domain?","MX",["TXT","SRV","NS"],"MX (mail exchanger) records list mail servers and their priorities. TXT records often hold SPF, DKIM and DMARC data.","1.4"],
+ [1,"Which DNS record type is used for reverse lookups, IP to name?","PTR",["A","SOA","CNAME"],"PTR records live in the in-addr.arpa (IPv4) or ip6.arpa (IPv6) zones.","1.4"],
+ [1,"A company manages its own OS and applications on rented virtual machines, while the provider manages the hardware. Which cloud model is this?","IaaS",["SaaS","PaaS","DaaS"],"With IaaS you manage the OS and everything above it. With PaaS the provider also manages the OS and runtime. With SaaS you only use the application.","1.3"],
+ [1,"Which topology connects every node directly to every other node?","Full mesh",["Star","Hub-and-spoke","Bus"],"A full mesh needs n(n−1)/2 links. It gives the most redundancy and costs the most.","1.6"],
+ [1,"Which transport protocol is connectionless and does not guarantee delivery?","UDP",["TCP","SCTP","GRE"],"UDP has no handshake and no retransmission, which keeps latency low for DNS queries, VoIP and streaming. TCP uses a three-way handshake and acknowledgments.","1.4"],
+ [1,"What is the correct order of the TCP three-way handshake?","SYN, SYN-ACK, ACK",["SYN, ACK, SYN-ACK","ACK, SYN, FIN","SYN, SYN, ACK"],"The client sends SYN, the server replies SYN-ACK, and the client confirms with ACK. FIN and RST tear connections down.","1.4"],
+ [1,"Software-defined networking (SDN) separates which two functions?","Control plane and data plane",["Access layer and core layer","Layer 2 and Layer 3","Management VLAN and user VLAN"],"In SDN a central controller runs the control plane, and switches forward traffic in the data (forwarding) plane. The application and management planes sit above them.","1.8"],
+ [1,"Which frequency band did Wi-Fi 6E add?","6 GHz",["5 GHz","2.4 GHz","60 GHz"],"Wi-Fi 6E is 802.11ax extended into 6 GHz, which has many clean channels and a shorter range.","1.5"],
+ [1,"Which IPv4 address range is reserved for multicast?","224.0.0.0 – 239.255.255.255",["240.0.0.0 – 255.255.255.255","127.0.0.0 – 127.255.255.255","192.0.2.0 – 192.0.2.255"],"Class D (224.0.0.0/4) is multicast. Class E (240.0.0.0/4) is experimental, and 127.0.0.0/8 is loopback.","1.7"],
+ [1,"What is the PDU called at the Transport layer when TCP is used?","Segment",["Packet","Frame","Bit"],"From the top down: data, segment (L4, or datagram for UDP), packet (L3), frame (L2), bits (L1).","1.1"],
+ [1,"Which technology carries Layer 2 frames over a Layer 3 network and is common in data centers?","VXLAN",["802.1Q","PPP","MPLS"],"VXLAN wraps Ethernet frames in UDP (port 4789) and uses a 24-bit VNI, which allows about 16 million segments compared with 4,094 VLANs.","1.8"],
+ [1,"Which fiber type uses a laser and a small core to cover the longest distances?","Single-mode fiber",["Multimode fiber","Cat 6a","Twinaxial"],"Single-mode has a core of about 9 µm and reaches many kilometres. Multimode has a 50 or 62.5 µm core and is used for shorter runs inside buildings.","1.5"],
+ [1,"What is the maximum supported distance for 10GBASE-T over Cat 6a?","100 meters",["55 meters","185 meters","500 meters"],"Cat 6a supports 10 Gbps to 100 m. Plain Cat 6 supports 10 Gbps only to about 55 m.","1.5"],
+ [1,"Which security model assumes no user or device is trusted by default, even inside the network?","Zero trust",["Defense in depth","Implicit trust","Perimeter security"],"Zero trust verifies every request explicitly, applies least privilege and assumes a breach has already happened.","1.8"],
+ [1,"Which IPv6 address is the loopback?","::1",["FE80::1","::","FF02::1"],"::1 is loopback. :: is the unspecified address and FF02::1 is the all-nodes multicast group.","1.8"],
 
- [2,"Which routing protocol is link-state and calculates paths using cost and Dijkstra's algorithm?","OSPF",["RIP","BGP","EIGRP"],"OSPF is a link-state protocol that builds a full topology map and runs SPF (Dijkstra). RIP is distance-vector and uses hop count. BGP is path-vector."],
- [2,"Which protocol exchanges routes between autonomous systems on the internet?","BGP",["OSPF","RIP","IS-IS"],"BGP is the path-vector exterior gateway protocol that runs between ISPs and large organizations."],
- [2,"A router learns the same prefix from OSPF, RIP and a static route. Which route is installed with default administrative distances?","The static route (AD 1)",["The OSPF route (AD 110)","The RIP route (AD 120)","All three, load-balanced"],"Lower AD is more trusted: connected 0, static 1, eBGP 20, EIGRP 90, OSPF 110, RIP 120."],
- [2,"What does IEEE 802.1Q define?","VLAN tagging on trunk links",["Port-based authentication","Link aggregation","Spanning Tree Protocol"],"802.1Q adds a 4-byte tag with a 12-bit VLAN ID. 802.1X is port authentication, 802.3ad is LACP and 802.1D is STP."],
- [2,"Which protocol stops Layer 2 switching loops by blocking redundant paths?","Spanning Tree Protocol",["LACP","VTP","HSRP"],"STP elects a root bridge and puts redundant ports into blocking. RSTP (802.1w) converges much faster."],
- [2,"How much power can an 802.3af PoE switch port supply?","15.4 W",["30 W","60 W","90 W"],"802.3af (PoE) supplies 15.4 W, 802.3at (PoE+) 30 W, and 802.3bt (PoE++) 60 W for Type 3 or about 90–100 W for Type 4."],
- [2,"Which wireless security standard replaces the pre-shared key handshake with SAE?","WPA3",["WPA2","WEP","WPS"],"WPA3-Personal uses Simultaneous Authentication of Equals, which resists offline dictionary attacks on captured handshakes."],
- [2,"In the 2.4 GHz band in North America, which channels do not overlap?","1, 6 and 11",["1, 5 and 9","2, 7 and 12","1, 4, 8 and 11"],"Each 2.4 GHz channel is 22 MHz wide with 5 MHz spacing, so only 1, 6 and 11 avoid overlapping."],
- [2,"Which protocol bundles several physical links into one logical link?","LACP (802.3ad)",["STP","CDP","VRRP"],"LACP negotiates link aggregation (port channels, EtherChannel), which adds bandwidth and redundancy."],
- [2,"On an 802.1Q trunk, how is native VLAN traffic sent?","Untagged",["Double-tagged","Tagged with VLAN 4095","Encrypted"],"Frames on the native VLAN cross the trunk without a tag. Both ends must agree on the native VLAN."],
- [2,"Which protocols provide default gateway redundancy by sharing a virtual IP address?","VRRP and HSRP",["OSPF and BGP","STP and RSTP","DHCP and DNS"],"First-hop redundancy protocols (FHRP) let two routers share a virtual gateway IP and MAC, so hosts keep working if one router fails."],
- [2,"Which technique lets many internal hosts share one public IP by tracking port numbers?","PAT (NAT overload)",["Static NAT","Port mirroring","Port forwarding"],"PAT maps many private addresses to one public address and keeps sessions apart by source port."],
- [2,"What is the usual MTU of a jumbo frame?","About 9000 bytes",["1500 bytes","576 bytes","65,535 bytes"],"Standard Ethernet MTU is 1500 bytes. Jumbo frames (about 9000) cut overhead on storage networks, and every device in the path must support them."],
- [2,"Which antenna sends signal in one focused direction, such as for a building-to-building link?","Yagi (directional)",["Omnidirectional","Dipole","Isotropic"],"Directional antennas such as Yagi or parabolic dishes concentrate gain in one direction. Omnidirectional antennas radiate all the way around."],
- [2,"Which device is needed for hosts in different VLANs to talk to each other?","A router or Layer 3 switch",["An unmanaged switch","A hub","A media converter"],"Each VLAN is its own broadcast domain and IP subnet, so traffic between them must be routed, for example with SVIs or router-on-a-stick."],
- [2,"Which 802.11 standard is marketed as Wi-Fi 6 and introduced OFDMA?","802.11ax",["802.11ac","802.11n","802.11g"],"Wi-Fi 4 is 802.11n, Wi-Fi 5 is 802.11ac (5 GHz only), and Wi-Fi 6 is 802.11ax on 2.4 and 5 GHz. Wi-Fi 6E extends 802.11ax into 6 GHz."],
- [2,"Which switch port mode carries traffic for several VLANs over one link?","Trunk port",["Access port","Mirror port","Console port"],"A trunk tags frames with their VLAN ID (802.1Q) so many VLANs share one link. An access port belongs to a single VLAN and sends untagged frames."],
- [2,"A router learns two routes to the same network from OSPF. How does it choose between them?","By the route metric (OSPF cost)",["By administrative distance","By the MAC address table","By the ARP cache"],"Administrative distance picks between different routing sources. Within one protocol, the lowest metric wins: cost for OSPF, hop count for RIP."],
- [2,"Which routing table entry matches any destination that has no more specific route?","The default route, 0.0.0.0/0",["The loopback route, 127.0.0.0/8","A host route, /32","The multicast route, 224.0.0.0/4"],"The default route, sometimes called the gateway of last resort, catches all traffic with no better match. Routers always prefer the longest prefix match."],
- [2,"A small branch needs traffic for 10.20.0.0/16 sent to one specific next hop, without running a routing protocol. What should be configured?","A static route",["A default VLAN","A DHCP relay","Port forwarding"],"Static routes are entered by hand. They have an administrative distance of 1 and add no protocol overhead, but they do not adapt when links fail."],
- [2,"What is the main purpose of a wireless site survey?","Find coverage, interference and the best AP placement",["Encrypt wireless traffic","Assign IP addresses to clients","Block rogue devices automatically"],"A survey measures signal strength (heat maps), noise and channel use so access points can be placed and tuned."],
+ [2,"Which routing protocol is link-state and calculates paths using cost and Dijkstra's algorithm?","OSPF",["RIP","BGP","EIGRP"],"OSPF is a link-state protocol that builds a full topology map and runs SPF (Dijkstra). RIP is distance-vector and uses hop count. BGP is path-vector.","2.1"],
+ [2,"Which protocol exchanges routes between autonomous systems on the internet?","BGP",["OSPF","RIP","IS-IS"],"BGP is the path-vector exterior gateway protocol that runs between ISPs and large organizations.","2.1"],
+ [2,"A router learns the same prefix from OSPF, RIP and a static route. Which route is installed with default administrative distances?","The static route (AD 1)",["The OSPF route (AD 110)","The RIP route (AD 120)","All three, load-balanced"],"Lower AD is more trusted: connected 0, static 1, eBGP 20, EIGRP 90, OSPF 110, RIP 120.","2.1"],
+ [2,"What does IEEE 802.1Q define?","VLAN tagging on trunk links",["Port-based authentication","Link aggregation","Spanning Tree Protocol"],"802.1Q adds a 4-byte tag with a 12-bit VLAN ID. 802.1X is port authentication, 802.3ad is LACP and 802.1D is STP.","2.2"],
+ [2,"Which protocol stops Layer 2 switching loops by blocking redundant paths?","Spanning Tree Protocol",["LACP","VTP","HSRP"],"STP elects a root bridge and puts redundant ports into blocking. RSTP (802.1w) converges much faster.","2.2"],
+ [2,"How much power can an 802.3af PoE switch port supply?","15.4 W",["30 W","60 W","90 W"],"802.3af (PoE) supplies 15.4 W, 802.3at (PoE+) 30 W, and 802.3bt (PoE++) 60 W for Type 3 or about 90–100 W for Type 4.","2.2"],
+ [2,"Which wireless security standard replaces the pre-shared key handshake with SAE?","WPA3",["WPA2","WEP","WPS"],"WPA3-Personal uses Simultaneous Authentication of Equals, which resists offline dictionary attacks on captured handshakes.","2.3"],
+ [2,"In the 2.4 GHz band in North America, which channels do not overlap?","1, 6 and 11",["1, 5 and 9","2, 7 and 12","1, 4, 8 and 11"],"Each 2.4 GHz channel is 22 MHz wide with 5 MHz spacing, so only 1, 6 and 11 avoid overlapping.","2.3"],
+ [2,"Which protocol bundles several physical links into one logical link?","LACP (802.3ad)",["STP","CDP","VRRP"],"LACP negotiates link aggregation (port channels, EtherChannel), which adds bandwidth and redundancy.","2.2"],
+ [2,"On an 802.1Q trunk, how is native VLAN traffic sent?","Untagged",["Double-tagged","Tagged with VLAN 4095","Encrypted"],"Frames on the native VLAN cross the trunk without a tag. Both ends must agree on the native VLAN.","2.2"],
+ [2,"Which protocols provide default gateway redundancy by sharing a virtual IP address?","VRRP and HSRP",["OSPF and BGP","STP and RSTP","DHCP and DNS"],"First-hop redundancy protocols (FHRP) let two routers share a virtual gateway IP and MAC, so hosts keep working if one router fails.","2.1"],
+ [2,"Which technique lets many internal hosts share one public IP by tracking port numbers?","PAT (NAT overload)",["Static NAT","Port mirroring","Port forwarding"],"PAT maps many private addresses to one public address and keeps sessions apart by source port.","2.1"],
+ [2,"What is the usual MTU of a jumbo frame?","About 9000 bytes",["1500 bytes","576 bytes","65,535 bytes"],"Standard Ethernet MTU is 1500 bytes. Jumbo frames (about 9000) cut overhead on storage networks, and every device in the path must support them.","2.2"],
+ [2,"Which antenna sends signal in one focused direction, such as for a building-to-building link?","Yagi (directional)",["Omnidirectional","Dipole","Isotropic"],"Directional antennas such as Yagi or parabolic dishes concentrate gain in one direction. Omnidirectional antennas radiate all the way around.","2.3"],
+ [2,"Which device is needed for hosts in different VLANs to talk to each other?","A router or Layer 3 switch",["An unmanaged switch","A hub","A media converter"],"Each VLAN is its own broadcast domain and IP subnet, so traffic between them must be routed, for example with SVIs or router-on-a-stick.","2.2"],
+ [2,"Which 802.11 standard is marketed as Wi-Fi 6 and introduced OFDMA?","802.11ax",["802.11ac","802.11n","802.11g"],"Wi-Fi 4 is 802.11n, Wi-Fi 5 is 802.11ac (5 GHz only), and Wi-Fi 6 is 802.11ax on 2.4 and 5 GHz. Wi-Fi 6E extends 802.11ax into 6 GHz.","2.3"],
+ [2,"Which switch port mode carries traffic for several VLANs over one link?","Trunk port",["Access port","Mirror port","Console port"],"A trunk tags frames with their VLAN ID (802.1Q) so many VLANs share one link. An access port belongs to a single VLAN and sends untagged frames.","2.2"],
+ [2,"A router learns two routes to the same network from OSPF. How does it choose between them?","By the route metric (OSPF cost)",["By administrative distance","By the MAC address table","By the ARP cache"],"Administrative distance picks between different routing sources. Within one protocol, the lowest metric wins: cost for OSPF, hop count for RIP.","2.1"],
+ [2,"Which routing table entry matches any destination that has no more specific route?","The default route, 0.0.0.0/0",["The loopback route, 127.0.0.0/8","A host route, /32","The multicast route, 224.0.0.0/4"],"The default route, sometimes called the gateway of last resort, catches all traffic with no better match. Routers always prefer the longest prefix match.","2.1"],
+ [2,"A small branch needs traffic for 10.20.0.0/16 sent to one specific next hop, without running a routing protocol. What should be configured?","A static route",["A default VLAN","A DHCP relay","Port forwarding"],"Static routes are entered by hand. They have an administrative distance of 1 and add no protocol overhead, but they do not adapt when links fail.","2.1"],
+ [2,"What is the main purpose of a wireless site survey?","Find coverage, interference and the best AP placement",["Encrypt wireless traffic","Assign IP addresses to clients","Block rogue devices automatically"],"A survey measures signal strength (heat maps), noise and channel use so access points can be placed and tuned.","2.3"],
 
- [3,"Which service collects log messages centrally, traditionally on UDP 514?","Syslog",["SNMP","NetFlow","NTP"],"Syslog severities run from 0 (Emergency) to 7 (Debug). A SIEM often collects and correlates these logs."],
- [3,"What does SNMPv3 add over SNMPv2c?","Authentication and encryption",["Support for traps","Community strings","UDP transport"],"v1 and v2c send community strings in plaintext. v3 adds user-based authentication and privacy (encryption)."],
- [3,"Which metric defines the maximum amount of data loss, measured in time, that a business can accept?","RPO",["RTO","MTTR","MTBF"],"The recovery point objective sets how often you must back up. The recovery time objective is how long you can be down."],
- [3,"Which disaster recovery site has equipment and current data and is ready to take over almost immediately?","Hot site",["Cold site","Warm site","Colocation cage"],"A hot site is fully equipped and synchronized. A warm site has hardware but needs data restored. A cold site is space and power only."],
- [3,"What is the correct order of the DHCP lease process?","Discover, Offer, Request, Acknowledge",["Request, Offer, Discover, Acknowledge","Offer, Discover, Acknowledge, Request","Discover, Request, Offer, Acknowledge"],"Remember DORA. The client broadcasts Discover from UDP 68 to server port 67."],
- [3,"A printer must always get the same IP address from DHCP. What should you configure?","A DHCP reservation",["A larger scope","A shorter lease time","An exclusion range"],"A reservation ties an IP to the client's MAC address. An exclusion keeps addresses out of the pool entirely."],
- [3,"Which document sets a provider's committed uptime and response times?","SLA",["MOU","NDA","AUP"],"A service level agreement defines measurable commitments such as 99.99% uptime and the penalties for missing them."],
- [3,"Why do administrators record a network performance baseline?","To have a normal reference point for spotting anomalies",["To meet encryption rules","To assign VLANs automatically","To replace documentation"],"Without a baseline you cannot tell whether 70% utilization or 30 ms latency is normal."],
- [3,"Which technology reports who talked to whom, over which ports, and how much data was sent?","NetFlow",["Syslog","SNMP traps","Port security"],"NetFlow, sFlow and IPFIX export flow records for traffic analysis and capacity planning."],
- [3,"How can you copy traffic from one switch port to an analyzer on another port?","Port mirroring (SPAN)",["Port security","Port forwarding","Port aggregation"],"SPAN copies frames to a monitor port. A network TAP does the same job in hardware."],
- [3,"Which IPv6 feature lets hosts configure their own address from router advertisements without a DHCP server?","SLAAC",["APIPA","DHCPv6 relay","EUI-48"],"Stateless address autoconfiguration combines the advertised prefix with an interface ID (EUI-64 or random)."],
- [3,"You need to manage switches even if the production network goes down. What should you use?","Out-of-band management",["In-band SSH","A management VLAN only","SNMP traps"],"Out-of-band management uses a separate path, such as a console server or cellular modem, that does not depend on production links."],
- [3,"Which metric measures the average time it takes to fix a failed component?","MTTR",["MTBF","RPO","RTO"],"MTTR is the average time to fix a failure. MTBF is the average time between failures. RPO is how much data loss is acceptable, and RTO is how much downtime is acceptable."],
- [3,"Which document shows cable runs, rack positions and the ports devices connect to?","A physical network diagram",["A logical network diagram","An SLA","A change request"],"A physical diagram shows where things are and how they are cabled. A logical diagram shows subnets, VLANs and how traffic is routed."],
- [3,"Which document lists hardware and software with each item's location, owner and warranty?","An asset inventory",["A baseline report","A change log","An MOU"],"An asset inventory supports lifecycle management, licensing, and end-of-life and end-of-support planning."],
- [3,"Which backup type copies everything changed since the last full backup, so a restore needs only the full backup plus the latest one of these?","Differential",["Incremental","Snapshot","Synthetic full"],"An incremental backup copies changes since the last backup of any kind, so a restore needs the full backup plus every incremental. A differential grows each day but restores faster."],
- [3,"Each server has dual power supplies fed from two separate UPS units and power feeds. What does this provide?","Redundancy for high availability",["Load balancing","Link aggregation","Network segmentation"],"Removing single points of failure, such as power, links and devices, keeps services running when one component fails."],
- [3,"What does the DHCP lease time control?","How long a client may use its address before it must renew",["How long the client waits for an offer","How many addresses are in the scope","The TTL of DNS records"],"A client tries to renew at 50% of the lease (T1) and rebinds at 87.5% (T2). Short leases recycle addresses faster on busy guest networks."],
- [3,"Which protocol synchronizes device clocks, which log correlation and Kerberos depend on?","NTP",["SNTP over TCP","PTP over HTTP","SMB"],"NTP uses UDP 123 and a hierarchy of strata. Stratum 0 is the reference clock."],
- [3,"Before applying a router change in production, change management usually requires what?","An approved change request with a rollback plan",["A new IP scheme","Approval only after the change","Disabling logging"],"Changes are documented, reviewed, approved, scheduled in a maintenance window and include a backout plan."],
+ [3,"Which service collects log messages centrally, traditionally on UDP 514?","Syslog",["SNMP","NetFlow","NTP"],"Syslog severities run from 0 (Emergency) to 7 (Debug). A SIEM often collects and correlates these logs.","3.2"],
+ [3,"What does SNMPv3 add over SNMPv2c?","Authentication and encryption",["Support for traps","Community strings","UDP transport"],"v1 and v2c send community strings in plaintext. v3 adds user-based authentication and privacy (encryption).","3.2"],
+ [3,"Which metric defines the maximum amount of data loss, measured in time, that a business can accept?","RPO",["RTO","MTTR","MTBF"],"The recovery point objective sets how often you must back up. The recovery time objective is how long you can be down.","3.3"],
+ [3,"Which disaster recovery site has equipment and current data and is ready to take over almost immediately?","Hot site",["Cold site","Warm site","Colocation cage"],"A hot site is fully equipped and synchronized. A warm site has hardware but needs data restored. A cold site is space and power only.","3.3"],
+ [3,"What is the correct order of the DHCP lease process?","Discover, Offer, Request, Acknowledge",["Request, Offer, Discover, Acknowledge","Offer, Discover, Acknowledge, Request","Discover, Request, Offer, Acknowledge"],"Remember DORA. The client broadcasts Discover from UDP 68 to server port 67.","3.4"],
+ [3,"A printer must always get the same IP address from DHCP. What should you configure?","A DHCP reservation",["A larger scope","A shorter lease time","An exclusion range"],"A reservation ties an IP to the client's MAC address. An exclusion keeps addresses out of the pool entirely.","3.4"],
+ [3,"Which document sets a provider's committed uptime and response times?","SLA",["MOU","NDA","AUP"],"A service level agreement defines measurable commitments such as 99.99% uptime and the penalties for missing them.","3.1"],
+ [3,"Why do administrators record a network performance baseline?","To have a normal reference point for spotting anomalies",["To meet encryption rules","To assign VLANs automatically","To replace documentation"],"Without a baseline you cannot tell whether 70% utilization or 30 ms latency is normal.","3.2"],
+ [3,"Which technology reports who talked to whom, over which ports, and how much data was sent?","NetFlow",["Syslog","SNMP traps","Port security"],"NetFlow, sFlow and IPFIX export flow records for traffic analysis and capacity planning.","3.2"],
+ [3,"How can you copy traffic from one switch port to an analyzer on another port?","Port mirroring (SPAN)",["Port security","Port forwarding","Port aggregation"],"SPAN copies frames to a monitor port. A network TAP does the same job in hardware.","3.2"],
+ [3,"Which IPv6 feature lets hosts configure their own address from router advertisements without a DHCP server?","SLAAC",["APIPA","DHCPv6 relay","EUI-48"],"Stateless address autoconfiguration combines the advertised prefix with an interface ID (EUI-64 or random).","3.4"],
+ [3,"You need to manage switches even if the production network goes down. What should you use?","Out-of-band management",["In-band SSH","A management VLAN only","SNMP traps"],"Out-of-band management uses a separate path, such as a console server or cellular modem, that does not depend on production links.","3.5"],
+ [3,"Which metric measures the average time it takes to fix a failed component?","MTTR",["MTBF","RPO","RTO"],"MTTR is the average time to fix a failure. MTBF is the average time between failures. RPO is how much data loss is acceptable, and RTO is how much downtime is acceptable.","3.3"],
+ [3,"Which document shows cable runs, rack positions and the ports devices connect to?","A physical network diagram",["A logical network diagram","An SLA","A change request"],"A physical diagram shows where things are and how they are cabled. A logical diagram shows subnets, VLANs and how traffic is routed.","3.1"],
+ [3,"Which document lists hardware and software with each item's location, owner and warranty?","An asset inventory",["A baseline report","A change log","An MOU"],"An asset inventory supports lifecycle management, licensing, and end-of-life and end-of-support planning.","3.1"],
+ [3,"Which backup type copies everything changed since the last full backup, so a restore needs only the full backup plus the latest one of these?","Differential",["Incremental","Snapshot","Synthetic full"],"An incremental backup copies changes since the last backup of any kind, so a restore needs the full backup plus every incremental. A differential grows each day but restores faster.","3.3"],
+ [3,"Each server has dual power supplies fed from two separate UPS units and power feeds. What does this provide?","Redundancy for high availability",["Load balancing","Link aggregation","Network segmentation"],"Removing single points of failure, such as power, links and devices, keeps services running when one component fails.","3.3"],
+ [3,"What does the DHCP lease time control?","How long a client may use its address before it must renew",["How long the client waits for an offer","How many addresses are in the scope","The TTL of DNS records"],"A client tries to renew at 50% of the lease (T1) and rebinds at 87.5% (T2). Short leases recycle addresses faster on busy guest networks.","3.4"],
+ [3,"Which protocol synchronizes device clocks, which log correlation and Kerberos depend on?","NTP",["SNTP over TCP","PTP over HTTP","SMB"],"NTP uses UDP 123 and a hierarchy of strata. Stratum 0 is the reference clock.","3.4"],
+ [3,"Before applying a router change in production, change management usually requires what?","An approved change request with a rollback plan",["A new IP scheme","Approval only after the change","Disabling logging"],"Changes are documented, reviewed, approved, scheduled in a maintenance window and include a backout plan.","3.1"],
 
- [4,"Hashing a file and comparing the result protects which part of the CIA triad?","Integrity",["Confidentiality","Availability","Non-repudiation"],"A changed hash shows the data was altered. Encryption protects confidentiality, and redundancy protects availability."],
- [4,"An attacker fills a switch's CAM table so it floods frames out every port. What is this attack?","MAC flooding",["ARP poisoning","VLAN hopping","DNS poisoning"],"Once the MAC table is full the switch acts like a hub. Port security that limits MACs per port mitigates it."],
- [4,"Which switch feature blocks rogue DHCP servers?","DHCP snooping",["Dynamic ARP inspection","BPDU guard","Port mirroring"],"DHCP snooping trusts only uplink ports to send DHCP offers and builds a binding table that DAI also uses."],
- [4,"Which feature mitigates ARP spoofing on a switched network?","Dynamic ARP inspection",["DHCP snooping alone","Root guard","Storm control"],"DAI checks ARP packets against the DHCP snooping binding table and drops forged replies."],
- [4,"In 802.1X, what role does the switch play?","Authenticator",["Supplicant","Authentication server","Certificate authority"],"The supplicant is the client, the authenticator is the switch or AP, and the authentication server is usually RADIUS."],
- [4,"Which AAA protocol uses TCP 49 and encrypts the entire payload?","TACACS+",["RADIUS","LDAP","Kerberos"],"RADIUS uses UDP 1812/1813 and encrypts only the password. TACACS+ also separates authentication, authorization and accounting."],
- [4,"An attacker sets up an AP with the same SSID as the corporate network to capture credentials. What is this?","Evil twin",["Bluejacking","War driving","Deauthentication"],"An evil twin copies a legitimate SSID. Deauth attacks are often used to push clients onto it."],
- [4,"Where should a public-facing web server sit?","In a screened subnet (DMZ)",["On the internal user VLAN","On the management VLAN","Behind the core switch with no firewall"],"A screened subnet isolates internet-facing services, so a compromise does not reach the internal network directly."],
- [4,"How do you reduce the risk of double-tagging VLAN hopping?","Change the native VLAN to an unused VLAN",["Enable jumbo frames","Turn on DTP on every port","Use VLAN 1 for users"],"Also disable DTP auto-trunking, set access ports to access mode and do not place users in the native VLAN."],
- [4,"A fingerprint scan is which authentication factor?","Something you are",["Something you know","Something you have","Somewhere you are"],"Biometrics are something you are. Passwords are something you know. Tokens and smart cards are something you have."],
- [4,"Which IPsec mode encrypts the entire original IP packet, including its header?","Tunnel mode",["Transport mode","Aggressive mode","Main mode"],"Tunnel mode adds a new outer IP header and is used for site-to-site VPNs. Transport mode protects only the payload. Main and aggressive are IKE phase 1 modes."],
- [4,"Which principle gives users only the access their job requires?","Least privilege",["Separation of duties","Implicit deny","Defense in depth"],"Least privilege limits damage from compromised accounts. Implicit deny is the rule at the end of a firewall ACL."],
- [4,"A decoy system that draws attackers in so their methods can be studied is called what?","Honeypot",["Bastion host","Jump box","Sinkhole"],"A honeypot is a decoy host, and a honeynet is a network of them."],
- [4,"Phishing done over phone calls is called what?","Vishing",["Smishing","Whaling","Pharming"],"Vishing is voice, smishing is SMS, whaling targets executives, and pharming redirects users through poisoned DNS or hosts files."],
- [4,"Which control keeps unknown devices off the network by checking their posture before granting access?","NAC",["IDS","DLP","WAF"],"Network access control often uses 802.1X and can quarantine devices that fail health checks."],
+ [4,"Hashing a file and comparing the result protects which part of the CIA triad?","Integrity",["Confidentiality","Availability","Non-repudiation"],"A changed hash shows the data was altered. Encryption protects confidentiality, and redundancy protects availability.","4.1"],
+ [4,"An attacker fills a switch's CAM table so it floods frames out every port. What is this attack?","MAC flooding",["ARP poisoning","VLAN hopping","DNS poisoning"],"Once the MAC table is full the switch acts like a hub. Port security that limits MACs per port mitigates it.","4.2"],
+ [4,"Which switch feature blocks rogue DHCP servers?","DHCP snooping",["Dynamic ARP inspection","BPDU guard","Port mirroring"],"DHCP snooping trusts only uplink ports to send DHCP offers and builds a binding table that DAI also uses.","4.3"],
+ [4,"Which feature mitigates ARP spoofing on a switched network?","Dynamic ARP inspection",["DHCP snooping alone","Root guard","Storm control"],"DAI checks ARP packets against the DHCP snooping binding table and drops forged replies.","4.3"],
+ [4,"In 802.1X, what role does the switch play?","Authenticator",["Supplicant","Authentication server","Certificate authority"],"The supplicant is the client, the authenticator is the switch or AP, and the authentication server is usually RADIUS.","4.1"],
+ [4,"Which AAA protocol uses TCP 49 and encrypts the entire payload?","TACACS+",["RADIUS","LDAP","Kerberos"],"RADIUS uses UDP 1812/1813 and encrypts only the password. TACACS+ also separates authentication, authorization and accounting.","4.1"],
+ [4,"An attacker sets up an AP with the same SSID as the corporate network to capture credentials. What is this?","Evil twin",["Bluejacking","War driving","Deauthentication"],"An evil twin copies a legitimate SSID. Deauth attacks are often used to push clients onto it.","4.2"],
+ [4,"Where should a public-facing web server sit?","In a screened subnet (DMZ)",["On the internal user VLAN","On the management VLAN","Behind the core switch with no firewall"],"A screened subnet isolates internet-facing services, so a compromise does not reach the internal network directly.","4.3"],
+ [4,"How do you reduce the risk of double-tagging VLAN hopping?","Change the native VLAN to an unused VLAN",["Enable jumbo frames","Turn on DTP on every port","Use VLAN 1 for users"],"Also disable DTP auto-trunking, set access ports to access mode and do not place users in the native VLAN.","4.3"],
+ [4,"A fingerprint scan is which authentication factor?","Something you are",["Something you know","Something you have","Somewhere you are"],"Biometrics are something you are. Passwords are something you know. Tokens and smart cards are something you have.","4.1"],
+ [4,"Which IPsec mode encrypts the entire original IP packet, including its header?","Tunnel mode",["Transport mode","Aggressive mode","Main mode"],"Tunnel mode adds a new outer IP header and is used for site-to-site VPNs. Transport mode protects only the payload. Main and aggressive are IKE phase 1 modes.","4.1"],
+ [4,"Which principle gives users only the access their job requires?","Least privilege",["Separation of duties","Implicit deny","Defense in depth"],"Least privilege limits damage from compromised accounts. Implicit deny is the rule at the end of a firewall ACL.","4.1"],
+ [4,"A decoy system that draws attackers in so their methods can be studied is called what?","Honeypot",["Bastion host","Jump box","Sinkhole"],"A honeypot is a decoy host, and a honeynet is a network of them.","4.1"],
+ [4,"Phishing done over phone calls is called what?","Vishing",["Smishing","Whaling","Pharming"],"Vishing is voice, smishing is SMS, whaling targets executives, and pharming redirects users through poisoned DNS or hosts files.","4.2"],
+ [4,"Which control keeps unknown devices off the network by checking their posture before granting access?","NAC",["IDS","DLP","WAF"],"Network access control often uses 802.1X and can quarantine devices that fail health checks.","4.3"],
 
- [5,"What is the first step in the CompTIA troubleshooting methodology?","Identify the problem",["Establish a theory of probable cause","Document findings","Implement the solution"],"The steps are: identify the problem, establish a theory, test the theory, plan the fix, implement or escalate, verify functionality, then document."],
- [5,"You have a theory of probable cause. What is the next step?","Test the theory to determine the cause",["Escalate to a vendor","Document findings","Verify full system functionality"],"If the test does not confirm the theory, form a new theory or escalate."],
- [5,"What is the final step of the troubleshooting methodology?","Document findings, actions, outcomes and lessons learned",["Verify full system functionality","Implement preventive measures","Close the ticket without notes"],"Documentation comes after you verify the fix and put preventive measures in place."],
- [5,"Which tool finds the location of a break in a long fiber run?","OTDR",["Toner probe","Loopback plug","Multimeter"],"An optical time-domain reflectometer sends light pulses and measures reflections to find the distance to a fault."],
- [5,"Which tool traces one unlabeled copper cable through a bundle to the patch panel?","Toner and probe",["OTDR","Spectrum analyzer","Light meter"],"The tone generator puts a signal on the cable and the probe picks it up by induction."],
- [5,"A user can ping 8.8.8.8 but cannot open websites by name. What is the most likely problem?","DNS resolution",["Default gateway","Duplex mismatch","DHCP scope exhaustion"],"Reaching an IP proves routing works. Check DNS server settings with nslookup or dig."],
- [5,"A host can reach devices on its own subnet but nothing remote. What should you check first?","The default gateway setting",["DNS server address","The NIC driver","The cable pinout"],"Traffic to other networks goes to the gateway, so a wrong or missing gateway blocks only remote traffic."],
- [5,"A link shows late collisions and poor throughput. Which problem is most likely?","Duplex mismatch",["Wrong VLAN","DNS misconfiguration","Expired DHCP lease"],"When one side runs half duplex and the other full, late collisions and CRC errors rise. Set both sides the same, or both to auto."],
- [5,"An interface shows a growing count of CRC errors. What is a likely cause?","A damaged cable or EMI",["A wrong subnet mask","An expired certificate","An incorrect DNS suffix"],"CRC errors mean frames were corrupted in transit, usually by a physical-layer problem such as cabling, interference or a bad transceiver."],
- [5,"Which Windows command shows each router hop on the way to a destination?","tracert",["pathping -n only","ipconfig /all","netstat -r"],"Windows uses tracert and Linux uses traceroute. Pathping combines ping and tracert statistics."],
- [5,"Which command shows the local ARP cache?","arp -a",["netstat -a","nslookup","route print"],"arp -a lists IP-to-MAC mappings. A wrong entry there can point to ARP spoofing."],
- [5,"VoIP calls sound choppy even though bandwidth is fine. Which metric is the likely problem?","Jitter",["Throughput","MTU","Lease time"],"Jitter is variation in packet delay. Real-time voice and video need it low, usually under about 30 ms, plus QoS."],
- [5,"Signal weakens over a long copper run. What is this called?","Attenuation",["Crosstalk","Latency","Reflection"],"Attenuation is loss of signal strength over distance. Crosstalk (NEXT, FEXT) is signal bleeding between pairs."],
- [5,"After someone connects two switch ports with a patch cable, the network slows to a crawl. What is the likely cause?","A broadcast storm from a switching loop",["DHCP scope exhaustion","An expired certificate","An incorrect NTP server"],"Without STP, broadcasts loop forever. Enable STP and BPDU guard on access ports."],
- [5,"Which Linux command shows interface IP addresses on a modern distribution?","ip addr",["ipconfig /all","show ip route","nbtstat"],"ip addr (or ip a) replaced ifconfig. On Windows, use ipconfig."],
- [5,"Wireless clients far from the AP report slow speeds and disconnects. What is the most likely cause?","Low signal strength (RSSI)",["Duplex mismatch","Wrong VLAN on the trunk","DNS poisoning"],"As RSSI drops, clients fall back to lower data rates. Moving or adding APs or adjusting transmit power helps."],
- [5,"Which tool measures actual throughput between two hosts?","iperf",["nslookup","arp","Wi-Fi analyzer"],"iperf runs a client and a server and pushes traffic between them to measure real bandwidth."],
- [5,"Which command shows active TCP connections and listening ports?","netstat",["tracert","ipconfig","dig"],"netstat -an shows sockets numerically. On Linux, ss is the modern replacement."],
- [5,"A new hire's PC gets 169.254.x.x while everyone else is fine. What should you check first?","The DHCP server or scope, and the PC's switch port or VLAN",["The DNS forwarders","The firewall's NAT rules","The NTP server"],"An APIPA address means DHCP failed. Common causes are an exhausted scope, a wrong access VLAN or a missing DHCP relay."],
- [5,"A switch interface shows a rising count of giants. What is the most likely cause?","An MTU mismatch, such as jumbo frames sent to a port that does not allow them",["A duplex mismatch","A wrong default gateway","An exhausted DHCP scope"],"Giants are frames larger than the maximum allowed size (1518 bytes for standard Ethernet). Runts are frames under 64 bytes and often come from collisions."],
- [5,"Interface counters show many runts on a half-duplex link. What usually causes runts?","Collisions or a faulty NIC",["MTU set too high","DNS timeouts","A wrong VLAN on the port"],"Runts are frames shorter than 64 bytes. Collisions cut frames short, so check duplex settings and the NIC."],
- [5,"A user plugs a small home switch into a wall jack and the port immediately goes err-disabled. What most likely shut it down?","BPDU guard or port security",["DHCP snooping","An expired lease","Jumbo frames"],"BPDU guard disables an access port that receives spanning tree BPDUs, and port security disables it when too many MAC addresses appear. Clear the cause, then shut and no-shut the port."],
- [5,"A switch port shows the status \"administratively down\". What does that mean?","Someone disabled it in the configuration (shutdown)",["The cable is unplugged","The far-end device is powered off","The port failed a hardware test"],"Administratively down means the shutdown command was applied. Enter no shutdown to enable it. A down/down status usually points to cabling or the far end."],
- [5,"Six access points work on a PoE switch, but a seventh will not power on with a known-good cable. What is the likely cause?","The switch's PoE power budget is exhausted",["The VLAN is wrong","A duplex mismatch","The SSID is hidden"],"Each switch has a total PoE budget. Check it with a command such as show power inline, then move devices or add a PoE injector."],
- [5,"A new fiber link will not come up. One end has a 1000BASE-SX transceiver and the other has 1000BASE-LX. What is the problem?","A transceiver mismatch",["Crosstalk","A bad crimp","Attenuation from too short a cable"],"SX is short-wavelength (850 nm) for multimode fiber and LX is long-wavelength (1310 nm), usually for single-mode. Both ends must use matching optics."],
- [5,"A new fiber patch shows no link, and swapping the two strands at one end fixes it. What was wrong?","TX and RX were reversed",["The connectors were dirty","A transceiver mismatch","The bend radius was too tight"],"Each fiber end transmits on one strand and receives on the other. If TX connects to TX, the link stays down."],
- [5,"A short fiber run measures much more loss than its budget allows. What should you do first?","Inspect and clean the connectors",["Replace the switch","Lower the MTU","Change the VLAN"],"Dirt on the connector end face is the most common cause of fiber loss. Inspect it with a fiber scope and clean it before replacing anything."],
- [5,"A fiber cable was pulled tight around a sharp corner and the link now drops intermittently. What is the cause?","The bend radius was exceeded",["Crosstalk","An MTU mismatch","A duplex mismatch"],"Bending fiber tighter than its minimum radius lets light escape (macrobend loss) and can crack the glass."],
- [5,"A technician terminates one end of a cable as T568A and the other end as T568B. What have they made?","A crossover cable",["A straight-through cable","A rollover cable","A loopback plug"],"A crossover swaps the transmit and receive pairs. Most modern ports have Auto-MDIX, but a crossover was once needed to connect like devices."],
- [5,"Clients on a new VLAN get APIPA addresses. The DHCP server sits on a different subnet. What is missing?","A DHCP relay (IP helper) on the VLAN's gateway",["A DNS forwarder","An NTP server","A larger MTU"],"DHCP Discover messages are broadcasts that routers do not forward. An IP helper or relay agent forwards them to the server as unicast."],
- [5,"A host loses connectivity at random and its event log shows an address conflict. What is the likely cause?","A duplicate IP address on the network",["A routing loop","A wrong subnet mask on the router","DNS cache poisoning"],"Two hosts with the same IP fight over ARP entries. Look for a statically assigned address inside the DHCP pool and use exclusions or reservations."],
- [5,"A traceroute bounces between the same two routers until it shows TTL expired. What is happening?","A routing loop",["Asymmetric routing","Packet shaping","A duplex mismatch"],"Each router points to the other for the destination. TTL stops the packet from looping forever. Check the static routes and route redistribution."],
- [5,"Pings work across a new VPN tunnel, but large file transfers stall. What is the most likely cause?","An MTU problem, with large packets dropped or unable to fragment",["A wrong DNS server","An expired DHCP lease","Too few VLANs"],"Tunnel headers reduce the usable MTU. Packets with the Don't Fragment bit set get dropped. Lower the MTU or adjust the TCP MSS on the tunnel."],
- [5,"Traffic leaves through one firewall and returns through another, and the stateful firewall drops the replies. What is this called?","Asymmetric routing",["A routing loop","Split horizon","Route summarization"],"A stateful firewall that never saw the outbound session drops the return traffic. Keep both directions on the same path or share state between the firewalls."],
- [5,"After a new access switch is installed, traffic takes a strange long path across the network. What is a likely cause?","The new switch became the spanning tree root bridge",["DHCP snooping is enabled","Jumbo frames are enabled","NTP is misconfigured"],"The switch with the lowest bridge priority, then the lowest MAC, becomes root. Set the priority on your intended core switch so a new switch cannot take over."],
- [5,"A user moves to a new desk and now gets an IP address from another department's subnet. What is the most likely cause?","The new switch port is in the wrong VLAN",["The NIC is failing","The DNS suffix is wrong","The cable is a crossover"],"The access VLAN on the port decides which subnet and DHCP scope the user lands in. Check the port's VLAN assignment."],
- [5,"After a firewall change, users can ping a web server but HTTPS connections time out. What should you check first?","ACL or firewall rules for TCP 443",["The DNS A record","The DHCP lease time","The STP root bridge"],"Ping (ICMP) working while one port fails points to a rule that blocks that port. Review the most recent change against the rule base."],
- [5,"Some laptops show \"certificate not yet valid\" errors on every HTTPS site. What is the likely cause?","Their system clock is wrong, such as a failed NTP sync",["A full DHCP scope","A duplex mismatch","A wrong VLAN"],"Certificates have valid-from and valid-to dates. A clock that is wrong makes good certificates look invalid, and it also breaks Kerberos."],
- [5,"Wi-Fi slows to a crawl in the break room whenever the microwave runs. What is happening?","RF interference in the 2.4 GHz band",["Co-channel interference from another AP","A duplex mismatch","An MTU mismatch"],"Microwave ovens leak energy around 2.4 GHz. Move clients to 5 or 6 GHz and confirm with a spectrum analyzer."],
- [5,"Two neighboring access points are both set to channel 6. What problem does this cause?","Co-channel interference",["Adjacent-channel interference","Attenuation","Jitter from QoS"],"APs on the same channel must take turns on the air, which cuts throughput. Use channels 1, 6 and 11 so neighbors differ."],
- [5,"A laptop stays connected to a distant AP with a weak signal even though a closer AP is available. What is this?","A sticky client, a roaming problem",["An evil twin","Channel bonding","A captive portal"],"Clients decide when to roam. Tune minimum RSSI, enable 802.11k/v/r, or lower transmit power so cells overlap less."],
- [5,"Which RSSI reading shows the strongest Wi-Fi signal?","−55 dBm",["−70 dBm","−85 dBm","−95 dBm"],"RSSI is negative, so closer to zero is stronger. About −67 dBm or better is a common target for voice and video."],
- [5,"A point-to-point wireless link reports a weak signal even with clear line of sight. One antenna is mounted vertically and the other horizontally. What is wrong?","The antenna polarization does not match",["The SSID is wrong","An encryption mismatch","Co-channel interference"],"Both antennas need the same polarization. A 90° mismatch can cost 20 dB or more."],
- [5,"Which tool shows which TCP ports are open on a server?","nmap",["arp","tracert","ipconfig"],"nmap is a port scanner. Use it only on systems you are authorized to scan."],
- [5,"Which tool captures packets and decodes each protocol field for analysis?","A protocol analyzer such as Wireshark",["A cable tester","A toner probe","A light meter"],"A protocol analyzer captures traffic, decodes headers and can follow TCP streams. tcpdump is the command-line equivalent."],
- [5,"On a managed switch, which command shows which port a given MAC address was learned on?","show mac address-table",["show ip route","show vlan brief","show running-config"],"The MAC address table maps MACs to ports and VLANs. Combine it with the ARP table to trace an IP address to a physical port."],
- [5,"How can you find out which switch and port sit at the other end of a cable in the wall?","LLDP or CDP neighbor information",["nslookup","A DHCP reservation","SNMP traps"],"LLDP (vendor-neutral) and CDP (Cisco) advertise a device's name, port and capabilities to its directly connected neighbors."],
- [5,"Every morning at 9 AM the WAN link reaches 100% utilization and applications lag. What is the problem?","Bandwidth saturation (congestion)",["A routing loop","An APIPA address","A crossover cable"],"Use NetFlow to find the top traffic, then apply QoS, schedule bulk jobs off-peak or add bandwidth."],
- [5,"Which tool shows the full RF picture, including non-Wi-Fi interference sources?","A spectrum analyzer",["A Wi-Fi analyzer","An OTDR","A multimeter"],"A Wi-Fi analyzer sees only 802.11 networks. A spectrum analyzer shows all RF energy, such as microwaves, cordless phones and Bluetooth."]
+ [5,"What is the first step in the CompTIA troubleshooting methodology?","Identify the problem",["Establish a theory of probable cause","Document findings","Implement the solution"],"The steps are: identify the problem, establish a theory, test the theory, plan the fix, implement or escalate, verify functionality, then document.","5.1"],
+ [5,"You have a theory of probable cause. What is the next step?","Test the theory to determine the cause",["Escalate to a vendor","Document findings","Verify full system functionality"],"If the test does not confirm the theory, form a new theory or escalate.","5.1"],
+ [5,"What is the final step of the troubleshooting methodology?","Document findings, actions, outcomes and lessons learned",["Verify full system functionality","Implement preventive measures","Close the ticket without notes"],"Documentation comes after you verify the fix and put preventive measures in place.","5.1"],
+ [5,"Which tool finds the location of a break in a long fiber run?","OTDR",["Toner probe","Loopback plug","Multimeter"],"An optical time-domain reflectometer sends light pulses and measures reflections to find the distance to a fault.","5.5"],
+ [5,"Which tool traces one unlabeled copper cable through a bundle to the patch panel?","Toner and probe",["OTDR","Spectrum analyzer","Light meter"],"The tone generator puts a signal on the cable and the probe picks it up by induction.","5.5"],
+ [5,"A user can ping 8.8.8.8 but cannot open websites by name. What is the most likely problem?","DNS resolution",["Default gateway","Duplex mismatch","DHCP scope exhaustion"],"Reaching an IP proves routing works. Check DNS server settings with nslookup or dig.","5.3"],
+ [5,"A host can reach devices on its own subnet but nothing remote. What should you check first?","The default gateway setting",["DNS server address","The NIC driver","The cable pinout"],"Traffic to other networks goes to the gateway, so a wrong or missing gateway blocks only remote traffic.","5.3"],
+ [5,"A link shows late collisions and poor throughput. Which problem is most likely?","Duplex mismatch",["Wrong VLAN","DNS misconfiguration","Expired DHCP lease"],"When one side runs half duplex and the other full, late collisions and CRC errors rise. Set both sides the same, or both to auto.","5.2"],
+ [5,"An interface shows a growing count of CRC errors. What is a likely cause?","A damaged cable or EMI",["A wrong subnet mask","An expired certificate","An incorrect DNS suffix"],"CRC errors mean frames were corrupted in transit, usually by a physical-layer problem such as cabling, interference or a bad transceiver.","5.2"],
+ [5,"Which Windows command shows each router hop on the way to a destination?","tracert",["pathping -n only","ipconfig /all","netstat -r"],"Windows uses tracert and Linux uses traceroute. Pathping combines ping and tracert statistics.","5.5"],
+ [5,"Which command shows the local ARP cache?","arp -a",["netstat -a","nslookup","route print"],"arp -a lists IP-to-MAC mappings. A wrong entry there can point to ARP spoofing.","5.5"],
+ [5,"VoIP calls sound choppy even though bandwidth is fine. Which metric is the likely problem?","Jitter",["Throughput","MTU","Lease time"],"Jitter is variation in packet delay. Real-time voice and video need it low, usually under about 30 ms, plus QoS.","5.4"],
+ [5,"Signal weakens over a long copper run. What is this called?","Attenuation",["Crosstalk","Latency","Reflection"],"Attenuation is loss of signal strength over distance. Crosstalk (NEXT, FEXT) is signal bleeding between pairs.","5.2"],
+ [5,"After someone connects two switch ports with a patch cable, the network slows to a crawl. What is the likely cause?","A broadcast storm from a switching loop",["DHCP scope exhaustion","An expired certificate","An incorrect NTP server"],"Without STP, broadcasts loop forever. Enable STP and BPDU guard on access ports.","5.3"],
+ [5,"Which Linux command shows interface IP addresses on a modern distribution?","ip addr",["ipconfig /all","show ip route","nbtstat"],"ip addr (or ip a) replaced ifconfig. On Windows, use ipconfig.","5.5"],
+ [5,"Wireless clients far from the AP report slow speeds and disconnects. What is the most likely cause?","Low signal strength (RSSI)",["Duplex mismatch","Wrong VLAN on the trunk","DNS poisoning"],"As RSSI drops, clients fall back to lower data rates. Moving or adding APs or adjusting transmit power helps.","5.4"],
+ [5,"Which tool measures actual throughput between two hosts?","iperf",["nslookup","arp","Wi-Fi analyzer"],"iperf runs a client and a server and pushes traffic between them to measure real bandwidth.","5.5"],
+ [5,"Which command shows active TCP connections and listening ports?","netstat",["tracert","ipconfig","dig"],"netstat -an shows sockets numerically. On Linux, ss is the modern replacement.","5.5"],
+ [5,"A new hire's PC gets 169.254.x.x while everyone else is fine. What should you check first?","The DHCP server or scope, and the PC's switch port or VLAN",["The DNS forwarders","The firewall's NAT rules","The NTP server"],"An APIPA address means DHCP failed. Common causes are an exhausted scope, a wrong access VLAN or a missing DHCP relay.","5.3"],
+ [5,"A switch interface shows a rising count of giants. What is the most likely cause?","An MTU mismatch, such as jumbo frames sent to a port that does not allow them",["A duplex mismatch","A wrong default gateway","An exhausted DHCP scope"],"Giants are frames larger than the maximum allowed size (1518 bytes for standard Ethernet). Runts are frames under 64 bytes and often come from collisions.","5.2"],
+ [5,"Interface counters show many runts on a half-duplex link. What usually causes runts?","Collisions or a faulty NIC",["MTU set too high","DNS timeouts","A wrong VLAN on the port"],"Runts are frames shorter than 64 bytes. Collisions cut frames short, so check duplex settings and the NIC.","5.2"],
+ [5,"A user plugs a small home switch into a wall jack and the port immediately goes err-disabled. What most likely shut it down?","BPDU guard or port security",["DHCP snooping","An expired lease","Jumbo frames"],"BPDU guard disables an access port that receives spanning tree BPDUs, and port security disables it when too many MAC addresses appear. Clear the cause, then shut and no-shut the port.","5.2"],
+ [5,"A switch port shows the status \"administratively down\". What does that mean?","Someone disabled it in the configuration (shutdown)",["The cable is unplugged","The far-end device is powered off","The port failed a hardware test"],"Administratively down means the shutdown command was applied. Enter no shutdown to enable it. A down/down status usually points to cabling or the far end.","5.2"],
+ [5,"Six access points work on a PoE switch, but a seventh will not power on with a known-good cable. What is the likely cause?","The switch's PoE power budget is exhausted",["The VLAN is wrong","A duplex mismatch","The SSID is hidden"],"Each switch has a total PoE budget. Check it with a command such as show power inline, then move devices or add a PoE injector.","5.2"],
+ [5,"A new fiber link will not come up. One end has a 1000BASE-SX transceiver and the other has 1000BASE-LX. What is the problem?","A transceiver mismatch",["Crosstalk","A bad crimp","Attenuation from too short a cable"],"SX is short-wavelength (850 nm) for multimode fiber and LX is long-wavelength (1310 nm), usually for single-mode. Both ends must use matching optics.","5.2"],
+ [5,"A new fiber patch shows no link, and swapping the two strands at one end fixes it. What was wrong?","TX and RX were reversed",["The connectors were dirty","A transceiver mismatch","The bend radius was too tight"],"Each fiber end transmits on one strand and receives on the other. If TX connects to TX, the link stays down.","5.2"],
+ [5,"A short fiber run measures much more loss than its budget allows. What should you do first?","Inspect and clean the connectors",["Replace the switch","Lower the MTU","Change the VLAN"],"Dirt on the connector end face is the most common cause of fiber loss. Inspect it with a fiber scope and clean it before replacing anything.","5.2"],
+ [5,"A fiber cable was pulled tight around a sharp corner and the link now drops intermittently. What is the cause?","The bend radius was exceeded",["Crosstalk","An MTU mismatch","A duplex mismatch"],"Bending fiber tighter than its minimum radius lets light escape (macrobend loss) and can crack the glass.","5.2"],
+ [5,"A technician terminates one end of a cable as T568A and the other end as T568B. What have they made?","A crossover cable",["A straight-through cable","A rollover cable","A loopback plug"],"A crossover swaps the transmit and receive pairs. Most modern ports have Auto-MDIX, but a crossover was once needed to connect like devices.","5.2"],
+ [5,"Clients on a new VLAN get APIPA addresses. The DHCP server sits on a different subnet. What is missing?","A DHCP relay (IP helper) on the VLAN's gateway",["A DNS forwarder","An NTP server","A larger MTU"],"DHCP Discover messages are broadcasts that routers do not forward. An IP helper or relay agent forwards them to the server as unicast.","5.3"],
+ [5,"A host loses connectivity at random and its event log shows an address conflict. What is the likely cause?","A duplicate IP address on the network",["A routing loop","A wrong subnet mask on the router","DNS cache poisoning"],"Two hosts with the same IP fight over ARP entries. Look for a statically assigned address inside the DHCP pool and use exclusions or reservations.","5.3"],
+ [5,"A traceroute bounces between the same two routers until it shows TTL expired. What is happening?","A routing loop",["Asymmetric routing","Packet shaping","A duplex mismatch"],"Each router points to the other for the destination. TTL stops the packet from looping forever. Check the static routes and route redistribution.","5.3"],
+ [5,"Pings work across a new VPN tunnel, but large file transfers stall. What is the most likely cause?","An MTU problem, with large packets dropped or unable to fragment",["A wrong DNS server","An expired DHCP lease","Too few VLANs"],"Tunnel headers reduce the usable MTU. Packets with the Don't Fragment bit set get dropped. Lower the MTU or adjust the TCP MSS on the tunnel.","5.3"],
+ [5,"Traffic leaves through one firewall and returns through another, and the stateful firewall drops the replies. What is this called?","Asymmetric routing",["A routing loop","Split horizon","Route summarization"],"A stateful firewall that never saw the outbound session drops the return traffic. Keep both directions on the same path or share state between the firewalls.","5.3"],
+ [5,"After a new access switch is installed, traffic takes a strange long path across the network. What is a likely cause?","The new switch became the spanning tree root bridge",["DHCP snooping is enabled","Jumbo frames are enabled","NTP is misconfigured"],"The switch with the lowest bridge priority, then the lowest MAC, becomes root. Set the priority on your intended core switch so a new switch cannot take over.","5.3"],
+ [5,"A user moves to a new desk and now gets an IP address from another department's subnet. What is the most likely cause?","The new switch port is in the wrong VLAN",["The NIC is failing","The DNS suffix is wrong","The cable is a crossover"],"The access VLAN on the port decides which subnet and DHCP scope the user lands in. Check the port's VLAN assignment.","5.3"],
+ [5,"After a firewall change, users can ping a web server but HTTPS connections time out. What should you check first?","ACL or firewall rules for TCP 443",["The DNS A record","The DHCP lease time","The STP root bridge"],"Ping (ICMP) working while one port fails points to a rule that blocks that port. Review the most recent change against the rule base.","5.3"],
+ [5,"Some laptops show \"certificate not yet valid\" errors on every HTTPS site. What is the likely cause?","Their system clock is wrong, such as a failed NTP sync",["A full DHCP scope","A duplex mismatch","A wrong VLAN"],"Certificates have valid-from and valid-to dates. A clock that is wrong makes good certificates look invalid, and it also breaks Kerberos.","5.3"],
+ [5,"Wi-Fi slows to a crawl in the break room whenever the microwave runs. What is happening?","RF interference in the 2.4 GHz band",["Co-channel interference from another AP","A duplex mismatch","An MTU mismatch"],"Microwave ovens leak energy around 2.4 GHz. Move clients to 5 or 6 GHz and confirm with a spectrum analyzer.","5.4"],
+ [5,"Two neighboring access points are both set to channel 6. What problem does this cause?","Co-channel interference",["Adjacent-channel interference","Attenuation","Jitter from QoS"],"APs on the same channel must take turns on the air, which cuts throughput. Use channels 1, 6 and 11 so neighbors differ.","5.4"],
+ [5,"A laptop stays connected to a distant AP with a weak signal even though a closer AP is available. What is this?","A sticky client, a roaming problem",["An evil twin","Channel bonding","A captive portal"],"Clients decide when to roam. Tune minimum RSSI, enable 802.11k/v/r, or lower transmit power so cells overlap less.","5.4"],
+ [5,"Which RSSI reading shows the strongest Wi-Fi signal?","−55 dBm",["−70 dBm","−85 dBm","−95 dBm"],"RSSI is negative, so closer to zero is stronger. About −67 dBm or better is a common target for voice and video.","5.4"],
+ [5,"A point-to-point wireless link reports a weak signal even with clear line of sight. One antenna is mounted vertically and the other horizontally. What is wrong?","The antenna polarization does not match",["The SSID is wrong","An encryption mismatch","Co-channel interference"],"Both antennas need the same polarization. A 90° mismatch can cost 20 dB or more.","5.4"],
+ [5,"Which tool shows which TCP ports are open on a server?","nmap",["arp","tracert","ipconfig"],"nmap is a port scanner. Use it only on systems you are authorized to scan.","5.5"],
+ [5,"Which tool captures packets and decodes each protocol field for analysis?","A protocol analyzer such as Wireshark",["A cable tester","A toner probe","A light meter"],"A protocol analyzer captures traffic, decodes headers and can follow TCP streams. tcpdump is the command-line equivalent.","5.5"],
+ [5,"On a managed switch, which command shows which port a given MAC address was learned on?","show mac address-table",["show ip route","show vlan brief","show running-config"],"The MAC address table maps MACs to ports and VLANs. Combine it with the ARP table to trace an IP address to a physical port.","5.5"],
+ [5,"How can you find out which switch and port sit at the other end of a cable in the wall?","LLDP or CDP neighbor information",["nslookup","A DHCP reservation","SNMP traps"],"LLDP (vendor-neutral) and CDP (Cisco) advertise a device's name, port and capabilities to its directly connected neighbors.","5.5"],
+ [5,"Every morning at 9 AM the WAN link reaches 100% utilization and applications lag. What is the problem?","Bandwidth saturation (congestion)",["A routing loop","An APIPA address","A crossover cable"],"Use NetFlow to find the top traffic, then apply QoS, schedule bulk jobs off-peak or add bandwidth.","5.4"],
+ [5,"Which tool shows the full RF picture, including non-Wi-Fi interference sources?","A spectrum analyzer",["A Wi-Fi analyzer","An OTDR","A multimeter"],"A Wi-Fi analyzer sees only 802.11 networks. A spectrum analyzer shows all RF energy, such as microwaves, cordless phones and Bluetooth.","5.5"],
+ [4,"Which protection keeps data on a stolen laptop's drive unreadable?","Encryption of data at rest, such as full-disk encryption",["Encryption of data in transit","Hashing the files","A screened subnet"],"Data at rest is stored data, protected with disk or file encryption. Data in transit moves across a network and is protected with TLS, IPsec or SSH.","4.1"],
+ [4,"In a PKI, what does a digital certificate bind together?","A public key and the identity of its owner",["A private key and a password","A MAC address and an IP address","A username and a password hash"],"A certificate authority (CA) signs the certificate to vouch for the binding. Self-signed certificates have no trusted third party behind them.","4.1"],
+ [4,"Users sign in once and then reach many web applications without signing in again. What is this?","Single sign-on",["Multifactor authentication","Role-based access control","Least privilege"],"SSO lets one authentication grant access to many systems, often through SAML or OpenID Connect. It reduces password fatigue, but that one login becomes very valuable to protect.","4.1"],
+ [4,"Which access control model grants permissions based on a person's job function?","Role-based access control",["Discretionary access control","Mandatory access control","Time-based access control"],"RBAC assigns permissions to roles, such as Help Desk or HR, and users get them by being placed in a role. Changing a job means changing the role, not every permission.","4.1"],
+ [4,"A policy blocks sign-ins from devices outside the country where the company operates. What is this?","Geofencing",["Geotagging","Port security","Content filtering"],"Geofencing uses location, such as GPS or IP geolocation, to allow or block access. Geotagging only adds location data to files.","4.1"],
+ [4,"An unpatched flaw in a web server's software is best described as what?","A vulnerability",["A threat","An exploit","A risk"],"A vulnerability is a weakness. A threat is something that could take advantage of it, an exploit is the method or code that does, and risk is the likelihood and impact of that happening.","4.1"],
+ [4,"Which standard sets the security rules for organizations that handle credit card data?","PCI DSS",["GDPR","HIPAA","SOX"],"PCI DSS covers cardholder data. GDPR covers personal data of people in the EU and drives data locality rules. HIPAA covers US health data, and SOX covers financial reporting.","4.1"],
+ [4,"When the same key both encrypts and decrypts data, what kind of encryption is it?","Symmetric encryption",["Asymmetric encryption","Hashing","Digital signing"],"Symmetric ciphers such as AES are fast but need a safe way to share the key. Asymmetric encryption uses a public and private key pair and is often used to exchange that symmetric key.","4.1"],
+ [4,"Thousands of compromised hosts flood a web server until it stops responding. What is this attack?","DDoS",["On-path attack","VLAN hopping","Evil twin"],"A distributed denial-of-service attack comes from many sources, often a botnet, so blocking one IP does not stop it. Mitigations include upstream scrubbing services and rate limiting.","4.2"],
+ [4,"An attacker secretly relays traffic between two hosts so they can read or change it. What is this?","An on-path attack",["A DDoS attack","Tailgating","MAC flooding"],"On-path, formerly called man-in-the-middle, often starts with ARP spoofing or a rogue AP. Encryption with certificate checks, such as TLS, defeats most of these attacks.","4.2"],
+ [4,"Someone follows an employee through a badge-controlled door without scanning a badge. What is this?","Tailgating",["Shoulder surfing","Dumpster diving","Pretexting"],"Tailgating, also called piggybacking, defeats physical access control. Access control vestibules (mantraps) and security awareness training reduce it.","4.2"],
+ [4,"An employee plugs a personal wireless router into the office network for better Wi-Fi. What is that device?","A rogue access point",["An evil twin","A honeypot","A wireless LAN controller"],"A rogue AP is any unauthorized AP connected to the network, and it bypasses your security controls. An evil twin is an AP that impersonates your SSID to trick users.","4.2"],
+ [4,"Malware encrypts a company's files and demands payment for the key. What is it?","Ransomware",["A logic bomb","Spyware","Adware"],"Offline, tested backups are the main defense, along with patching and email filtering, since phishing often delivers it.","4.2"],
+ [4,"An attacker changes DNS answers so users land on a fake banking site. What attack is this?","DNS poisoning",["ARP spoofing","VLAN hopping","Deauthentication"],"DNS poisoning (spoofing) corrupts name resolution, so the right name leads to the wrong IP. DNSSEC signs DNS records so resolvers can detect forged answers.","4.2"],
+ [4,"An attacker sends forged frames that knock every client off a Wi-Fi network. What is this?","A deauthentication attack",["MAC flooding","DNS poisoning","Bluejacking"],"Older Wi-Fi management frames are not authenticated, so they can be forged. WPA3 requires protected management frames (802.11w), which blocks this attack.","4.2"],
+ [4,"Which step most directly shrinks the attack surface of a new switch?","Disable unused ports and services",["Enable every port for future use","Keep the default admin password","Turn on Telnet for remote access"],"Device hardening also means changing default credentials, using SSH instead of Telnet, updating firmware and putting management on its own network.","4.3"],
+ [4,"A firewall allows a few specific services. What happens to traffic that matches no rule?","It is dropped by the implicit deny",["It is allowed by default","It is logged and forwarded","It is sent to the screened subnet"],"Firewall ACLs are read top-down, and the first match wins. Anything that matches nothing hits the implicit deny at the end.","4.3"],
+ [4,"Smart TVs and cameras should not share a network with company laptops. What should you do?","Put the IoT devices on their own segmented VLAN",["Give them static IPs on the user VLAN","Enable jumbo frames","Turn off DHCP"],"Segmentation limits how far an attacker can move from a weak device. Guest, BYOD, IoT and OT or ICS devices usually get their own segments with firewall rules between them.","4.3"],
+ [4,"Which switch feature limits a port to a set number of learned MAC addresses?","Port security",["Port mirroring","Port forwarding","Port aggregation"],"Port security can shut down, restrict or protect a port when it sees too many or unknown MAC addresses. It defeats MAC flooding.","4.3"],
+ [4,"Which control blocks employees from reaching gambling and known malware sites by category?","Content filtering",["Port security","NAT","A honeypot"],"Content or URL filtering checks requested sites against categories and reputation lists, often at a proxy or next-generation firewall.","4.3"]
 ];
 
 const PORTS = [ // [service, port, note, full name]
@@ -558,7 +594,11 @@ const GL={
  "IEEE":"Institute of Electrical and Electronics Engineers","DORA":"Discover, Offer, Request, Acknowledge","TX":"transmit","RX":"receive",
  "RPC":"Remote Procedure Call","NetBIOS":"Network Basic Input/Output System","IPFIX":"IP Flow Information Export","ISP":"internet service provider",
  "CNAME":"Canonical Name","MX":"Mail Exchanger","PTR":"Pointer","SOA":"Start of Authority","SRV":"Service","NS":"Name Server","TXT":"Text",
- "UPS":"uninterruptible power supply","OFDMA":"Orthogonal Frequency-Division Multiple Access","SX":"short wavelength","LX":"long wavelength","SFP":"small form-factor pluggable","ASCII":"American Standard Code for Information Interchange"
+ "UPS":"uninterruptible power supply","SSO":"single sign-on","SAML":"Security Assertion Markup Language","RBAC":"role-based access control",
+ "PCI DSS":"Payment Card Industry Data Security Standard","GDPR":"General Data Protection Regulation","HIPAA":"Health Insurance Portability and Accountability Act",
+ "SOX":"Sarbanes-Oxley Act","DDoS":"distributed denial-of-service","DoS":"denial-of-service","IoT":"Internet of Things","URL":"Uniform Resource Locator",
+ "CA":"certificate authority","PKI":"public key infrastructure","AES":"Advanced Encryption Standard","DNSSEC":"Domain Name System Security Extensions",
+ "BYOD":"bring your own device","OT":"operational technology","ICS":"industrial control system","OFDMA":"Orthogonal Frequency-Division Multiple Access","SX":"short wavelength","LX":"long wavelength","SFP":"small form-factor pluggable","ASCII":"American Standard Code for Information Interchange"
 };
 const GL_RE=new RegExp("(^|[^\\w+-])("+Object.keys(GL).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(s?)(?=$|[^\\w+-])","g");
 // Spells out the first use of each abbreviation in a piece of text, e.g. "UDP" -> "UDP (User Datagram Protocol)".
@@ -696,7 +736,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,quizDone:false,bonus:0,railY:0};
+    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,quizDone:false,bonus:0,railY:0};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);paused=false;if($("dPause"))$("dPause").textContent="Pause";hud();
   }
@@ -706,15 +746,15 @@ const D=(function(){
     G.enemies.push({t,x:W+rnd(10,40),y:rnd(fTop()+10,fBot()-2),hp,max:hp,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1)),dps:b?9:2.2,ph:rnd(0,6),hit:0});
   }
   function text(x,y,s,c){if(G)G.fx.push({k:"t",x,y,s,c,life:1.5});}
+  // The horde spawns without end from the first question until the last one is answered.
   function wave(i,total){
     if(!G||G.status!=="live")return;
-    G.wave=i+1;G.waves=total;
-    const n=4+Math.floor(G.night*1.3)+Math.floor(i/3);
-    for(let k=0;k<n;k++)G.q.push({at:G.time+0.8+k*(9/n)+rnd(0,0.6),t:"w"});
-    if(i%4===3)G.q.push({at:G.time+5,t:"b"});
+    G.wave=i+1;G.waves=total;G.spawning=true;
   }
+  const spawnGap=()=>1/(0.28+0.04*(G.night-1))*rnd(0.6,1.4);
+  const bruteGap=()=>Math.max(22,45-2*G.night)*rnd(0.85,1.15);
   function correct(rw,streak){
-    if(!G||(G.status!=="live"&&G.status!=="final"))return;
+    if(!G||G.status!=="live")return;
     const a=rw.ammo+G.c.bonusAmmo;G.ammo+=a;
     text(wallX()+46*U(),fTop()+14*U(),"+"+a+" AMMO","#FFB020");
     if(rw.scrap)text(wallX()+46*U(),fTop()+32*U(),"+"+rw.scrap+" SCRAP","#19F0FF");
@@ -724,14 +764,13 @@ const D=(function(){
     if(!G||G.status!=="live")return;
     G.q.push({at:G.time+0.4,t:"b"});text(W-70*U(),fTop()+16*U(),"BRUTE INBOUND","#FF2BD6");
   }
-  function final(score){
+  // Last question answered: a bomber flies over and clears the field.
+  function final(){
     if(!G)return;G.quizDone=true;
     if(G.status==="live"){
-      const bonus=score*4;G.ammo+=bonus;if(bonus)text(wallX()+46*U(),fTop()+14*U(),"RESUPPLY +"+bonus,"#FFB020");
-      const n=10+2*G.night;
-      for(let k=0;k<n;k++)G.q.push({at:G.time+0.5+k*(8/n),t:"w"});
-      for(let b=0;b<1+Math.floor(G.night/2);b++)G.q.push({at:G.time+3+b*2,t:"b"});
-      G.status="final";
+      G.status="air";G.spawning=false;G.q=[];
+      G.bomber={x:-90*U(),drop:wallX()+20*U(),done:false};G.bombs=[];
+      text(W/2,fTop()+18*U(),"AIR STRIKE INBOUND","#19F0FF");
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
@@ -762,15 +801,34 @@ const D=(function(){
     bar.style.width=(p*100)+"%";bar.className=p<0.3?"low":p<0.6?"mid":"";
     $("dWall").textContent=Math.ceil(G.wall);$("dAmmo").textContent=G.ammo;$("dScrap").textContent=S.base.scrap;
     const st=$("dStatus");let txt="",alert=false;const dry=G.ammo<=0&&G.enemies.length>0;
-    if(G.status==="live"){txt=G.wave?`WAVE ${G.wave}/${G.waves} · ${G.enemies.length} HOSTILES`:"STAND BY";if(dry){txt="NO AMMO · ANSWER CORRECTLY TO RESUPPLY";alert=true;}}
-    else if(G.status==="final"){txt=`FINAL WAVE · ${G.enemies.length+G.q.length} HOSTILES`;if(dry){txt="FINAL WAVE · NO AMMO";alert=true;}}
-    if(paused&&(G.status==="live"||G.status==="final")){txt="PAUSED";alert=false;}
+    if(G.status==="live"){txt=G.wave?`QUESTION ${G.wave}/${G.waves} · ${G.enemies.length} HOSTILES · HORDE INCOMING`:"STAND BY";if(dry){txt="NO AMMO · ANSWER CORRECTLY TO RESUPPLY";alert=true;}}
+    else if(G.status==="air"){txt=`AIR STRIKE · ${G.enemies.length} HOSTILES LEFT`;}
+    if(paused&&(G.status==="live"||G.status==="air")){txt="PAUSED";alert=false;}
     st.textContent=txt;st.classList.toggle("alert",alert);
   }
 
   function update(dt){
     G.time+=dt;
     for(let i=G.q.length-1;i>=0;i--)if(G.q[i].at<=G.time){spawn(G.q[i].t);G.q.splice(i,1);}
+    if(G.spawning&&G.status==="live"&&G.enemies.length<120){
+      G.sT-=dt;if(G.sT<=0){spawn("w");G.sT=spawnGap();}
+      G.bT-=dt;if(G.bT<=0){spawn("b");G.bT=bruteGap();}
+    }
+    if(G.bomber&&!G.bomber.done){
+      const B=G.bomber;B.x+=(W+180*u0())/2.8*dt;
+      while(B.x>=B.drop&&B.drop<W){
+        for(let k=0;k<3;k++){const y=fTop()+(fBot()-fTop())*(k+rnd(0.1,0.9))/3;G.bombs.push({x:B.drop+rnd(-10,10),y0:fTop()-6*u0(),y1:y,t:0,T:0.45});}
+        B.drop+=36*u0();
+      }
+      if(B.x>W+90*u0()){B.done=true;
+        G.enemies.forEach((e,k)=>G.bombs.push({x:e.x,y0:fTop()-6*u0(),y1:e.y,t:-k*0.03,T:0.4}));}
+    }
+    for(let i=G.bombs.length-1;i>=0;i--){
+      const bm=G.bombs[i];bm.t+=dt;
+      if(bm.t>=bm.T){const r=44*u0();
+        for(const e of G.enemies)if(Math.hypot(e.x-bm.x,e.y-bm.y1)<r){e.hp=0;}
+        G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
+    }
     const u=U(),wx=wallX(),line=wx+8*u;
     for(const e of G.enemies){e.hit-=dt;if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;G.wall-=e.dps*dt;}}
     const vis=G.enemies.filter(e=>e.x<W-6).sort((a,b)=>a.x-b.x);
@@ -833,7 +891,7 @@ const D=(function(){
       return false;
     });
     if(G.wall<=0){G.wall=0;lose();}
-    else if(G.status==="final"&&!G.q.length&&!G.enemies.length&&!G.shells.length)win();
+    else if(G.status==="air"&&G.bomber&&G.bomber.done&&!G.bombs.length&&!G.enemies.length)win();
   }
   function idle(dt){for(const e of G.enemies){e.hit-=dt;e.ph+=dt*6;}}
   function stepFx(dt){
@@ -841,6 +899,7 @@ const D=(function(){
     for(const f of G.fx){f.life-=dt;if(f.k==="f"){f.x+=f.vx*dt;f.y+=f.vy*dt;}else if(f.k==="t")f.y-=22*dt;}
     G.fx=G.fx.filter(f=>f.life>0);
   }
+  const u0=()=>U();
   const mortarPos=()=>{const u=U();return[Math.max(16*u,wallX()-52*u),fBot()-18*u];};
 
   function buildBg(){
@@ -887,6 +946,20 @@ const D=(function(){
     ctx.fillStyle=b?"#FF7BEA":"#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
     if(b){const w=14*s;ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(x-w/2,y-30*s,w,2.5*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(x-w/2,y-30*s,w*Math.max(0,e.hp/e.max),2.5*u);}
   }
+  function drawBomber(x,y,u){
+    // ground shadow
+    ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(x-10*u,(fTop()+fBot())/2+30*u,34*u,6*u,0,0,7);ctx.fill();
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle="#3A4650";ctx.beginPath();ctx.moveTo(-6*u,-2*u);ctx.lineTo(-22*u,-26*u);ctx.lineTo(-12*u,-26*u);ctx.lineTo(8*u,-2*u);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(-6*u,2*u);ctx.lineTo(-22*u,26*u);ctx.lineTo(-12*u,26*u);ctx.lineTo(8*u,2*u);ctx.closePath();ctx.fill();
+    ctx.fillStyle="#56636D";ctx.beginPath();ctx.ellipse(0,0,30*u,5*u,0,0,7);ctx.fill();
+    ctx.fillStyle="#3A4650";ctx.beginPath();ctx.moveTo(-26*u,0);ctx.lineTo(-36*u,-11*u);ctx.lineTo(-31*u,0);ctx.lineTo(-36*u,11*u);ctx.closePath();ctx.fill();
+    ctx.fillStyle="#19F0FF";ctx.fillRect(14*u,-1.5*u,10*u,3*u);
+    ctx.globalCompositeOperation="lighter";const f=0.6+0.4*Math.sin(G.time*40);
+    ctx.fillStyle=`rgba(255,140,40,${0.7*f})`;[-14,14].forEach(o=>{ctx.beginPath();ctx.arc(-14*u,o*u,3.5*u*f,0,7);ctx.fill();});
+    ctx.fillStyle="rgba(255,43,214,.9)";ctx.beginPath();ctx.arc(-18*u,-24*u,1.6*u,0,7);ctx.arc(-18*u,24*u,1.6*u,0,7);ctx.fill();
+    ctx.globalCompositeOperation="source-over";ctx.restore();
+  }
   function draw(){
     ctx.setTransform(1,0,0,1,0,0);if(bg)ctx.drawImage(bg,0,0);
     ctx.setTransform(dpr,0,0,dpr,0,0);if(!G)return;
@@ -930,6 +1003,8 @@ const D=(function(){
       else if(f.k==="r"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,43,214,${0.5*a})`;ctx.fillRect(wx,f.y-4*u*a,W-wx,8*u*a);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fillRect(wx,f.y-1,W-wx,2);}
     }
     ctx.globalCompositeOperation="source-over";
+    for(const bm of G.bombs){if(bm.t<0)continue;const k=Math.min(1,bm.t/bm.T);ctx.fillStyle="#2A2F33";ctx.beginPath();ctx.ellipse(bm.x,bm.y0+(bm.y1-bm.y0)*k*k,2*u,3.5*u,0,0,7);ctx.fill();ctx.fillStyle="#FFB020";ctx.fillRect(bm.x-2*u,bm.y0+(bm.y1-bm.y0)*k*k-5*u,4*u,1.5*u);}
+    if(G.bomber&&!G.bomber.done)drawBomber(G.bomber.x,fTop()-2*u,u);
     ctx.textAlign="center";ctx.font=`600 ${Math.round(12*Math.min(1.3,u))}px "IBM Plex Mono", monospace`;
     for(const f of G.fx)if(f.k==="t"){ctx.globalAlpha=Math.min(1,f.life);ctx.fillStyle=f.c;ctx.fillText(f.s,f.x,f.y);}
     ctx.globalAlpha=1;
@@ -939,14 +1014,14 @@ const D=(function(){
     const dt=Math.min(0.05,Math.max(0,(t-last)/1000));last=t;
     if(!G||!W)return;
     if(!paused&&!shopOpen&&!document.hidden){
-      if(G.status==="live"||G.status==="final")update(dt);else idle(dt);
+      if(G.status==="live"||G.status==="air")update(dt);else idle(dt);
       stepFx(dt);
     }
     draw();
     hudT+=dt;if(hudT>0.12){hudT=0;hud();}
     saveT+=dt;if(saveT>3){saveT=0;save();}
   }
-  const live=()=>!!(G&&(G.status==="live"||G.status==="final"));
+  const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
   return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,setNext:f=>{nextFn=f;}};
 })();
@@ -983,7 +1058,7 @@ function viewHome(){
         <span class="label">Daily drill</span>
         <h2>Short rounds that build exam recall.</h2>
         <p>Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand. Anything you miss goes into your review queue.</p>
-        <div class="row"><a class="btn primary" href="#quiz">Start a 10-question quiz</a>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}</div>
+        <div class="row"><a class="btn primary" href="#quiz">Start a quick exam</a>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}</div>
       </div>
       <div class="stats">
         <div><span class="label">Weighted accuracy</span><b>${ready}</b></div>
@@ -999,7 +1074,7 @@ function viewHome(){
     <section>
       <div class="label" style="margin-bottom:10px">Training modes</div>
       <div class="modes">
-        <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Exam Quiz</h3><p>Each quiz is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
+        <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Quick Exams</h3><p>Each quick exam is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
         <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">90 min</span><h3>Mock Exam</h3><p>A timed 90-question exam weighted like the real N10-009.</p><span class="best">${S.mock?"In progress: "+fmtTime(S.mock.ends-Date.now())+" left":S.mockHistory.length?"Last score: "+S.mockHistory[S.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
         <a class="mode" href="#ports" style="--c:var(--green)"><span class="label">60 seconds</span><h3>Port Blitz</h3><p>Match services to port numbers. A wrong answer costs 3 seconds.</p><span class="best">Best: ${S.best.ports}</span></a>
         <a class="mode" href="#osi" style="--c:var(--blue)"><span class="label">12 items</span><h3>OSI Stack</h3><p>Place devices, protocols and PDUs on the correct layer.</p><span class="best">Best: ${S.best.osi}/12</span></a>
@@ -1009,7 +1084,7 @@ function viewHome(){
     <section class="tp outpost" id="outpost">
       <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
         <div class="op-stats"><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
-      <p>Every quiz is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base.</p>
+      <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base.</p>
       <div class="tiers">${[1,2,3,4,5].map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
     </section>
@@ -1029,7 +1104,7 @@ function viewQuizSetup(){
   const chips = [["all","All domains"]].concat(Object.entries(DOMAINS).map(([k,d])=>[k,k+".0 "+d.name+" · "+reward(k).n]))
     .map(([k,l])=>`<button class="chip" data-d="${k}" aria-pressed="${quizDomain===k}">${esc(l)}</button>`).join("");
   $app.innerHTML = `<div class="panel stack">
-    <div><span class="label">Exam Quiz</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
+    <div><span class="label">Quick Exams</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
     <div class="row">${chips}</div>
     <p class="muted" style="margin:0">Questions you missed and questions you haven't seen come first. Press 1–4 to answer and Enter to continue.</p>
     <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in the answer choices too. When a question tests what a term means, its choices stay abbreviated until you answer. Turn this off to test yourself on every abbreviation.</span></label>
@@ -1045,6 +1120,41 @@ function buildPool(dom){
   ids = shuffle(ids).sort((a,b)=>prio(a)-prio(b));
   return shuffle(ids.slice(0,10));
 }
+/* ---------------- Exam objectives and study sources ---------------- */
+// N10-009 exam objectives, with a short topic used to search for study videos.
+const OBJ={
+ "1.1":["Explain concepts related to the OSI reference model","OSI model"],
+ "1.2":["Compare and contrast networking appliances, applications, and functions","networking appliances"],
+ "1.3":["Summarize cloud concepts and connectivity options","cloud concepts"],
+ "1.4":["Explain common networking ports, protocols, services, and traffic types","ports and protocols"],
+ "1.5":["Compare and contrast transmission media and transceivers","transmission media"],
+ "1.6":["Compare and contrast network topologies, architectures, and types","network topologies"],
+ "1.7":["Given a scenario, use appropriate IPv4 network addressing","IPv4 addressing"],
+ "1.8":["Summarize evolving use cases for modern network environments","SDN zero trust IPv6"],
+ "2.1":["Explain characteristics of routing technologies","routing technologies"],
+ "2.2":["Given a scenario, configure switching technologies","switching VLANs"],
+ "2.3":["Given a scenario, select and configure wireless devices and technologies","wireless technologies"],
+ "2.4":["Explain important factors of physical installations","physical installations"],
+ "3.1":["Explain the purpose of organizational processes and procedures","documentation change management"],
+ "3.2":["Given a scenario, use network monitoring technologies","network monitoring"],
+ "3.3":["Explain disaster recovery (DR) concepts","disaster recovery"],
+ "3.4":["Given a scenario, implement IPv4 and IPv6 network services","DHCP DNS NTP"],
+ "3.5":["Compare and contrast network access and management methods","network access management"],
+ "4.1":["Explain the importance of basic network security concepts","network security concepts"],
+ "4.2":["Summarize various types of attacks and their impact to the network","network attacks"],
+ "4.3":["Given a scenario, apply network security features, defense techniques, and solutions","network security features"],
+ "5.1":["Explain the troubleshooting methodology","troubleshooting methodology"],
+ "5.2":["Given a scenario, troubleshoot common cabling and physical interface issues","cabling interface issues"],
+ "5.3":["Given a scenario, troubleshoot common issues with network services","network service issues"],
+ "5.4":["Given a scenario, troubleshoot common performance issues","performance issues"],
+ "5.5":["Given a scenario, use the appropriate tool or protocol to solve networking issues","network tools"]
+};
+const SRC={
+  messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent("Professor Messer N10-009 "+o+" "+OBJ[o][1]),
+  messerSite:"https://www.professormesser.com/",
+  comptiaObjectives:"https://www.google.com/search?q="+encodeURIComponent("CompTIA Network+ N10-009 exam objectives PDF"),
+  comptiaSite:"https://www.comptia.org/"
+};
 const REVIEW_CLEAR=2; // correct answers in a row needed to clear a missed question
 // Updates stats and the review queue for one answered question; returns a short status note.
 function recordAnswer(id,ok){
@@ -1060,24 +1170,65 @@ function recordAnswer(id,ok){
   if(!S.missedEver.includes(id))S.missedEver.push(id);
   return `In your review queue. Answer it correctly ${REVIEW_CLEAR} times in a row to clear it.`;
 }
-function startExam(){startQuiz(buildPool(quizDomain),"Exam Quiz",startExam);}
+function startExam(){startQuiz(buildPool(quizDomain),"Quick Exam",startExam);}
 function startReview(){if(!S.review.length)return viewReview();startQuiz(shuffle(S.review).slice(0,15),"Review",startReview);}
 function startMissed(){if(!S.missedEver.length)return viewReview();startQuiz(shuffle(S.missedEver).slice(0,15),"Missed practice",startMissed);}
+function weakObjectives(){
+  const rows={};
+  Q.forEach((q,i)=>{const o=q[5],r=rows[o]||(rows[o]={o,ids:[],c:0,w:0,queue:[],past:[]});
+    r.ids.push(i);const st=S.qs[i];if(st){r.c+=st.c;r.w+=st.w;}
+    if(S.review.includes(i))r.queue.push(i);else if(S.missedEver.includes(i))r.past.push(i);});
+  return Object.values(rows)
+    .filter(r=>r.queue.length||((r.c+r.w)>=3&&r.c/(r.c+r.w)<0.7))
+    .sort((a,b)=>b.queue.length-a.queue.length||(pct(a.c,a.w)??101)-(pct(b.c,b.w)??101));
+}
+function startObjective(o){
+  const ids=Q.map((_,i)=>i).filter(i=>Q[i][5]===o);
+  const go=()=>startQuiz(shuffle(ids).slice(0,10),"Practice "+o,go);go();
+}
 function viewReview(){
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
-  const q=S.review.length,m=S.missedEver.length;
-  $app.innerHTML=`<div class="panel stack">
+  const q=S.review.length,m=S.missedEver.length,weak=weakObjectives();
+  const link=(href,label,sub)=>`<a class="src" href="${href}" target="_blank" rel="noopener">${label} <small>${sub}</small> ↗</a>`;
+  $app.innerHTML=`<div class="stack">
+  <div class="panel stack">
     <div><span class="label">Review</span><h2 style="font-size:28px;margin-top:4px">Work on your misses</h2></div>
     <p class="muted" style="margin:0;max-width:62ch">Every question you miss goes into the review queue. It stays there until you answer it correctly ${REVIEW_CLEAR} times in a row, in any mode. You can also go back over every question you've ever missed, as often as you like.</p>
     <div class="rv-opts">
-      <button class="rv" id="rvQueue"${q?"":" disabled"}><b>Review queue · ${q}</b><span>${q?`Up to 15 questions you haven't cleared yet.`:"Nothing waiting. Miss a question in a quiz and it lands here."}</span></button>
+      <button class="rv" id="rvQueue"${q?"":" disabled"}><b>Review queue · ${q}</b><span>${q?`Up to 15 questions you haven't cleared yet.`:"Nothing waiting. Miss a question in a quick exam and it lands here."}</span></button>
       <button class="rv" id="rvAll"${m?"":" disabled"}><b>Everything you've missed · ${m}</b><span>${m?"Practice any question you've missed before, even ones you've cleared.":"Your miss history is empty so far."}</span></button>
     </div>
-    ${q||m?"":`<div><a class="btn primary" href="#quiz">Take a quiz</a></div>`}
+  </div>
+  <div class="panel">
+    <span class="label">Study plan</span>
+    <h3 style="font-size:22px;margin:4px 0 6px">What to go over next</h3>
+    <p class="muted" style="margin:0 0 14px;max-width:64ch">Built from your review queue and your accuracy on each N10-009 exam objective. Read the key facts, watch the matching Professor Messer video, then practice that objective until it clears.</p>
+    ${weak.length?weak.map((r,ix)=>{
+      const a=pct(r.c,r.w),notes=r.queue.concat(r.past).slice(0,6);
+      return `<details class="obj"${ix<3?" open":""}>
+        <summary><span class="oc">${r.o}</span><span class="ot">${esc(OBJ[r.o][0])}</span><span class="chips">${r.queue.length?`<span class="chip-s bad">${r.queue.length} to review</span>`:""}${a!==null?`<span class="chip-s">${a}% correct over ${r.c+r.w} answers</span>`:""}<span class="chip-s">Domain ${r.o[0]}.0 · ${esc(DOMAINS[r.o[0]].name)}</span></span></summary>
+        <div class="obj-body">
+          <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.comptiaObjectives,"CompTIA exam objectives","official PDF")}</div>
+          ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
+          <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
+        </div></details>`;}).join("")
+      :`<div class="empty" style="padding:16px 0">No weak spots yet. Take a quick exam or a mock exam, and objectives you miss or score under 70% on will show up here.</div>`}
+  </div>
+  <div class="panel">
+    <span class="label">Study sources</span>
+    <h3 style="font-size:18px;margin:4px 0 10px">Where to learn more</h3>
+    <div class="srcs">
+      ${link(SRC.messerSite,"Professor Messer","free N10-009 video course and notes")}
+      ${link(SRC.comptiaSite,"CompTIA","official Network+ certification page")}
+      ${link(SRC.comptiaObjectives,"N10-009 exam objectives","find the official PDF")}
+    </div>
+    <p class="muted small" style="margin:12px 0 0">The objectives PDF is CompTIA's own list of everything the exam covers. Use it as a checklist alongside the study plan.</p>
+  </div>
   </div>`;
   document.getElementById("rvQueue").onclick=startReview;
   document.getElementById("rvAll").onclick=startMissed;
+  $app.querySelectorAll("[data-po]").forEach(b=>b.onclick=()=>startObjective(b.dataset.po));
 }
 function startQuiz(pool,label,again){
   if(cleanup){cleanup();cleanup=null;}
@@ -1115,21 +1266,21 @@ function showQ(st){
     const note=recordAnswer(id,ok);
     if(ok){st.correct++;st.streak++;S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
     else{st.streak=0;D.wrong();award(2);}
-    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
+    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}<div class="small muted" style="margin-top:6px">Objective ${Q[id][5]}: ${esc(OBJ[Q[id][5]][0])}</div>${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
       <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
     document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
     document.getElementById("next").focus({preventScroll:true});
   });
 }
 function quizResult(st){
-  D.final(st.correct);
+  D.final();
   const p=Math.round(100*st.correct/st.pool.length);
   const msg=p>=90?"Exam-ready on this set.":p>=72?"Solid. The real exam needs 720 on a 100–900 scale, so aim for 80% or better in practice.":"Your misses are now in the review queue. Clear them next.";
   $app.innerHTML=`<div class="panel result stack">
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
     <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
-    <p class="small" style="margin:0 auto;max-width:48ch">The final wave is hitting the wall below. Your score sent ${st.correct*4} bonus ammo.</p>
+    <p class="small" style="margin:0 auto;max-width:48ch">A bomber is clearing the field below. Once it passes, the next night begins.</p>
     <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
   document.getElementById("again").onclick=()=>st.again();
