@@ -166,6 +166,71 @@ td.p{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
 .empty{padding:30px;text-align:center;color:var(--muted)}
 footer{margin-top:36px;font-size:13px;color:var(--muted)}
 
+.rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.rw b{color:var(--orange);font-weight:600}
+
+/* Outpost: a deliberately single dark tech-punk look, used for the defense dock and the home armory */
+:root{--dock-h:clamp(230px,46vh,460px)}
+.tp{--tp-bg:#06090D;--tp-panel:#0C131A;--tp-line:#1C2E3B;--tp-cyan:#19F0FF;--tp-mag:#FF2BD6;--tp-amb:#FFB020;--tp-ink:#D6F4FF;--tp-dim:#7A93A2;color:var(--tp-ink);color-scheme:dark}
+.tp :focus-visible{outline:2px solid var(--tp-amb);outline-offset:2px}
+body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px) + 24px)}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;height:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--tp-bg);border-top:1px solid var(--tp-cyan);box-shadow:0 -10px 40px rgba(25,240,255,.15)}
+.dock::before{content:"";position:absolute;left:0;right:0;top:-7px;height:6px;background:repeating-linear-gradient(-45deg,var(--tp-amb) 0 9px,#0B0B0B 9px 18px)}
+.dock-in{position:relative;height:100%;overflow:hidden}
+.dock canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.dock-in::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,rgba(214,244,255,.03) 0 1px,transparent 1px 3px)}
+.dhud{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:6px 14px;flex-wrap:wrap;padding-block:8px 14px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim);background:linear-gradient(180deg,rgba(6,9,13,.95) 60%,rgba(6,9,13,0))}
+.dhud b{color:var(--tp-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.dh-g{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dtag{font-family:var(--f-display);font-size:15px;color:var(--tp-cyan);letter-spacing:.12em;text-shadow:0 0 8px rgba(25,240,255,.6)}
+.dtag b{color:var(--tp-cyan)}
+.dwall{display:flex;align-items:center;gap:8px}
+.dbar{width:clamp(64px,16vw,160px);height:8px;background:#111A22;border:1px solid var(--tp-line);clip-path:polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)}
+.dbar i{display:block;height:100%;background:var(--tp-cyan);transition:width .2s}
+.dbar i.mid{background:var(--tp-amb)} .dbar i.low{background:var(--tp-mag)}
+.tpbtn{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;background:rgba(25,240,255,.06);border:1px solid var(--tp-cyan);color:var(--tp-cyan);clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+.tpbtn:hover{background:rgba(25,240,255,.16)}
+.tpbtn.hot{background:var(--tp-amb);border-color:var(--tp-amb);color:#120A00}
+.dstatus{position:absolute;z-index:2;right:max(12px,env(safe-area-inset-right,0px));bottom:10px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;color:var(--tp-amb);text-shadow:0 0 6px rgba(255,176,32,.5);text-align:right;max-width:70%}
+.dstatus.alert{color:var(--tp-mag);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.dbanner{position:absolute;z-index:3;left:50%;top:56%;transform:translate(-50%,-50%);width:min(460px,calc(100% - 32px));padding:16px 18px;background:rgba(8,13,18,.93);border:1px solid var(--tp-cyan);text-align:center;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);box-shadow:inset 0 0 30px rgba(25,240,255,.12)}
+.dbanner.lost{border-color:var(--tp-mag);box-shadow:inset 0 0 30px rgba(255,43,214,.18)}
+.dbanner .bt{font-family:var(--f-display);font-size:clamp(20px,3.5vw,28px);letter-spacing:.08em;color:var(--tp-cyan);text-shadow:0 0 12px rgba(25,240,255,.6)}
+.dbanner.lost .bt{color:var(--tp-mag);text-shadow:0 0 12px rgba(255,43,214,.6)}
+.dbanner .bs{font-size:14px;color:var(--tp-dim);margin:6px 0 14px}
+.dbanner .bb{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.dshop{position:absolute;z-index:4;inset:0;background:rgba(6,9,13,.97);overflow-y:auto;padding-block:12px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.dshop-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-family:var(--f-display);font-size:16px;letter-spacing:.1em;color:var(--tp-cyan)}
+.dnote{font-size:12px;color:var(--tp-dim);margin:10px 0 0}
+.shop-sec+.shop-sec{margin-top:14px}
+.shop-h{display:flex;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;color:var(--tp-dim);margin-bottom:8px;border-bottom:1px solid var(--tp-line);padding-bottom:6px}
+.shop-h b{color:var(--tp-amb)} .shop-h b.x{color:var(--tp-mag)}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.up{display:flex;flex-direction:column;gap:4px;text-align:left;padding:10px 12px;background:var(--tp-panel);border:1px solid var(--tp-line);color:var(--tp-ink);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.up:hover:not([disabled]){border-color:var(--tp-cyan);background:#0F1C25}
+.up.owned{border-color:#1F4A57}
+.up[disabled]{opacity:.5;cursor:not-allowed}
+.up-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.up-n{font-family:var(--f-display);font-size:15px;letter-spacing:.04em}
+.up-p{display:flex;gap:3px}
+.up-p i{width:8px;height:8px;border:1px solid var(--tp-cyan);transform:skewX(-20deg)}
+.up-p i.on{background:var(--tp-cyan);box-shadow:0 0 6px rgba(25,240,255,.7)}
+.up-lock{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--tp-mag)}
+.up-d{font-size:13px;color:var(--tp-dim)}
+.up-c{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-amb)}
+.up-c.xp{color:var(--tp-mag)}
+.outpost{background:var(--tp-bg);border:1px solid var(--tp-line);padding:20px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.op-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.op-head h3{font-size:26px;color:var(--tp-cyan);letter-spacing:.06em;text-shadow:0 0 10px rgba(25,240,255,.5)}
+.tp-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--tp-amb)}
+.op-stats{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
+.op-stats b{color:var(--tp-ink);font-size:16px} .op-stats b.x{color:var(--tp-mag)}
+.outpost p{color:var(--tp-dim);margin:0 0 12px;max-width:68ch;font-size:14px}
+.tiers{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;font-family:var(--f-mono);font-size:12px}
+.tiers span{padding:4px 8px;border:1px solid var(--tp-line);background:var(--tp-panel);color:var(--tp-dim)}
+.tiers b{color:var(--tp-cyan)}
+
 @media (max-width:720px){
   .hero,.osi{grid-template-columns:1fr}
   .dom{grid-template-columns:2em 1fr 3em 4em;gap:8px}
@@ -306,7 +371,37 @@ const Q = [
  [5,"Wireless clients far from the AP report slow speeds and disconnects. What is the most likely cause?","Low signal strength (RSSI)",["Duplex mismatch","Wrong VLAN on the trunk","DNS poisoning"],"As RSSI drops, clients fall back to lower data rates. Moving or adding APs or adjusting transmit power helps."],
  [5,"Which tool measures actual throughput between two hosts?","iperf",["nslookup","arp","Wi-Fi analyzer"],"iperf runs a client and a server and pushes traffic between them to measure real bandwidth."],
  [5,"Which command shows active TCP connections and listening ports?","netstat",["tracert","ipconfig","dig"],"netstat -an shows sockets numerically. On Linux, ss is the modern replacement."],
- [5,"A new hire's PC gets 169.254.x.x while everyone else is fine. What should you check first?","The DHCP server or scope, and the PC's switch port or VLAN",["The DNS forwarders","The firewall's NAT rules","The NTP server"],"An APIPA address means DHCP failed. Common causes are an exhausted scope, a wrong access VLAN or a missing DHCP relay."]
+ [5,"A new hire's PC gets 169.254.x.x while everyone else is fine. What should you check first?","The DHCP server or scope, and the PC's switch port or VLAN",["The DNS forwarders","The firewall's NAT rules","The NTP server"],"An APIPA address means DHCP failed. Common causes are an exhausted scope, a wrong access VLAN or a missing DHCP relay."],
+ [5,"A switch interface shows a rising count of giants. What is the most likely cause?","An MTU mismatch, such as jumbo frames sent to a port that does not allow them",["A duplex mismatch","A wrong default gateway","An exhausted DHCP scope"],"Giants are frames larger than the maximum allowed size (1518 bytes for standard Ethernet). Runts are frames under 64 bytes and often come from collisions."],
+ [5,"Interface counters show many runts on a half-duplex link. What usually causes runts?","Collisions or a faulty NIC",["MTU set too high","DNS timeouts","A wrong VLAN on the port"],"Runts are frames shorter than 64 bytes. Collisions cut frames short, so check duplex settings and the NIC."],
+ [5,"A user plugs a small home switch into a wall jack and the port immediately goes err-disabled. What most likely shut it down?","BPDU guard or port security",["DHCP snooping","An expired lease","Jumbo frames"],"BPDU guard disables an access port that receives spanning tree BPDUs, and port security disables it when too many MAC addresses appear. Clear the cause, then shut and no-shut the port."],
+ [5,"A switch port shows the status \"administratively down\". What does that mean?","Someone disabled it in the configuration (shutdown)",["The cable is unplugged","The far-end device is powered off","The port failed a hardware test"],"Administratively down means the shutdown command was applied. Enter no shutdown to enable it. A down/down status usually points to cabling or the far end."],
+ [5,"Six access points work on a PoE switch, but a seventh will not power on with a known-good cable. What is the likely cause?","The switch's PoE power budget is exhausted",["The VLAN is wrong","A duplex mismatch","The SSID is hidden"],"Each switch has a total PoE budget. Check it with a command such as show power inline, then move devices or add a PoE injector."],
+ [5,"A new fiber link will not come up. One end has a 1000BASE-SX transceiver and the other has 1000BASE-LX. What is the problem?","A transceiver mismatch",["Crosstalk","A bad crimp","Attenuation from too short a cable"],"SX is short-wavelength (850 nm) for multimode fiber and LX is long-wavelength (1310 nm), usually for single-mode. Both ends must use matching optics."],
+ [5,"A new fiber patch shows no link, and swapping the two strands at one end fixes it. What was wrong?","TX and RX were reversed",["The connectors were dirty","A transceiver mismatch","The bend radius was too tight"],"Each fiber end transmits on one strand and receives on the other. If TX connects to TX, the link stays down."],
+ [5,"A short fiber run measures much more loss than its budget allows. What should you do first?","Inspect and clean the connectors",["Replace the switch","Lower the MTU","Change the VLAN"],"Dirt on the connector end face is the most common cause of fiber loss. Inspect it with a fiber scope and clean it before replacing anything."],
+ [5,"A fiber cable was pulled tight around a sharp corner and the link now drops intermittently. What is the cause?","The bend radius was exceeded",["Crosstalk","An MTU mismatch","A duplex mismatch"],"Bending fiber tighter than its minimum radius lets light escape (macrobend loss) and can crack the glass."],
+ [5,"A technician terminates one end of a cable as T568A and the other end as T568B. What have they made?","A crossover cable",["A straight-through cable","A rollover cable","A loopback plug"],"A crossover swaps the transmit and receive pairs. Most modern ports have Auto-MDIX, but a crossover was once needed to connect like devices."],
+ [5,"Clients on a new VLAN get APIPA addresses. The DHCP server sits on a different subnet. What is missing?","A DHCP relay (IP helper) on the VLAN's gateway",["A DNS forwarder","An NTP server","A larger MTU"],"DHCP Discover messages are broadcasts that routers do not forward. An IP helper or relay agent forwards them to the server as unicast."],
+ [5,"A host loses connectivity at random and its event log shows an address conflict. What is the likely cause?","A duplicate IP address on the network",["A routing loop","A wrong subnet mask on the router","DNS cache poisoning"],"Two hosts with the same IP fight over ARP entries. Look for a statically assigned address inside the DHCP pool and use exclusions or reservations."],
+ [5,"A traceroute bounces between the same two routers until it shows TTL expired. What is happening?","A routing loop",["Asymmetric routing","Packet shaping","A duplex mismatch"],"Each router points to the other for the destination. TTL stops the packet from looping forever. Check the static routes and route redistribution."],
+ [5,"Pings work across a new VPN tunnel, but large file transfers stall. What is the most likely cause?","An MTU problem, with large packets dropped or unable to fragment",["A wrong DNS server","An expired DHCP lease","Too few VLANs"],"Tunnel headers reduce the usable MTU. Packets with the Don't Fragment bit set get dropped. Lower the MTU or adjust the TCP MSS on the tunnel."],
+ [5,"Traffic leaves through one firewall and returns through another, and the stateful firewall drops the replies. What is this called?","Asymmetric routing",["A routing loop","Split horizon","Route summarization"],"A stateful firewall that never saw the outbound session drops the return traffic. Keep both directions on the same path or share state between the firewalls."],
+ [5,"After a new access switch is installed, traffic takes a strange long path across the network. What is a likely cause?","The new switch became the spanning tree root bridge",["DHCP snooping is enabled","Jumbo frames are enabled","NTP is misconfigured"],"The switch with the lowest bridge priority, then the lowest MAC, becomes root. Set the priority on your intended core switch so a new switch cannot take over."],
+ [5,"A user moves to a new desk and now gets an IP address from another department's subnet. What is the most likely cause?","The new switch port is in the wrong VLAN",["The NIC is failing","The DNS suffix is wrong","The cable is a crossover"],"The access VLAN on the port decides which subnet and DHCP scope the user lands in. Check the port's VLAN assignment."],
+ [5,"After a firewall change, users can ping a web server but HTTPS connections time out. What should you check first?","ACL or firewall rules for TCP 443",["The DNS A record","The DHCP lease time","The STP root bridge"],"Ping (ICMP) working while one port fails points to a rule that blocks that port. Review the most recent change against the rule base."],
+ [5,"Some laptops show \"certificate not yet valid\" errors on every HTTPS site. What is the likely cause?","Their system clock is wrong, such as a failed NTP sync",["A full DHCP scope","A duplex mismatch","A wrong VLAN"],"Certificates have valid-from and valid-to dates. A clock that is wrong makes good certificates look invalid, and it also breaks Kerberos."],
+ [5,"Wi-Fi slows to a crawl in the break room whenever the microwave runs. What is happening?","RF interference in the 2.4 GHz band",["Co-channel interference from another AP","A duplex mismatch","An MTU mismatch"],"Microwave ovens leak energy around 2.4 GHz. Move clients to 5 or 6 GHz and confirm with a spectrum analyzer."],
+ [5,"Two neighboring access points are both set to channel 6. What problem does this cause?","Co-channel interference",["Adjacent-channel interference","Attenuation","Jitter from QoS"],"APs on the same channel must take turns on the air, which cuts throughput. Use channels 1, 6 and 11 so neighbors differ."],
+ [5,"A laptop stays connected to a distant AP with a weak signal even though a closer AP is available. What is this?","A sticky client, a roaming problem",["An evil twin","Channel bonding","A captive portal"],"Clients decide when to roam. Tune minimum RSSI, enable 802.11k/v/r, or lower transmit power so cells overlap less."],
+ [5,"Which RSSI reading shows the strongest Wi-Fi signal?","−55 dBm",["−70 dBm","−85 dBm","−95 dBm"],"RSSI is negative, so closer to zero is stronger. About −67 dBm or better is a common target for voice and video."],
+ [5,"A point-to-point wireless link reports a weak signal even with clear line of sight. One antenna is mounted vertically and the other horizontally. What is wrong?","The antenna polarization does not match",["The SSID is wrong","An encryption mismatch","Co-channel interference"],"Both antennas need the same polarization. A 90° mismatch can cost 20 dB or more."],
+ [5,"Which tool shows which TCP ports are open on a server?","nmap",["arp","tracert","ipconfig"],"nmap is a port scanner. Use it only on systems you are authorized to scan."],
+ [5,"Which tool captures packets and decodes each protocol field for analysis?","A protocol analyzer such as Wireshark",["A cable tester","A toner probe","A light meter"],"A protocol analyzer captures traffic, decodes headers and can follow TCP streams. tcpdump is the command-line equivalent."],
+ [5,"On a managed switch, which command shows which port a given MAC address was learned on?","show mac address-table",["show ip route","show vlan brief","show running-config"],"The MAC address table maps MACs to ports and VLANs. Combine it with the ARP table to trace an IP address to a physical port."],
+ [5,"How can you find out which switch and port sit at the other end of a cable in the wall?","LLDP or CDP neighbor information",["nslookup","A DHCP reservation","SNMP traps"],"LLDP (vendor-neutral) and CDP (Cisco) advertise a device's name, port and capabilities to its directly connected neighbors."],
+ [5,"Every morning at 9 AM the WAN link reaches 100% utilization and applications lag. What is the problem?","Bandwidth saturation (congestion)",["A routing loop","An APIPA address","A crossover cable"],"Use NetFlow to find the top traffic, then apply QoS, schedule bulk jobs off-peak or add bandwidth."],
+ [5,"Which tool shows the full RF picture, including non-Wi-Fi interference sources?","A spectrum analyzer",["A Wi-Fi analyzer","An OTDR","A multimeter"],"A Wi-Fi analyzer sees only 802.11 networks. A spectrum analyzer shows all RF energy, such as microwaves, cordless phones and Bluetooth."]
 ];
 
 const PORTS = [
@@ -362,8 +457,8 @@ const OSI_ITEMS = [
 
 /* ---------------- State ---------------- */
 const KEY = "netplus-patch-bay-v1";
-function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0};}
-function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});}}catch(e){}return d;}
+function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0,base:{scrap:0,up:{},night:1,bestNight:0,xpSpent:0}};}
+function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});d.base=Object.assign(freshState().base,r.base||{});d.base.up=Object.assign({},(r.base&&r.base.up)||{});}}catch(e){}return d;}
 let S = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function dayStr(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
@@ -382,15 +477,363 @@ function renderHud(){
   const into = S.xp%250;
   document.getElementById("hud").innerHTML =
     `<div><span>LVL</span> <b>${level()}</b><span class="xpbar" title="${into}/250 XP to next level"><i style="width:${into/2.5}%"></i></span></div>
-     <div><b>${S.xp}</b> <span>XP</span></div>
+     <div><b>${xpAvail()}</b> <span>XP to spend</span></div>
      <div><b>${S.streak}</b> <span>day streak</span></div>`;
 }
+
+/* ---------------- Outpost economy ---------------- */
+// Section difficulty: every correct answer sends ammo; harder sections also send scrap for upgrades.
+const TIER={1:1,2:2,3:1,4:2,5:3};
+const TIERS={1:{n:"Standard",ammo:20,scrap:0},2:{n:"Hard",ammo:25,scrap:10},3:{n:"Elite",ammo:30,scrap:15}};
+const reward=d=>TIERS[TIER[d]];
+function xpAvail(){return Math.max(0,S.xp-(S.base.xpSpent||0));}
+const UPG=[ // bought with scrap
+ {k:"caliber",n:"Heavy caliber",d:"+35% turret damage",max:5,cost:l=>40+40*l},
+ {k:"autoload",n:"Autoloader",d:"+20% turret fire rate",max:5,cost:l=>40+35*l},
+ {k:"turrets",n:"Turret mount",d:"Adds another turret to the wall",max:3,cost:l=>90+70*l},
+ {k:"plating",n:"Wall plating",d:"+40 wall integrity",max:5,cost:l=>35+30*l},
+ {k:"cache",n:"Ammo cache",d:"+20 starting ammo and +5 per correct answer",max:5,cost:l=>30+30*l}
+];
+const WPN=[ // unlocked with XP, then upgraded with scrap
+ {k:"flame",n:"Flame bunker",d:"Burns hostiles that reach the wall. Uses no ammo.",xp:150,max:3,cost:l=>90+70*(l-1)},
+ {k:"tesla",n:"Tesla coil",d:"Chain lightning that jumps between hostiles.",xp:300,max:3,cost:l=>130+90*(l-1)},
+ {k:"mortar",n:"Mortar pit",d:"Shells the densest pack for splash damage.",xp:450,max:3,cost:l=>150+100*(l-1)},
+ {k:"rail",n:"Railgun",d:"A beam that pierces every hostile in its lane.",xp:650,max:3,cost:l=>180+120*(l-1)}
+];
+const upL=k=>(S.base.up&&S.base.up[k])||0;
+function buy(k){
+  const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);
+  if(w&&l===0){if(xpAvail()<w.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+w.xp;S.base.up[k]=1;save();renderHud();return true;}
+  const it=u||w;if(!it||l>=it.max)return false;
+  const c=it.cost(l);if(S.base.scrap<c)return false;
+  S.base.scrap-=c;S.base.up[k]=l+1;save();return true;
+}
+function pips(l,m){let s="";for(let i=0;i<m;i++)s+=`<i class="${i<l?"on":""}"></i>`;return `<span class="up-p" aria-label="Level ${l} of ${m}">${s}</span>`;}
+function shopHTML(){
+  const wp=WPN.map(w=>{const l=upL(w.k);let price,dis;
+    if(l===0){price=`UNLOCK · ${w.xp} XP`;dis=xpAvail()<w.xp;}
+    else if(l>=w.max){price="MAXED";dis=true;}
+    else{const c=w.cost(l);price=`UPGRADE · ${c} SCRAP`;dis=S.base.scrap<c;}
+    return `<button class="up${l?" owned":""}" data-k="${w.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${w.n}</span>${l?pips(l,w.max):`<span class="up-lock">LOCKED</span>`}</span><span class="up-d">${w.d}</span><span class="up-c${l===0?" xp":""}">${price}</span></button>`;}).join("");
+  const up=UPG.map(u=>{const l=upL(u.k),mx=l>=u.max,c=u.cost(l);
+    return `<button class="up" data-k="${u.k}"${mx||S.base.scrap<c?" disabled":""}><span class="up-top"><span class="up-n">${u.n}</span>${pips(l,u.max)}</span><span class="up-d">${u.d}</span><span class="up-c">${mx?"MAXED":c+" SCRAP"}</span></button>`;}).join("");
+  return `<div class="shop-sec"><div class="shop-h"><span>WEAPONS · ATTACH TO BASE</span><span>Unlock with XP · <b class="x">${xpAvail()} XP</b></span></div><div class="shop">${wp}</div></div>
+    <div class="shop-sec"><div class="shop-h"><span>BASE UPGRADES</span><span>Paid with scrap · <b>${S.base.scrap} SCRAP</b></span></div><div class="shop">${up}</div></div>`;
+}
+function bindShop(root,after){root.querySelectorAll(".up").forEach(b=>b.onclick=()=>{if(buy(b.dataset.k))after();});}
+
+/* ---------------- Outpost defense (bottom dock) ---------------- */
+const D=(function(){
+  let dock=null,cv,ctx,hudEl,W=0,H=0,dpr=1,raf=0,last=0,ro=null,bg=null,G=null,paused=false,shopOpen=false,nextFn=null,hudT=0,saveT=0,top0=40;
+  const $=id=>dock?dock.querySelector("#"+id):null;
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  const U=()=>Math.max(0.8,H/300);
+  const wallX=()=>Math.max(70,Math.round(W*0.19));
+  const fTop=()=>Math.max(top0+6,H*0.2);
+  const fBot=()=>H-12;
+  const depth=y=>0.75+0.45*Math.min(1,Math.max(0,(y-fTop())/Math.max(1,fBot()-fTop())));
+  function cfg(){return{turrets:2+upL("turrets"),dmg:1+0.35*upL("caliber"),rate:1.5*(1+0.2*upL("autoload")),wallMax:100+40*upL("plating"),ammo0:50+20*upL("cache"),bonusAmmo:5*upL("cache"),flame:upL("flame"),tesla:upL("tesla"),mortar:upL("mortar"),rail:upL("rail")};}
+
+  function mount(){
+    if(dock)return;
+    dock=document.createElement("section");
+    dock.className="dock tp";dock.setAttribute("aria-label","Outpost defense");
+    dock.innerHTML=`<div class="dock-in">
+      <canvas aria-hidden="true"></canvas>
+      <div class="dhud">
+        <div class="dh-g"><span class="dtag">NIGHT <b id="dNight">1</b></span><span class="dwall">WALL <span class="dbar"><i id="dWallBar"></i></span><b id="dWall">100</b></span></div>
+        <div class="dh-g"><span>AMMO <b id="dAmmo">0</b></span><span>SCRAP <b id="dScrap">0</b></span><button class="tpbtn" id="dPause">Pause</button><button class="tpbtn" id="dShop">Armory</button></div>
+      </div>
+      <div class="dstatus" id="dStatus"></div>
+      <div class="dbanner" id="dBanner" hidden></div>
+      <div class="dshop" id="dShopP" hidden><div class="dshop-h"><span>ARMORY</span><button class="tpbtn" id="dShopX">Close</button></div><div id="dShopGrid"></div><p class="dnote">The fight pauses while the armory is open. Purchases take effect immediately.</p></div>
+    </div>`;
+    document.body.appendChild(dock);document.body.classList.add("has-dock");
+    cv=dock.querySelector("canvas");ctx=cv.getContext("2d");hudEl=dock.querySelector(".dhud");
+    $("dPause").onclick=()=>{paused=!paused;$("dPause").textContent=paused?"Resume":"Pause";};
+    $("dShop").onclick=()=>toggleShop(true);
+    $("dShopX").onclick=()=>toggleShop(false);
+    if(window.ResizeObserver){ro=new ResizeObserver(resize);ro.observe(dock.querySelector(".dock-in"));}else window.addEventListener("resize",resize);
+    resize();last=performance.now();raf=requestAnimationFrame(frame);
+  }
+  function unmount(){
+    if(!dock)return;
+    cancelAnimationFrame(raf);if(ro){ro.disconnect();ro=null;}else window.removeEventListener("resize",resize);
+    dock.remove();dock=null;G=null;document.body.classList.remove("has-dock");
+    paused=false;shopOpen=false;nextFn=null;save();
+  }
+  function resize(){
+    if(!dock)return;const box=dock.querySelector(".dock-in");
+    W=box.clientWidth;H=box.clientHeight;if(!W||!H)return;
+    dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+    top0=hudEl.offsetHeight;buildBg();layout();
+    if(G)G.enemies.forEach(e=>{e.y=Math.min(fBot()-2,Math.max(fTop()+8,e.y));});
+  }
+  function layout(){
+    if(!G)return;const n=G.c.turrets,wx=wallX(),old=G.turrets;G.turrets=[];
+    for(let i=0;i<n;i++){const y=fTop()+(fBot()-fTop())*(i+0.5)/n;G.turrets.push({x:wx-2,y,a:Math.PI,cd:old[i]?old[i].cd:Math.random()*0.4,fl:0});}
+    if(!G.railY)G.railY=(fTop()+fBot())/2;
+  }
+  function newRound(){
+    const c=cfg();
+    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,quizDone:false,bonus:0,railY:0};
+    layout();hideBanner();toggleShop(false);paused=false;if($("dPause"))$("dPause").textContent="Pause";hud();
+  }
+  function spawn(t){
+    const n=G.night,b=t==="b",span=W-wallX();
+    const hp=b?14+5*(n-1):2+0.5*(n-1);
+    G.enemies.push({t,x:W+rnd(10,40),y:rnd(fTop()+10,fBot()-2),hp,max:hp,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1)),dps:b?9:2.2,ph:rnd(0,6),hit:0});
+  }
+  function text(x,y,s,c){if(G)G.fx.push({k:"t",x,y,s,c,life:1.5});}
+  function wave(i,total){
+    if(!G||G.status!=="live")return;
+    G.wave=i+1;G.waves=total;
+    const n=4+Math.floor(G.night*1.3)+Math.floor(i/3);
+    for(let k=0;k<n;k++)G.q.push({at:G.time+0.8+k*(9/n)+rnd(0,0.6),t:"w"});
+    if(i%4===3)G.q.push({at:G.time+5,t:"b"});
+  }
+  function correct(rw,streak){
+    if(!G||(G.status!=="live"&&G.status!=="final"))return;
+    const a=rw.ammo+G.c.bonusAmmo;G.ammo+=a;
+    text(wallX()+46*U(),fTop()+14*U(),"+"+a+" AMMO","#FFB020");
+    if(rw.scrap)text(wallX()+46*U(),fTop()+32*U(),"+"+rw.scrap+" SCRAP","#19F0FF");
+    if(streak>=3)text(wallX()+46*U(),fTop()+50*U(),"STREAK +5 SCRAP","#FF2BD6");
+  }
+  function wrong(){
+    if(!G||G.status!=="live")return;
+    G.q.push({at:G.time+0.4,t:"b"});text(W-70*U(),fTop()+16*U(),"BRUTE INBOUND","#FF2BD6");
+  }
+  function final(score){
+    if(!G)return;G.quizDone=true;
+    if(G.status==="live"){
+      const bonus=score*4;G.ammo+=bonus;if(bonus)text(wallX()+46*U(),fTop()+14*U(),"RESUPPLY +"+bonus,"#FFB020");
+      const n=10+2*G.night;
+      for(let k=0;k<n;k++)G.q.push({at:G.time+0.5+k*(8/n),t:"w"});
+      for(let b=0;b<1+Math.floor(G.night/2);b++)G.q.push({at:G.time+3+b*2,t:"b"});
+      G.status="final";
+    } else if(G.status==="lost")showBanner("lost");
+  }
+  function win(){
+    G.status="won";const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.night=G.night+1;save();showBanner("won");
+  }
+  function lose(){G.status="lost";G.q=[];save();showBanner("lost");}
+  function showBanner(kind){
+    const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
+    if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
+    else b.innerHTML=`<div class="bt">OUTPOST OVERRUN</div><div class="bs">${G.quizDone?`The wall fell on night ${G.night}. Spend scrap and XP in the armory, then try again.`:"The wall is down. Keep answering: correct answers still earn scrap and XP for the armory."}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${G.quizDone&&nextFn?`<button class="tpbtn hot" data-b="next">Retry night ${G.night}</button>`:""}</div>`;
+    b.hidden=false;
+    b.querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{if(x.dataset.b==="shop")toggleShop(true);else if(nextFn)nextFn();});
+  }
+  function hideBanner(){const b=$("dBanner");if(b)b.hidden=true;}
+  function toggleShop(open){shopOpen=open;const p=$("dShopP");if(!p)return;p.hidden=!open;if(open)renderShop();}
+  function renderShop(){
+    const g=$("dShopGrid");g.innerHTML=shopHTML();
+    bindShop(g,()=>{
+      if(G){const o=G.c;G.c=cfg();if(G.status!=="lost")G.wall=Math.min(G.c.wallMax,G.wall+(G.c.wallMax-o.wallMax));layout();}
+      renderShop();hud();
+    });
+  }
+  function hud(){
+    if(!G||!dock)return;
+    $("dNight").textContent=G.night;
+    const p=Math.max(0,G.wall/G.c.wallMax),bar=$("dWallBar");
+    bar.style.width=(p*100)+"%";bar.className=p<0.3?"low":p<0.6?"mid":"";
+    $("dWall").textContent=Math.ceil(G.wall);$("dAmmo").textContent=G.ammo;$("dScrap").textContent=S.base.scrap;
+    const st=$("dStatus");let txt="",alert=false;const dry=G.ammo<=0&&G.enemies.length>0;
+    if(G.status==="live"){txt=G.wave?`WAVE ${G.wave}/${G.waves} · ${G.enemies.length} HOSTILES`:"STAND BY";if(dry){txt="NO AMMO · ANSWER CORRECTLY TO RESUPPLY";alert=true;}}
+    else if(G.status==="final"){txt=`FINAL WAVE · ${G.enemies.length+G.q.length} HOSTILES`;if(dry){txt="FINAL WAVE · NO AMMO";alert=true;}}
+    if(paused&&(G.status==="live"||G.status==="final")){txt="PAUSED";alert=false;}
+    st.textContent=txt;st.classList.toggle("alert",alert);
+  }
+
+  function update(dt){
+    G.time+=dt;
+    for(let i=G.q.length-1;i>=0;i--)if(G.q[i].at<=G.time){spawn(G.q[i].t);G.q.splice(i,1);}
+    const u=U(),wx=wallX(),line=wx+8*u;
+    for(const e of G.enemies){e.hit-=dt;if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;G.wall-=e.dps*dt;}}
+    const vis=G.enemies.filter(e=>e.x<W-6).sort((a,b)=>a.x-b.x);
+    G.turrets.forEach((t,i)=>{
+      t.cd-=dt;t.fl-=dt;const e=vis[Math.min(i%3,vis.length-1)];if(!e)return;
+      const ty=e.y-12*u*depth(e.y);t.a=Math.atan2(ty-t.y,e.x-t.x);
+      if(t.cd<=0&&G.ammo>0){
+        G.ammo--;t.cd=1/G.c.rate*rnd(0.9,1.1);t.fl=0.06;e.hp-=G.c.dmg;e.hit=0.08;
+        const L=12*u;G.fx.push({k:"tr",x1:t.x+Math.cos(t.a)*L,y1:t.y+Math.sin(t.a)*L,x2:e.x,y2:ty,life:0.09});
+      }
+    });
+    if(G.c.flame){
+      const L=G.c.flame,reach=line+(30+22*L)*u;
+      for(const e of G.enemies)if(e.x<reach){e.hp-=(1.5+2*L)*dt;
+        if(G.fx.length<320&&Math.random()<0.5)G.fx.push({k:"f",x:wx+6*u,y:e.y-8*u*depth(e.y)+rnd(-4,4),vx:rnd(90,160)*u,vy:rnd(-25,25),life:rnd(0.25,0.45),m:0.45});}
+    }
+    if(G.c.tesla){
+      G.tcd-=dt;
+      if(G.tcd<=0&&vis.length){
+        const L=G.c.tesla,cx=wx-24*u,cy=(fTop()+fBot())/2-22*u;let px=cx,py=cy;const pool=vis.slice(),pts=[[cx,cy]];
+        for(let k=0;k<1+L&&pool.length;k++){
+          pool.sort((a,b)=>Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py));
+          const e=pool.shift();e.hp-=3+2*L;e.hit=0.12;px=e.x;py=e.y-12*u*depth(e.y);pts.push([px,py]);
+        }
+        G.fx.push({k:"z",pts,life:0.22,m:0.22});G.tcd=Math.max(1.4,4.5-0.9*L);
+      }
+    }
+    if(G.c.mortar){
+      G.mcd-=dt;
+      if(G.mcd<=0&&vis.length){
+        const L=G.c.mortar;let best=vis[0],bn=-1;
+        for(const e of vis){let n=0;for(const o of vis)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
+        const m=mortarPos();G.shells.push({x0:m[0],y0:m[1],x1:Math.max(line,best.x-best.spd*0.8),y1:best.y,t:0,T:0.8,L});
+        G.mcd=Math.max(2,5.5-1*L);
+      }
+    }
+    for(let i=G.shells.length-1;i>=0;i--){
+      const s=G.shells[i];s.t+=dt;
+      if(s.t>=s.T){
+        const r=(30+8*s.L)*u;
+        for(const e of G.enemies)if(Math.hypot(e.x-s.x1,e.y-s.y1)<r){e.hp-=3+2.5*s.L;e.hit=0.12;}
+        G.fx.push({k:"b",x:s.x1,y:s.y1,r,life:0.35,m:0.35});G.shells.splice(i,1);
+      }
+    }
+    if(G.c.rail){
+      G.rcd-=dt;
+      if(G.rcd<=0&&vis.length){
+        const L=G.c.rail,band=10*u;let by=vis[0].y,bn=0;
+        for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<band)n++;if(n>bn){bn=n;by=e.y;}}
+        for(const e of G.enemies)if(Math.abs(e.y-by)<band&&e.x<W){e.hp-=6+5*L;e.hit=0.15;}
+        G.railY=by-12*u*depth(by);G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=Math.max(2.5,7-1.3*L);
+      }
+    }
+    G.enemies=G.enemies.filter(e=>{
+      if(e.hp>0)return true;
+      G.kills++;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
+      if(G.splats.length>70)G.splats.shift();
+      G.splats.push({x:e.x,y:e.y,r:(e.t==="b"?10:5)*u*depth(e.y),life:8});
+      if(e.t==="b")text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
+      return false;
+    });
+    if(G.wall<=0){G.wall=0;lose();}
+    else if(G.status==="final"&&!G.q.length&&!G.enemies.length&&!G.shells.length)win();
+  }
+  function idle(dt){for(const e of G.enemies){e.hit-=dt;e.ph+=dt*6;}}
+  function stepFx(dt){
+    for(const s of G.splats)s.life-=dt*0.4;G.splats=G.splats.filter(s=>s.life>0);
+    for(const f of G.fx){f.life-=dt;if(f.k==="f"){f.x+=f.vx*dt;f.y+=f.vy*dt;}else if(f.k==="t")f.y-=22*dt;}
+    G.fx=G.fx.filter(f=>f.life>0);
+  }
+  const mortarPos=()=>{const u=U();return[Math.max(16*u,wallX()-52*u),fBot()-18*u];};
+
+  function buildBg(){
+    bg=document.createElement("canvas");bg.width=cv.width;bg.height=cv.height;
+    const b=bg.getContext("2d");b.scale(dpr,dpr);
+    const u=U(),wx=wallX(),ft=fTop();
+    let seed=11;const sr=()=>(seed=(seed*16807)%2147483647)/2147483647;
+    const g=b.createLinearGradient(0,0,0,H);g.addColorStop(0,"#08110D");g.addColorStop(1,"#13231A");b.fillStyle=g;b.fillRect(0,0,W,H);
+    for(let i=0;i<46;i++){b.fillStyle=`rgba(${70+sr()*30|0},${52+sr()*20|0},34,${0.1+sr()*0.14})`;b.beginPath();b.ellipse(wx+sr()*(W-wx),ft+sr()*(H-ft),(18+sr()*60)*u,(5+sr()*14)*u,0,0,7);b.fill();}
+    for(let i=0;i<140;i++){b.fillStyle=`rgba(60,${110+sr()*60|0},60,0.35)`;b.fillRect(wx+sr()*(W-wx),ft+sr()*(H-ft),1.5*u,3*u);}
+    b.strokeStyle="rgba(25,240,255,0.07)";b.lineWidth=1;
+    for(let y=ft;y<H;y+=24*u){b.beginPath();b.moveTo(wx,y);b.lineTo(W,y);b.stroke();}
+    for(let x=wx;x<W;x+=48*u){b.beginPath();b.moveTo(x,ft);b.lineTo(x,H);b.stroke();}
+    b.fillStyle="rgba(25,240,255,0.4)";b.font=`500 ${Math.round(9*u)}px "IBM Plex Mono", monospace`;
+    for(let x=wx+96*u,m=25;x<W-24;x+=96*u,m+=25)b.fillText(m+"m",x+3,H-4);
+    // base yard
+    b.save();b.beginPath();b.rect(0,0,wx,H);b.clip();
+    b.fillStyle="#0A1015";b.fillRect(0,0,wx,H);
+    b.strokeStyle="rgba(214,244,255,0.04)";for(let x=-H;x<wx;x+=10*u){b.beginPath();b.moveTo(x,H);b.lineTo(x+H,0);b.stroke();}
+    seed=5;const rows=Math.max(2,Math.floor((H-ft)/(56*u)));
+    for(let r=0;r<rows;r++){
+      const y=ft+r*(H-ft)/rows+4*u,w=Math.min(wx-30*u,(26+sr()*20)*u),h=(18+sr()*12)*u,x=6*u+sr()*Math.max(1,wx-36*u-w);
+      if(w<10)continue;
+      b.fillStyle="#15212A";b.fillRect(x,y,w,h);b.fillStyle="#22343F";b.fillRect(x,y,w,3*u);
+      b.fillStyle=r%2?"rgba(25,240,255,.75)":"rgba(255,176,32,.75)";
+      for(let k=0;k<Math.floor((w-4*u)/(8*u));k++)b.fillRect(x+3*u+k*8*u,y+h*0.45,4*u,2*u);
+      if(r%2===0&&w>24*u){b.fillStyle="#1D3E7A";b.fillRect(x+2*u,y+h+3*u,w*0.6,6*u);b.strokeStyle="rgba(150,200,255,.35)";b.strokeRect(x+2*u,y+h+3*u,w*0.6,6*u);}
+    }
+    b.fillStyle="#2A3640";b.beginPath();b.arc(wx*0.35,ft-4*u,7*u,0,7);b.fill();b.strokeStyle="#3D4E5A";b.stroke();
+    b.restore();
+  }
+
+  function drawZ(e){
+    const u=U(),s=depth(e.y)*(e.t==="b"?1.9:1)*u,x=e.x,y=e.y,sw=Math.sin(e.ph),b=e.t==="b";
+    ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y,6*s,2*s,0,0,7);ctx.fill();
+    ctx.lineCap="round";ctx.strokeStyle=b?"#3A2630":"#26332B";ctx.lineWidth=2.2*s;
+    ctx.beginPath();ctx.moveTo(x,y-9*s);ctx.lineTo(x+sw*3*s,y);ctx.moveTo(x,y-9*s);ctx.lineTo(x-sw*3*s,y);ctx.stroke();
+    ctx.fillStyle=e.hit>0?"#E8FFF0":(b?"#6B3B4A":"#4A5E4C");ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
+    const skin=e.hit>0?"#FFFFFF":(b?"#9A6A72":"#7C9A74");
+    ctx.strokeStyle=skin;ctx.lineWidth=1.8*s;
+    ctx.beginPath();ctx.moveTo(x-1*s,y-16*s);ctx.lineTo(x-8*s,y-15*s+sw*1.5*s);ctx.moveTo(x+1*s,y-15*s);ctx.lineTo(x-7*s,y-13*s-sw*1.5*s);ctx.stroke();
+    ctx.fillStyle=skin;ctx.beginPath();ctx.arc(x-1.5*s,y-22*s,3.2*s,0,7);ctx.fill();
+    ctx.fillStyle=b?"rgba(255,43,214,.35)":"rgba(156,255,87,.35)";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2.2*s,0,7);ctx.fill();
+    ctx.fillStyle=b?"#FF7BEA":"#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
+    if(b){const w=14*s;ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(x-w/2,y-30*s,w,2.5*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(x-w/2,y-30*s,w*Math.max(0,e.hp/e.max),2.5*u);}
+  }
+  function draw(){
+    ctx.setTransform(1,0,0,1,0,0);if(bg)ctx.drawImage(bg,0,0);
+    ctx.setTransform(dpr,0,0,dpr,0,0);if(!G)return;
+    const u=U(),wx=wallX(),ft=fTop(),fb=fBot(),mid=(ft+fb)/2;
+    for(const s of G.splats){ctx.fillStyle=`rgba(110,220,70,${0.28*Math.min(1,s.life/3)})`;ctx.beginPath();ctx.ellipse(s.x,s.y,s.r*1.6,s.r*0.6,0,0,7);ctx.fill();}
+    // attached weapons in the base
+    if(G.c.tesla){const cx=wx-24*u,cy=mid-22*u,pulse=0.5+0.5*Math.sin(G.time*6);
+      ctx.fillStyle="#22313B";ctx.fillRect(cx-4*u,cy,8*u,24*u);
+      ctx.strokeStyle="#4BD8E8";ctx.lineWidth=1.5;for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(cx,cy+5*u+k*4.5*u,6*u,1.6*u,0,0,7);ctx.stroke();}
+      ctx.fillStyle=`rgba(25,240,255,${0.25+0.3*pulse})`;ctx.beginPath();ctx.arc(cx,cy,7*u,0,7);ctx.fill();ctx.fillStyle="#BFFBFF";ctx.beginPath();ctx.arc(cx,cy,3*u,0,7);ctx.fill();}
+    if(G.c.mortar){const m=mortarPos();ctx.fillStyle="#1A242C";ctx.beginPath();ctx.arc(m[0],m[1],9*u,0,7);ctx.fill();ctx.strokeStyle="#FFB020";ctx.lineWidth=1.2;ctx.stroke();
+      ctx.save();ctx.translate(m[0],m[1]);ctx.rotate(-0.9);ctx.fillStyle="#8A9AA5";ctx.fillRect(0,-2.5*u,13*u,5*u);ctx.restore();}
+    // wall
+    const top=ft-14*u,w=10*u,p=G.wall/G.c.wallMax;
+    ctx.fillStyle="#1A242C";ctx.fillRect(wx-w/2,top,w,H-top);
+    ctx.strokeStyle="#0B1116";ctx.lineWidth=1;for(let y=top;y<H;y+=14*u){ctx.beginPath();ctx.moveTo(wx-w/2,y);ctx.lineTo(wx+w/2,y);ctx.stroke();}
+    const col=G.status==="lost"||p<0.3?"#FF2BD6":p<0.6?"#FFB020":"#19F0FF";
+    const fl=(p<0.3&&G.status!=="lost")?0.5+0.5*Math.sin(G.time*20):1;
+    ctx.globalAlpha=0.9*fl;ctx.fillStyle=col;ctx.fillRect(wx+w/2-1.5,top,2,H-top);
+    ctx.globalAlpha=0.16*fl;ctx.fillRect(wx+w/2,top,8*u,H-top);ctx.globalAlpha=1;
+    if(G.c.flame){ctx.fillStyle="#FF7A1A";for(let y=ft+10*u;y<fb;y+=26*u)ctx.fillRect(wx+w/2-1,y,3*u,4*u);}
+    if(G.c.rail){const ry=G.railY||mid;ctx.fillStyle="#2A2033";ctx.fillRect(wx-8*u,ry-4*u,20*u,8*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(wx+4*u,ry-1.5*u,12*u,3*u);}
+    G.enemies.slice().sort((a,b)=>a.y-b.y).forEach(drawZ);
+    for(const t of G.turrets){
+      ctx.fillStyle="#22313B";ctx.beginPath();ctx.arc(t.x,t.y,7*u,0,7);ctx.fill();
+      ctx.strokeStyle=G.ammo>0?"#19F0FF":"#FF2BD6";ctx.lineWidth=1.2;ctx.stroke();
+      ctx.save();ctx.translate(t.x,t.y);ctx.rotate(t.a);
+      ctx.fillStyle="#9FB3BF";ctx.fillRect(0,-1.6*u,12*u,3.2*u);ctx.fillStyle="#3A4A55";ctx.fillRect(-4*u,-3.5*u,7*u,7*u);
+      if(t.fl>0){ctx.globalCompositeOperation="lighter";ctx.fillStyle="rgba(255,200,80,.9)";ctx.beginPath();ctx.arc(13*u,0,3.5*u,0,7);ctx.fill();ctx.globalCompositeOperation="source-over";}
+      ctx.restore();
+    }
+    for(const s of G.shells){const k=s.t/s.T,x=s.x0+(s.x1-s.x0)*k,y=s.y0+(s.y1-s.y0)*k-Math.sin(Math.PI*k)*H*0.35;
+      ctx.fillStyle="#FFE2A0";ctx.beginPath();ctx.arc(x,y,2.5*u,0,7);ctx.fill();}
+    ctx.globalCompositeOperation="lighter";
+    for(const f of G.fx){
+      if(f.k==="tr"){ctx.strokeStyle=`rgba(255,190,60,${f.life/0.09})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(f.x1,f.y1);ctx.lineTo(f.x2,f.y2);ctx.stroke();}
+      else if(f.k==="f"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,${(90+120*a)|0},30,${0.55*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(2+5*(1-a))*u,0,7);ctx.fill();}
+      else if(f.k==="z"){const a=f.life/f.m;ctx.lineWidth=2.2;ctx.strokeStyle=`rgba(25,240,255,${a})`;ctx.beginPath();
+        f.pts.forEach((p2,i)=>{if(!i){ctx.moveTo(p2[0],p2[1]);return;}const q=f.pts[i-1];for(let s=1;s<=5;s++){const tt=s/5;ctx.lineTo(q[0]+(p2[0]-q[0])*tt+(s<5?rnd(-6,6):0),q[1]+(p2[1]-q[1])*tt+(s<5?rnd(-6,6):0));}});ctx.stroke();}
+      else if(f.k==="b"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,140,40,${0.45*a})`;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.1-0.5*a),0,7);ctx.fill();ctx.strokeStyle=`rgba(255,220,120,${a})`;ctx.lineWidth=2;ctx.stroke();}
+      else if(f.k==="r"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,43,214,${0.5*a})`;ctx.fillRect(wx,f.y-4*u*a,W-wx,8*u*a);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fillRect(wx,f.y-1,W-wx,2);}
+    }
+    ctx.globalCompositeOperation="source-over";
+    ctx.textAlign="center";ctx.font=`600 ${Math.round(12*Math.min(1.3,u))}px "IBM Plex Mono", monospace`;
+    for(const f of G.fx)if(f.k==="t"){ctx.globalAlpha=Math.min(1,f.life);ctx.fillStyle=f.c;ctx.fillText(f.s,f.x,f.y);}
+    ctx.globalAlpha=1;
+  }
+  function frame(t){
+    raf=requestAnimationFrame(frame);
+    const dt=Math.min(0.05,Math.max(0,(t-last)/1000));last=t;
+    if(!G||!W)return;
+    if(!paused&&!shopOpen&&!document.hidden){
+      if(G.status==="live"||G.status==="final")update(dt);else idle(dt);
+      stepFx(dt);
+    }
+    draw();
+    hudT+=dt;if(hudT>0.12){hudT=0;hud();}
+    saveT+=dt;if(saveT>3){saveT=0;save();}
+  }
+  return {mount,unmount,newRound,wave,correct,wrong,final,setNext:f=>{nextFn=f;}};
+})();
 
 /* ---------------- Router ---------------- */
 let cleanup = null;
 const VIEWS = {home:viewHome,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet};
 function route(){
   if(cleanup){cleanup();cleanup=null;}
+  D.unmount();
   const name = (location.hash||"#home").slice(1);
   const v = VIEWS[name]?name:"home";
   document.querySelectorAll("#tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+v?"page":"false"));
@@ -429,14 +872,22 @@ function viewHome(){
     <section>
       <div class="label" style="margin-bottom:10px">Training modes</div>
       <div class="modes">
-        <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Exam Quiz</h3><p>10 multiple-choice questions with an explanation after each.</p><span class="best">${Q.length} questions in the bank</span></a>
+        <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Exam Quiz</h3><p>Each quiz is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
         <a class="mode" href="#ports" style="--c:var(--green)"><span class="label">60 seconds</span><h3>Port Blitz</h3><p>Match services to port numbers. A wrong answer costs 3 seconds.</p><span class="best">Best: ${S.best.ports}</span></a>
         <a class="mode" href="#osi" style="--c:var(--blue)"><span class="label">12 items</span><h3>OSI Stack</h3><p>Place devices, protocols and PDUs on the correct layer.</p><span class="best">Best: ${S.best.osi}/12</span></a>
         <a class="mode" href="#subnet" style="--c:var(--brown)"><span class="label">Endless</span><h3>Subnet Sprint</h3><p>Work out network, broadcast, host ranges and masks by hand.</p><span class="best">Best streak: ${S.best.subnet}</span></a>
       </div>
     </section>
+    <section class="tp outpost" id="outpost">
+      <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
+        <div class="op-stats"><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
+      <p>Every quiz is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base.</p>
+      <div class="tiers">${[1,2,3,4,5].map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
+      ${shopHTML()}
+    </section>
     <div class="row"><button class="btn small" id="reset" style="font-size:13px;padding:6px 12px">Reset progress</button><span id="resetMsg" class="muted small"></span></div>
   </div>`;
+  bindShop(document.getElementById("outpost"),viewHome);
   let armed=false;
   document.getElementById("reset").onclick=e=>{
     if(!armed){armed=true;e.target.textContent="Click again to erase all progress";return;}
@@ -447,7 +898,7 @@ function viewHome(){
 /* ---------------- Quiz ---------------- */
 let quizDomain = "all";
 function viewQuizSetup(){
-  const chips = [["all","All domains"]].concat(Object.entries(DOMAINS).map(([k,d])=>[k,k+".0 "+d.name]))
+  const chips = [["all","All domains"]].concat(Object.entries(DOMAINS).map(([k,d])=>[k,k+".0 "+d.name+" · "+reward(k).n]))
     .map(([k,l])=>`<button class="chip" data-d="${k}" aria-pressed="${quizDomain===k}">${esc(l)}</button>`).join("");
   $app.innerHTML = `<div class="panel stack">
     <div><span class="label">Exam Quiz</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
@@ -466,12 +917,17 @@ function buildPool(dom){
 }
 function viewReview(){
   if(!S.review.length){
+    if(cleanup){cleanup();cleanup=null;}
+    D.unmount();
     $app.innerHTML=`<div class="panel empty"><h2 style="font-size:24px;color:var(--ink);margin-bottom:8px">Review queue is empty</h2><p>Questions you miss in the Exam Quiz show up here. Answer one correctly to clear it.</p><a class="btn primary" href="#quiz">Take a quiz</a></div>`;return;
   }
   startQuiz(shuffle(S.review).slice(0,15),"Review");
 }
 function startQuiz(pool,label){
-  const st={pool,i:0,correct:0,label,done:false};
+  if(cleanup){cleanup();cleanup=null;}
+  const st={pool,i:0,correct:0,label,done:false,streak:0};
+  D.mount();D.newRound();
+  D.setNext(()=>{if(label==="Review")viewReview();else startQuiz(buildPool(quizDomain),"Exam Quiz");});
   const onKey=e=>{
     if(e.target.tagName==="INPUT")return;
     if(!st.done&&/^[1-4]$/.test(e.key)){const b=$app.querySelectorAll(".opt")[+e.key-1];if(b&&!b.disabled)b.click();}
@@ -484,10 +940,11 @@ function startQuiz(pool,label){
 function showQ(st){
   if(st.i>=st.pool.length)return quizResult(st);
   st.done=false;
-  const id=st.pool[st.i], [d,q,a,wr,ex]=Q[id];
+  const id=st.pool[st.i], [d,q,a,wr,ex]=Q[id], rw=reward(d);
+  D.wave(st.i,st.pool.length);
   const opts=shuffle([a,...wr]);
   $app.innerHTML=`<div class="panel">
-    <div class="qhead"><span class="label">${esc(st.label)} · ${st.i+1} of ${st.pool.length}</span><span class="label" style="color:${DOMAINS[d].c}">${d}.0 ${DOMAINS[d].name}</span></div>
+    <div class="qhead"><span class="label">${esc(st.label)} · ${st.i+1} of ${st.pool.length}</span><span class="row" style="gap:8px"><span class="label" style="color:${DOMAINS[d].c}">${d}.0 ${DOMAINS[d].name}</span><span class="rw">${rw.n.toUpperCase()} · <b>+${rw.ammo} ammo</b>${rw.scrap?` · <b>+${rw.scrap} scrap</b>`:""}</span></span></div>
     <div class="progress"><i style="width:${100*st.i/st.pool.length}%"></i></div>
     <p class="qtext">${esc(q)}</p>
     <div class="opts">${opts.map((o,k)=>`<button class="opt" data-v="${esc(o)}"><kbd>${k+1}</kbd><span>${esc(o)}</span></button>`).join("")}</div>
@@ -499,8 +956,8 @@ function showQ(st){
     $app.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.v===a)x.classList.add("right");else if(x===b)x.classList.add("wrong");else x.classList.add("dim");});
     const r=S.qs[id]||(S.qs[id]={c:0,w:0});const dr=S.dom[d]||(S.dom[d]={c:0,w:0});
     S.answered++;
-    if(ok){r.c++;dr.c++;st.correct++;S.review=S.review.filter(x=>x!==id);award(10);}
-    else{r.w++;dr.w++;if(!S.review.includes(id))S.review.push(id);award(2);}
+    if(ok){r.c++;dr.c++;st.correct++;st.streak++;S.review=S.review.filter(x=>x!==id);S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
+    else{r.w++;dr.w++;st.streak=0;if(!S.review.includes(id))S.review.push(id);D.wrong();award(2);}
     document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(a)}</b>${esc(ex)}</div>
       <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
     document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
@@ -508,12 +965,14 @@ function showQ(st){
   });
 }
 function quizResult(st){
+  D.final(st.correct);
   const p=Math.round(100*st.correct/st.pool.length);
   const msg=p>=90?"Exam-ready on this set.":p>=72?"Solid. The real exam needs 720 on a 100–900 scale, so aim for 80% or better in practice.":"Your misses are now in the review queue. Clear them next.";
   $app.innerHTML=`<div class="panel result stack">
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
     <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
+    <p class="small" style="margin:0 auto;max-width:48ch">The final wave is hitting the wall below. Your score sent ${st.correct*4} bonus ammo.</p>
     <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
   document.getElementById("again").onclick=()=>{ if(st.label==="Review"){viewReview();} else startQuiz(buildPool(quizDomain),"Exam Quiz"); };
@@ -559,7 +1018,7 @@ function runBlitz(){
     if(locked)return;locked=true;
     const ok=b.dataset.v===cur.ans;
     bz.classList.remove("flash-ok","flash-bad");void bz.offsetWidth;bz.classList.add(ok?"flash-ok":"flash-bad");
-    if(ok){score++;document.getElementById("sc").textContent=score;setTimeout(next,120);}
+    if(ok){score++;S.base.scrap+=2;document.getElementById("sc").textContent=score;setTimeout(next,120);}
     else{end-=3000;misses.push(cur.name);S.missedPorts[cur.name]=(S.missedPorts[cur.name]||0)+1;
       document.querySelectorAll("#bo .opt").forEach(x=>{if(x.dataset.v===cur.ans)x.classList.add("right");else if(x===b)x.classList.add("wrong");});
       setTimeout(next,700);}
@@ -604,7 +1063,7 @@ function viewOsi(){
     </div>`;
     $app.querySelectorAll(".layer").forEach(b=>b.onclick=()=>{
       if(locked)return;locked=true;
-      const ok=+b.dataset.l===it[1];if(ok)score++;
+      const ok=+b.dataset.l===it[1];if(ok){score++;S.base.scrap+=3;}
       $app.querySelectorAll(".layer").forEach(x=>{x.disabled=true;if(+x.dataset.l===it[1])x.classList.add("right");else if(x===b)x.classList.add("wrong");});
       document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(it[2])}`;
       document.getElementById("nx").innerHTML=`<button class="btn primary" id="next">Next</button>`;
@@ -685,7 +1144,7 @@ function viewSubnet(){
   const inp=document.getElementById("sa");inp.focus({preventScroll:true});
   function finish(ok,given){
     if(answered)return;answered=true;
-    if(ok){subStreak++;if(subStreak>S.best.subnet)S.best.subnet=subStreak;award(8);}else{subStreak=0;save();bumpDay();}
+    if(ok){subStreak++;S.base.scrap+=5;if(subStreak>S.best.subnet)S.best.subnet=subStreak;award(8);}else{subStreak=0;save();bumpDay();}
     document.getElementById("sres").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":given===null?"Answer":"Not quite"}: ${esc(P.ans[P.type])}</b></div>
       <div style="margin-top:12px">${working(P)}</div>
       <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" id="next">Next subnet</button></div>`;

@@ -4,11 +4,28 @@ A browser study game for the **CompTIA Network+ (N10-009)** exam. It is a single
 
 ## Modes
 
-- **Exam Quiz:** 10-question rounds drawn from 85 practice questions across all five exam domains, with an explanation after every answer. Press 1–4 to answer and Enter to continue.
+- **Exam Quiz + Outpost Defense:** 10-question rounds drawn from 114 practice questions across all five exam domains, with an explanation after every answer. Each quiz is also a night of defense in the bottom half of the screen. Undead waves march on your walled base, and correct answers resupply its guns. Press 1–4 to answer and Enter to continue.
 - **Port Blitz:** 60 seconds of matching services and port numbers. Each wrong answer costs 3 seconds. Includes a port reference table.
 - **OSI Stack:** put devices, protocols and PDUs on the correct OSI layer, 12 items per round.
 - **Subnet Sprint:** endless random subnetting problems (network and broadcast address, host range, host count, mask) with a worked binary breakdown after each one.
 - **Review:** every question you miss goes into a queue until you answer it correctly.
+
+## Outpost Defense
+
+- **Ammo:** every correct answer sends ammo to the wall. Domains are rated by difficulty, and harder ones also send scrap:
+
+  | Domain | Tier | Reward per correct answer |
+  |---|---|---|
+  | 1.0 Networking Concepts | Standard | +20 ammo |
+  | 3.0 Network Operations | Standard | +20 ammo |
+  | 2.0 Network Implementation | Hard | +25 ammo, +10 scrap |
+  | 4.0 Network Security | Hard | +25 ammo, +10 scrap |
+  | 5.0 Network Troubleshooting | Elite | +30 ammo, +15 scrap |
+
+- **Wrong answers** draw a brute into the fight. Three correct answers in a row earn bonus scrap.
+- **Scrap** buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights, Port Blitz, OSI Stack and Subnet Sprint.
+- **XP is currency:** spend it in the Armory to attach new weapons to the base: Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Your level still counts all the XP you've ever earned.
+- **Nights:** survive the final wave to advance to the next night, where the horde gets bigger and tougher.
 
 The home screen shows your accuracy in each domain next to that domain's exam weight. It also tracks XP, levels, a daily streak and your best scores.
 
