@@ -166,6 +166,15 @@ td.p{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
 .empty{padding:30px;text-align:center;color:var(--muted)}
 footer{margin-top:36px;font-size:13px;color:var(--muted)}
 
+.opt small.full{display:block;font-family:var(--f-body);font-size:12px;font-weight:400;color:var(--muted);margin-top:4px;letter-spacing:0}
+.toggle{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--muted);cursor:pointer}
+.toggle input{margin-top:3px;accent-color:var(--orange);width:16px;height:16px}
+.rv-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.rv{display:flex;flex-direction:column;gap:6px;text-align:left;padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+.rv:hover:not([disabled]){border-color:var(--orange)}
+.rv[disabled]{opacity:.55;cursor:not-allowed}
+.rv b{font-family:var(--f-display);font-size:18px}
+.rv span{color:var(--muted);font-size:14px}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
@@ -210,6 +219,8 @@ body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px
 .up{display:flex;flex-direction:column;gap:4px;text-align:left;padding:10px 12px;background:var(--tp-panel);border:1px solid var(--tp-line);color:var(--tp-ink);clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
 .up:hover:not([disabled]){border-color:var(--tp-cyan);background:#0F1C25}
 .up.owned{border-color:#1F4A57}
+.up.supply{border-color:#4A3A12}
+.up-c.ok{color:var(--tp-cyan)}
 .up[disabled]{opacity:.5;cursor:not-allowed}
 .up-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .up-n{font-family:var(--f-display);font-size:15px;letter-spacing:.04em}
@@ -333,7 +344,7 @@ const Q = [
  [3,"How can you copy traffic from one switch port to an analyzer on another port?","Port mirroring (SPAN)",["Port security","Port forwarding","Port aggregation"],"SPAN copies frames to a monitor port. A network TAP does the same job in hardware."],
  [3,"Which IPv6 feature lets hosts configure their own address from router advertisements without a DHCP server?","SLAAC",["APIPA","DHCPv6 relay","EUI-48"],"Stateless address autoconfiguration combines the advertised prefix with an interface ID (EUI-64 or random)."],
  [3,"You need to manage switches even if the production network goes down. What should you use?","Out-of-band management",["In-band SSH","A management VLAN only","SNMP traps"],"Out-of-band management uses a separate path, such as a console server or cellular modem, that does not depend on production links."],
- [3,"What is MTTR?","Mean time to repair",["Mean time to reboot","Maximum transfer throughput rate","Minimum time to restore"],"MTTR is the average time to fix a failure. MTBF is the average time between failures."],
+ [3,"Which metric measures the average time it takes to fix a failed component?","MTTR",["MTBF","RPO","RTO"],"MTTR is the average time to fix a failure. MTBF is the average time between failures. RPO is how much data loss is acceptable, and RTO is how much downtime is acceptable."],
  [3,"Which protocol synchronizes device clocks, which log correlation and Kerberos depend on?","NTP",["SNTP over TCP","PTP over HTTP","SMB"],"NTP uses UDP 123 and a hierarchy of strata. Stratum 0 is the reference clock."],
  [3,"Before applying a router change in production, change management usually requires what?","An approved change request with a rollback plan",["A new IP scheme","Approval only after the change","Disabling logging"],"Changes are documented, reviewed, approved, scheduled in a maintenance window and include a backout plan."],
 
@@ -404,16 +415,16 @@ const Q = [
  [5,"Which tool shows the full RF picture, including non-Wi-Fi interference sources?","A spectrum analyzer",["A Wi-Fi analyzer","An OTDR","A multimeter"],"A Wi-Fi analyzer sees only 802.11 networks. A spectrum analyzer shows all RF energy, such as microwaves, cordless phones and Bluetooth."]
 ];
 
-const PORTS = [
- ["FTP","20, 21","Data on 20, control on 21"],["SSH / SFTP / SCP","22","Secure shell and file transfer"],["Telnet","23","Unencrypted remote terminal"],
- ["SMTP","25","Mail transfer between servers"],["DNS","53","UDP for queries, TCP for zone transfers"],["DHCP","67, 68","Server 67, client 68 (UDP)"],
- ["TFTP","69","Trivial FTP over UDP, no authentication"],["HTTP","80","Unencrypted web"],["POP3","110","Download mail"],
- ["NTP","123","Time sync over UDP"],["IMAP","143","Mailbox access"],["SNMP","161, 162","Agent queries 161, traps 162"],
- ["LDAP","389","Directory lookups"],["HTTPS","443","Web over TLS"],["SMB","445","Windows file sharing"],
- ["Syslog","514","Central logging over UDP"],["SMTPS (submission)","587","Client mail submission with TLS"],["LDAPS","636","LDAP over TLS"],
- ["IMAPS","993","IMAP over TLS"],["POP3S","995","POP3 over TLS"],["Microsoft SQL Server","1433","Database"],
- ["RADIUS","1812, 1813","Authentication 1812, accounting 1813"],["RDP","3389","Remote Desktop"],["SIP","5060, 5061","VoIP signaling (5061 with TLS)"],
- ["TACACS+","49","Device AAA over TCP"]
+const PORTS = [ // [service, port, note, full name]
+ ["FTP","20, 21","Data on 20, control on 21","File Transfer Protocol"],["SSH / SFTP / SCP","22","Secure shell and file transfer","Secure Shell / SSH File Transfer Protocol / Secure Copy Protocol"],["Telnet","23","Unencrypted remote terminal","Teletype Network"],
+ ["SMTP","25","Mail transfer between servers","Simple Mail Transfer Protocol"],["DNS","53","UDP for queries, TCP for zone transfers","Domain Name System"],["DHCP","67, 68","Server 67, client 68 (UDP)","Dynamic Host Configuration Protocol"],
+ ["TFTP","69","Trivial FTP over UDP, no authentication","Trivial File Transfer Protocol"],["HTTP","80","Unencrypted web","Hypertext Transfer Protocol"],["POP3","110","Download mail","Post Office Protocol version 3"],
+ ["NTP","123","Time sync over UDP","Network Time Protocol"],["IMAP","143","Mailbox access","Internet Message Access Protocol"],["SNMP","161, 162","Agent queries 161, traps 162","Simple Network Management Protocol"],
+ ["LDAP","389","Directory lookups","Lightweight Directory Access Protocol"],["HTTPS","443","Web over TLS","Hypertext Transfer Protocol Secure"],["SMB","445","Windows file sharing","Server Message Block"],
+ ["Syslog","514","Central logging over UDP","System Logging Protocol"],["SMTPS (submission)","587","Client mail submission with TLS","Simple Mail Transfer Protocol Secure"],["LDAPS","636","LDAP over TLS","Lightweight Directory Access Protocol Secure"],
+ ["IMAPS","993","IMAP over TLS","Internet Message Access Protocol Secure"],["POP3S","995","POP3 over TLS","Post Office Protocol version 3 Secure"],["Microsoft SQL Server","1433","Database","Structured Query Language database server"],
+ ["RADIUS","1812, 1813","Authentication 1812, accounting 1813","Remote Authentication Dial-In User Service"],["RDP","3389","Remote Desktop","Remote Desktop Protocol"],["SIP","5060, 5061","VoIP signaling (5061 with TLS)","Session Initiation Protocol"],
+ ["TACACS+","49","Device AAA over TCP","Terminal Access Controller Access-Control System Plus"]
 ];
 
 const LAYERS = [
@@ -457,8 +468,8 @@ const OSI_ITEMS = [
 
 /* ---------------- State ---------------- */
 const KEY = "netplus-patch-bay-v1";
-function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0,base:{scrap:0,up:{},night:1,bestNight:0,xpSpent:0}};}
-function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});d.base=Object.assign(freshState().base,r.base||{});d.base.up=Object.assign({},(r.base&&r.base.up)||{});}}catch(e){}return d;}
+function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0,reviewHits:{},missedEver:[],settings:{expandChoices:true},base:{scrap:0,up:{},night:1,bestNight:0,xpSpent:0,stock:0}};}
+function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});d.base=Object.assign(freshState().base,r.base||{});d.base.up=Object.assign({},(r.base&&r.base.up)||{});d.settings=Object.assign(freshState().settings,r.settings||{});d.reviewHits=r.reviewHits||{};d.missedEver=Array.from(new Set((r.missedEver||[]).concat(r.review||[])));}}catch(e){}return d;}
 let S = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function dayStr(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
@@ -472,6 +483,62 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const shuffle = a => {a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const pct = (c,w) => (c+w)?Math.round(100*c/(c+w)):null;
+
+/* ---------------- Abbreviations ---------------- */
+const GL={
+ "OSI":"Open Systems Interconnection","IP":"Internet Protocol","IPv4":"Internet Protocol version 4","IPv6":"Internet Protocol version 6",
+ "TCP":"Transmission Control Protocol","UDP":"User Datagram Protocol","ARP":"Address Resolution Protocol","RARP":"Reverse Address Resolution Protocol",
+ "NDP":"Neighbor Discovery Protocol","DNS":"Domain Name System","DHCP":"Dynamic Host Configuration Protocol","DHCPv6":"Dynamic Host Configuration Protocol for IPv6",
+ "APIPA":"Automatic Private IP Addressing","RFC":"Request for Comments","NAT":"Network Address Translation","PAT":"Port Address Translation",
+ "MAC":"Media Access Control","NIC":"Network Interface Card","LAN":"Local Area Network","VLAN":"Virtual Local Area Network","WAN":"Wide Area Network",
+ "VXLAN":"Virtual Extensible LAN","VNI":"VXLAN Network Identifier","MPLS":"Multiprotocol Label Switching","GRE":"Generic Routing Encapsulation",
+ "PPP":"Point-to-Point Protocol","SCTP":"Stream Control Transmission Protocol","SDN":"Software-Defined Networking","OS":"operating system",
+ "IaaS":"Infrastructure as a Service","PaaS":"Platform as a Service","SaaS":"Software as a Service","DaaS":"Desktop as a Service",
+ "PDU":"Protocol Data Unit","SYN":"synchronize","SYN-ACK":"synchronize-acknowledge","ACK":"acknowledge","FIN":"finish","RST":"reset",
+ "OSPF":"Open Shortest Path First","BGP":"Border Gateway Protocol","RIP":"Routing Information Protocol","EIGRP":"Enhanced Interior Gateway Routing Protocol",
+ "IS-IS":"Intermediate System to Intermediate System","AD":"administrative distance","SPF":"Sender Policy Framework","DKIM":"DomainKeys Identified Mail",
+ "DMARC":"Domain-based Message Authentication, Reporting and Conformance","STP":"Spanning Tree Protocol","RSTP":"Rapid Spanning Tree Protocol",
+ "LACP":"Link Aggregation Control Protocol","VTP":"VLAN Trunking Protocol","HSRP":"Hot Standby Router Protocol","VRRP":"Virtual Router Redundancy Protocol",
+ "FHRP":"First Hop Redundancy Protocol","CDP":"Cisco Discovery Protocol","LLDP":"Link Layer Discovery Protocol","DTP":"Dynamic Trunking Protocol",
+ "SVI":"Switch Virtual Interface","BPDU":"Bridge Protocol Data Unit","MTU":"Maximum Transmission Unit","MSS":"Maximum Segment Size",
+ "PoE":"Power over Ethernet","PoE+":"Power over Ethernet Plus","PoE++":"Power over Ethernet Plus Plus","Auto-MDIX":"Automatic Medium-Dependent Interface Crossover",
+ "WPA2":"Wi-Fi Protected Access 2","WPA3":"Wi-Fi Protected Access 3","WEP":"Wired Equivalent Privacy","WPS":"Wi-Fi Protected Setup",
+ "SAE":"Simultaneous Authentication of Equals","SSID":"Service Set Identifier","AP":"access point","RF":"radio frequency",
+ "RSSI":"Received Signal Strength Indicator","dBm":"decibels relative to one milliwatt","dB":"decibels","EMI":"electromagnetic interference",
+ "FEXT":"far-end crosstalk","SNMP":"Simple Network Management Protocol","SNMPv2c":"SNMP version 2c","SNMPv3":"SNMP version 3",
+ "NTP":"Network Time Protocol","SNTP":"Simple Network Time Protocol","PTP":"Precision Time Protocol","SMB":"Server Message Block",
+ "HTTP":"Hypertext Transfer Protocol","HTTPS":"Hypertext Transfer Protocol Secure","FTP":"File Transfer Protocol","SFTP":"SSH File Transfer Protocol",
+ "TFTP":"Trivial File Transfer Protocol","SCP":"Secure Copy Protocol","SSH":"Secure Shell","SMTP":"Simple Mail Transfer Protocol",
+ "SMTPS":"Simple Mail Transfer Protocol Secure","POP3":"Post Office Protocol version 3","IMAP":"Internet Message Access Protocol",
+ "LDAP":"Lightweight Directory Access Protocol","LDAPS":"Lightweight Directory Access Protocol Secure","RDP":"Remote Desktop Protocol",
+ "SIP":"Session Initiation Protocol","RADIUS":"Remote Authentication Dial-In User Service","TACACS+":"Terminal Access Controller Access-Control System Plus",
+ "AAA":"authentication, authorization and accounting","SQL":"Structured Query Language","TLS":"Transport Layer Security","SSL":"Secure Sockets Layer",
+ "VPN":"virtual private network","IPsec":"Internet Protocol Security","IKE":"Internet Key Exchange","DMZ":"demilitarized zone",
+ "NAC":"network access control","IDS":"intrusion detection system","DLP":"data loss prevention","WAF":"web application firewall",
+ "SIEM":"security information and event management","ACL":"access control list","DAI":"Dynamic ARP Inspection","CAM":"content addressable memory",
+ "CIA":"confidentiality, integrity and availability","SLA":"service level agreement","MOU":"memorandum of understanding","NDA":"non-disclosure agreement",
+ "AUP":"acceptable use policy","RPO":"recovery point objective","RTO":"recovery time objective","MTTR":"mean time to repair",
+ "MTBF":"mean time between failures","SLAAC":"Stateless Address Autoconfiguration","EUI-64":"64-bit Extended Unique Identifier",
+ "SPAN":"Switched Port Analyzer","TAP":"test access point","OTDR":"optical time-domain reflectometer","QoS":"Quality of Service",
+ "VoIP":"Voice over IP","CRC":"cyclic redundancy check","FCS":"frame check sequence","TTL":"time to live",
+ "ICMP":"Internet Control Message Protocol","ICMPv4":"ICMP for IPv4","ICMPv6":"ICMP for IPv6","IGMP":"Internet Group Management Protocol",
+ "IEEE":"Institute of Electrical and Electronics Engineers","DORA":"Discover, Offer, Request, Acknowledge","TX":"transmit","RX":"receive",
+ "RPC":"Remote Procedure Call","NetBIOS":"Network Basic Input/Output System","IPFIX":"IP Flow Information Export","ISP":"internet service provider",
+ "CNAME":"Canonical Name","MX":"Mail Exchanger","PTR":"Pointer","SOA":"Start of Authority","SRV":"Service","NS":"Name Server","TXT":"Text",
+ "SX":"short wavelength","LX":"long wavelength","SFP":"small form-factor pluggable","ASCII":"American Standard Code for Information Interchange"
+};
+const GL_RE=new RegExp("(^|[^\\w+-])("+Object.keys(GL).sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")+")(s?)(?=$|[^\\w+-])","g");
+// Spells out the first use of each abbreviation in a piece of text, e.g. "UDP" -> "UDP (User Datagram Protocol)".
+function expand(t){
+  const seen=new Set();t=String(t);const low=t.toLowerCase();
+  return t.replace(GL_RE,(m,pre,k,pl,off,str)=>{
+    if(seen.has(k)||pre==="(")return m;
+    const full=GL[k];
+    if(str.slice(off+m.length).startsWith(" (")||low.includes(full.toLowerCase()))return m;
+    seen.add(k);return pre+k+pl+" ("+full+(pl?"s":"")+")";
+  });
+}
+const choice=o=>S.settings.expandChoices?expand(o):o;
 
 function renderHud(){
   const into = S.xp%250;
@@ -500,6 +567,18 @@ const WPN=[ // unlocked with XP, then upgraded with scrap
  {k:"mortar",n:"Mortar pit",d:"Shells the densest pack for splash damage.",xp:450,max:3,cost:l=>150+100*(l-1)},
  {k:"rail",n:"Railgun",d:"A beam that pierces every hostile in its lane.",xp:650,max:3,cost:l=>180+120*(l-1)}
 ];
+const SUPPLY=[ // ammo: straight to the guns during a night, otherwise stockpiled for the next one
+ {k:"crate",n:"Ammo crate",amt:40,scrap:15,d:"40 rounds"},
+ {k:"pallet",n:"Ammo pallet",amt:150,scrap:50,d:"150 rounds, best value"},
+ {k:"airdrop",n:"Airdrop",amt:100,xp:60,d:"100 rounds, paid with XP"}
+];
+function buySupply(k){
+  const it=SUPPLY.find(x=>x.k===k);if(!it)return false;
+  if(it.xp){if(xpAvail()<it.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+it.xp;}
+  else{if(S.base.scrap<it.scrap)return false;S.base.scrap-=it.scrap;}
+  if(!D.addAmmo(it.amt))S.base.stock=(S.base.stock||0)+it.amt;
+  save();renderHud();return true;
+}
 const upL=k=>(S.base.up&&S.base.up[k])||0;
 function buy(k){
   const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);
@@ -517,10 +596,14 @@ function shopHTML(){
     return `<button class="up${l?" owned":""}" data-k="${w.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${w.n}</span>${l?pips(l,w.max):`<span class="up-lock">LOCKED</span>`}</span><span class="up-d">${w.d}</span><span class="up-c${l===0?" xp":""}">${price}</span></button>`;}).join("");
   const up=UPG.map(u=>{const l=upL(u.k),mx=l>=u.max,c=u.cost(l);
     return `<button class="up" data-k="${u.k}"${mx||S.base.scrap<c?" disabled":""}><span class="up-top"><span class="up-n">${u.n}</span>${pips(l,u.max)}</span><span class="up-d">${u.d}</span><span class="up-c">${mx?"MAXED":c+" SCRAP"}</span></button>`;}).join("");
-  return `<div class="shop-sec"><div class="shop-h"><span>WEAPONS · ATTACH TO BASE</span><span>Unlock with XP · <b class="x">${xpAvail()} XP</b></span></div><div class="shop">${wp}</div></div>
+  const live=D.live();
+  const sp=SUPPLY.map(it=>{const dis=it.xp?xpAvail()<it.xp:S.base.scrap<it.scrap;
+    return `<button class="up supply" data-s="${it.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${it.n}</span><span class="up-c ok">+${it.amt}</span></span><span class="up-d">${it.d}</span><span class="up-c${it.xp?" xp":""}">${it.xp?it.xp+" XP":it.scrap+" SCRAP"}</span></button>`;}).join("");
+  return `<div class="shop-sec"><div class="shop-h"><span>SUPPLIES · AMMO</span><span>${live?"Delivered to the guns now":"Stockpiled for your next night"} · stockpile <b>${S.base.stock||0}</b></span></div><div class="shop">${sp}</div></div>
+    <div class="shop-sec"><div class="shop-h"><span>WEAPONS · ATTACH TO BASE</span><span>Unlock with XP · <b class="x">${xpAvail()} XP</b></span></div><div class="shop">${wp}</div></div>
     <div class="shop-sec"><div class="shop-h"><span>BASE UPGRADES</span><span>Paid with scrap · <b>${S.base.scrap} SCRAP</b></span></div><div class="shop">${up}</div></div>`;
 }
-function bindShop(root,after){root.querySelectorAll(".up").forEach(b=>b.onclick=()=>{if(buy(b.dataset.k))after();});}
+function bindShop(root,after){root.querySelectorAll(".up").forEach(b=>b.onclick=()=>{if(b.dataset.s?buySupply(b.dataset.s):buy(b.dataset.k))after();});}
 
 /* ---------------- Outpost defense (bottom dock) ---------------- */
 const D=(function(){
@@ -546,7 +629,7 @@ const D=(function(){
       </div>
       <div class="dstatus" id="dStatus"></div>
       <div class="dbanner" id="dBanner" hidden></div>
-      <div class="dshop" id="dShopP" hidden><div class="dshop-h"><span>ARMORY</span><button class="tpbtn" id="dShopX">Close</button></div><div id="dShopGrid"></div><p class="dnote">The fight pauses while the armory is open. Purchases take effect immediately.</p></div>
+      <div class="dshop" id="dShopP" hidden><div class="dshop-h"><span>ARMORY</span><button class="tpbtn" id="dShopX">Close</button></div><div id="dShopGrid"></div><p class="dnote">The fight pauses while the armory is open. Purchases take effect immediately, and ammo goes straight to the guns.</p></div>
     </div>`;
     document.body.appendChild(dock);document.body.classList.add("has-dock");
     cv=dock.querySelector("canvas");ctx=cv.getContext("2d");hudEl=dock.querySelector(".dhud");
@@ -577,6 +660,7 @@ const D=(function(){
   function newRound(){
     const c=cfg();
     G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,quizDone:false,bonus:0,railY:0};
+    const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);paused=false;if($("dPause"))$("dPause").textContent="Pause";hud();
   }
   function spawn(t){
@@ -825,7 +909,9 @@ const D=(function(){
     hudT+=dt;if(hudT>0.12){hudT=0;hud();}
     saveT+=dt;if(saveT>3){saveT=0;save();}
   }
-  return {mount,unmount,newRound,wave,correct,wrong,final,setNext:f=>{nextFn=f;}};
+  const live=()=>!!(G&&(G.status==="live"||G.status==="final"));
+  function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,setNext:f=>{nextFn=f;}};
 })();
 
 /* ---------------- Router ---------------- */
@@ -840,6 +926,10 @@ function route(){
   VIEWS[v]();
 }
 window.addEventListener("hashchange",route);
+document.addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest('a[href^="#"]');
+  if(a&&a.getAttribute("href")===(location.hash||"#home")){e.preventDefault();route();}
+});
 
 /* ---------------- Home ---------------- */
 function viewHome(){
@@ -904,10 +994,12 @@ function viewQuizSetup(){
     <div><span class="label">Exam Quiz</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
     <div class="row">${chips}</div>
     <p class="muted" style="margin:0">Questions you missed and questions you haven't seen come first. Press 1–4 to answer and Enter to continue.</p>
+    <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in the answer choices too. Questions and explanations always spell them out. Turn this off to test yourself on what the abbreviations stand for.</span></label>
     <div><button class="btn primary" id="go">Start 10 questions</button></div>
   </div>`;
   $app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{quizDomain=b.dataset.d;viewQuizSetup();});
-  document.getElementById("go").onclick=()=>startQuiz(buildPool(quizDomain),"Exam Quiz");
+  document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
+  document.getElementById("go").onclick=startExam;
 }
 function buildPool(dom){
   let ids = Q.map((_,i)=>i).filter(i=>dom==="all"||String(Q[i][0])===dom);
@@ -915,19 +1007,32 @@ function buildPool(dom){
   ids = shuffle(ids).sort((a,b)=>prio(a)-prio(b));
   return shuffle(ids.slice(0,10));
 }
+const REVIEW_CLEAR=2; // correct answers in a row needed to clear a missed question
+function startExam(){startQuiz(buildPool(quizDomain),"Exam Quiz",startExam);}
+function startReview(){if(!S.review.length)return viewReview();startQuiz(shuffle(S.review).slice(0,15),"Review",startReview);}
+function startMissed(){if(!S.missedEver.length)return viewReview();startQuiz(shuffle(S.missedEver).slice(0,15),"Missed practice",startMissed);}
 function viewReview(){
-  if(!S.review.length){
-    if(cleanup){cleanup();cleanup=null;}
-    D.unmount();
-    $app.innerHTML=`<div class="panel empty"><h2 style="font-size:24px;color:var(--ink);margin-bottom:8px">Review queue is empty</h2><p>Questions you miss in the Exam Quiz show up here. Answer one correctly to clear it.</p><a class="btn primary" href="#quiz">Take a quiz</a></div>`;return;
-  }
-  startQuiz(shuffle(S.review).slice(0,15),"Review");
+  if(cleanup){cleanup();cleanup=null;}
+  D.unmount();
+  const q=S.review.length,m=S.missedEver.length;
+  $app.innerHTML=`<div class="panel stack">
+    <div><span class="label">Review</span><h2 style="font-size:28px;margin-top:4px">Work on your misses</h2></div>
+    <p class="muted" style="margin:0;max-width:62ch">Every question you miss goes into the review queue. It stays there until you answer it correctly ${REVIEW_CLEAR} times in a row, in any mode. You can also go back over every question you've ever missed, as often as you like.</p>
+    <div class="rv-opts">
+      <button class="rv" id="rvQueue"${q?"":" disabled"}><b>Review queue · ${q}</b><span>${q?`Up to 15 questions you haven't cleared yet.`:"Nothing waiting. Miss a question in a quiz and it lands here."}</span></button>
+      <button class="rv" id="rvAll"${m?"":" disabled"}><b>Everything you've missed · ${m}</b><span>${m?"Practice any question you've missed before, even ones you've cleared.":"Your miss history is empty so far."}</span></button>
+    </div>
+    ${q||m?"":`<div><a class="btn primary" href="#quiz">Take a quiz</a></div>`}
+  </div>`;
+  document.getElementById("rvQueue").onclick=startReview;
+  document.getElementById("rvAll").onclick=startMissed;
 }
-function startQuiz(pool,label){
+function startQuiz(pool,label,again){
   if(cleanup){cleanup();cleanup=null;}
   const st={pool,i:0,correct:0,label,done:false,streak:0};
   D.mount();D.newRound();
-  D.setNext(()=>{if(label==="Review")viewReview();else startQuiz(buildPool(quizDomain),"Exam Quiz");});
+  st.again=again||startExam;
+  D.setNext(()=>st.again());
   const onKey=e=>{
     if(e.target.tagName==="INPUT")return;
     if(!st.done&&/^[1-4]$/.test(e.key)){const b=$app.querySelectorAll(".opt")[+e.key-1];if(b&&!b.disabled)b.click();}
@@ -946,8 +1051,8 @@ function showQ(st){
   $app.innerHTML=`<div class="panel">
     <div class="qhead"><span class="label">${esc(st.label)} · ${st.i+1} of ${st.pool.length}</span><span class="row" style="gap:8px"><span class="label" style="color:${DOMAINS[d].c}">${d}.0 ${DOMAINS[d].name}</span><span class="rw">${rw.n.toUpperCase()} · <b>+${rw.ammo} ammo</b>${rw.scrap?` · <b>+${rw.scrap} scrap</b>`:""}</span></span></div>
     <div class="progress"><i style="width:${100*st.i/st.pool.length}%"></i></div>
-    <p class="qtext">${esc(q)}</p>
-    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-v="${esc(o)}"><kbd>${k+1}</kbd><span>${esc(o)}</span></button>`).join("")}</div>
+    <p class="qtext">${esc(expand(q))}</p>
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-v="${esc(o)}"><kbd>${k+1}</kbd><span>${esc(choice(o))}</span></button>`).join("")}</div>
     <div id="fb"></div>
   </div>`;
   $app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
@@ -956,9 +1061,16 @@ function showQ(st){
     $app.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.v===a)x.classList.add("right");else if(x===b)x.classList.add("wrong");else x.classList.add("dim");});
     const r=S.qs[id]||(S.qs[id]={c:0,w:0});const dr=S.dom[d]||(S.dom[d]={c:0,w:0});
     S.answered++;
-    if(ok){r.c++;dr.c++;st.correct++;st.streak++;S.review=S.review.filter(x=>x!==id);S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
-    else{r.w++;dr.w++;st.streak=0;if(!S.review.includes(id))S.review.push(id);D.wrong();award(2);}
-    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(a)}</b>${esc(ex)}</div>
+    let note="";
+    if(ok){r.c++;dr.c++;st.correct++;st.streak++;
+      if(S.review.includes(id)){const h=(S.reviewHits[id]||0)+1;
+        if(h>=REVIEW_CLEAR){S.review=S.review.filter(x=>x!==id);delete S.reviewHits[id];note="Cleared from your review queue.";}
+        else{S.reviewHits[id]=h;note=`Review progress: ${h} of ${REVIEW_CLEAR} correct answers in a row to clear this one.`;}}
+      S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
+    else{r.w++;dr.w++;st.streak=0;if(!S.review.includes(id))S.review.push(id);S.reviewHits[id]=0;
+      if(!S.missedEver.includes(id))S.missedEver.push(id);
+      note=`In your review queue. Answer it correctly ${REVIEW_CLEAR} times in a row to clear it.`;D.wrong();award(2);}
+    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
       <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
     document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
     document.getElementById("next").focus({preventScroll:true});
@@ -975,7 +1087,7 @@ function quizResult(st){
     <p class="small" style="margin:0 auto;max-width:48ch">The final wave is hitting the wall below. Your score sent ${st.correct*4} bonus ammo.</p>
     <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
-  document.getElementById("again").onclick=()=>{ if(st.label==="Review"){viewReview();} else startQuiz(buildPool(quizDomain),"Exam Quiz"); };
+  document.getElementById("again").onclick=()=>st.again();
 }
 
 /* ---------------- Port Blitz ---------------- */
@@ -990,7 +1102,7 @@ function viewPorts(){
     </div>
     <div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Port reference</h3>
       <div class="tbl-wrap"><table><thead><tr><th>Port</th><th>Service</th><th>Note</th></tr></thead><tbody>
-      ${PORTS.slice().sort((a,b)=>parseInt(a[1])-parseInt(b[1])).map(p=>`<tr><td class="p">${p[1]}</td><td>${esc(p[0])}</td><td class="muted">${esc(p[2])}</td></tr>`).join("")}
+      ${PORTS.slice().sort((a,b)=>parseInt(a[1])-parseInt(b[1])).map(p=>`<tr><td class="p">${p[1]}</td><td>${esc(p[0])}<div class="muted small">${esc(p[3])}</div></td><td class="muted">${esc(expand(p[2]))}</td></tr>`).join("")}
       </tbody></table></div></div>
   </div>`;
   document.getElementById("start").onclick=runBlitz;
@@ -1008,10 +1120,11 @@ function runBlitz(){
     locked=false;
     const p=pick(PORTS);const dir=Math.random()<.5;
     let others=shuffle(PORTS.filter(x=>x!==p&&x[1]!==p[1])).slice(0,3);
-    if(dir){cur={ans:p[1],q:`${p[0]} uses port…`,opts:shuffle([p[1],...others.map(o=>o[1])]),name:p[0]};}
+    if(dir){cur={ans:p[1],q:`${p[0]} (${p[3]}) uses port…`,opts:shuffle([p[1],...others.map(o=>o[1])]),name:p[0]};}
     else{cur={ans:p[0],q:`Port ${p[1]} is…`,opts:shuffle([p[0],...others.map(o=>o[0])]),name:p[0]};}
     document.getElementById("bq").textContent=cur.q;
-    document.getElementById("bo").innerHTML=cur.opts.map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}</button>`).join("");
+    const full=o=>{const x=PORTS.find(y=>y[0]===o);return x?x[3]:"";};
+    document.getElementById("bo").innerHTML=cur.opts.map(o=>`<button class="opt" data-v="${esc(o)}">${esc(o)}${!dir&&S.settings.expandChoices&&full(o)?`<small class="full">(${esc(full(o))})</small>`:""}</button>`).join("");
     document.querySelectorAll("#bo .opt").forEach(b=>b.onclick=()=>answer(b));
   }
   function answer(b){
@@ -1038,7 +1151,7 @@ function runBlitz(){
     $app.innerHTML=`<div class="panel result stack">
       <span class="label">Time</span><div class="big">${score}</div>
       <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+S.best.ports}</p>
-      ${uniq.length?`<div class="tbl-wrap" style="max-width:420px;margin:0 auto;text-align:left"><table><thead><tr><th>Missed</th><th>Port</th></tr></thead><tbody>${uniq.map(n=>{const p=PORTS.find(x=>x[0]===n);return `<tr><td>${esc(n)}</td><td class="p">${p[1]}</td></tr>`;}).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
+      ${uniq.length?`<div class="tbl-wrap" style="max-width:420px;margin:0 auto;text-align:left"><table><thead><tr><th>Missed</th><th>Port</th></tr></thead><tbody>${uniq.map(n=>{const p=PORTS.find(x=>x[0]===n);return `<tr><td>${esc(n)} <span class="muted small">(${esc(p[3])})</span></td><td class="p">${p[1]}</td></tr>`;}).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">Run it again</button><a class="btn" href="#home">Home</a></div>
     </div>`;
     document.getElementById("again").onclick=runBlitz;
@@ -1056,7 +1169,7 @@ function viewOsi(){
       <div class="qhead"><span class="label">OSI Stack · ${i+1} of ${items.length}</span><span class="mono">${score} correct</span></div>
       <div class="progress"><i style="width:${100*i/items.length}%"></i></div>
       <div class="osi">
-        <div class="item-card"><span class="label">Which layer?</span><div class="it">${esc(it[0])}</div><div id="why" class="muted small"></div><div id="nx"></div></div>
+        <div class="item-card"><span class="label">Which layer?</span><div class="it">${esc(expand(it[0]))}</div><div id="why" class="muted small"></div><div id="nx"></div></div>
         <div class="layers">${LAYERS.map(L=>`<button class="layer" data-l="${L[0]}" style="--lc:${L[3]}"><span class="n">${L[0]}</span><span>${L[1]}</span><span class="pdu">${L[2]}</span></button>`).join("")}</div>
       </div>
       <p class="muted small" style="margin:16px 0 0">Top to bottom: <b>A</b>ll <b>P</b>eople <b>S</b>eem <b>T</b>o <b>N</b>eed <b>D</b>ata <b>P</b>rocessing. Press 1–7 for the layer number.</p>
@@ -1065,7 +1178,7 @@ function viewOsi(){
       if(locked)return;locked=true;
       const ok=+b.dataset.l===it[1];if(ok){score++;S.base.scrap+=3;}
       $app.querySelectorAll(".layer").forEach(x=>{x.disabled=true;if(+x.dataset.l===it[1])x.classList.add("right");else if(x===b)x.classList.add("wrong");});
-      document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(it[2])}`;
+      document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(expand(it[2]))}`;
       document.getElementById("nx").innerHTML=`<button class="btn primary" id="next">Next</button>`;
       document.getElementById("next").onclick=()=>{i++;render();};
       document.getElementById("next").focus({preventScroll:true});
