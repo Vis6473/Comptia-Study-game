@@ -28,9 +28,13 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Attack Match:** 60 seconds to name the attack behind each indicator or scenario, such as password spraying, an evil twin or a logic bomb. A wrong answer costs 3 seconds, and the attacks you missed are listed at the end.
 - **Review:** the same review queue and study plan as Network+. Each weak objective links to its chapters in the Security+ Study Guide and to that domain's chapter in the Security+ Practice Tests book, with the question and answer pages.
 
+## CISSP (coming soon)
+
+The main menu has a slot for ISC2's CISSP, marked Arriving soon. Its eight domains are set up, but it has no questions or modes yet.
+
 ## A+ Core 1 modes (220-1201)
 
-- **Quick Exams + Outpost Defense:** 10-question rounds from 144 original questions covering all 27 Core 1 objectives across mobile devices, networking, hardware, virtualization and cloud, and hardware and network troubleshooting.
+- **Quick Exams + Outpost Defense:** 10-question rounds from 216 original questions covering all 27 Core 1 objectives, with at least 8 per objective across mobile devices, networking, hardware, virtualization and cloud, and hardware and network troubleshooting.
 - **Mock Exam:** 90 questions in 90 minutes, split 12/21/22/10/25 by the domain weights (13/23/25/11/28%). The pass mark is 675 on the 100–900 scale.
 - **Port Blitz:** the port drill, limited to the 15 ports the A+ objectives list (including NetBIOS 137–139), with its own high score.
 - **Hardware Match:** 60 seconds to name connectors, cables, components, printer parts and tools from their descriptions.

@@ -833,7 +833,7 @@ const OSI_ITEMS = [
 const KEY = "netplus-patch-bay-v1";
 // Progress is kept per exam (S.ex.net, S.ex.sec, S.ex.a1, S.ex.a2). XP, streak, settings and the outpost are shared,
 // except base upgrades and weapons, which each exam has its own set of (S.base.up.<exam>).
-const EXAM_IDS=["net","sec","a1","a2"];
+const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,mock:null},missedPorts:{},answered:0};}
@@ -927,7 +927,7 @@ const GL={
  "PXE":"Preboot Execution Environment","RAM":"random access memory","VRAM":"video random access memory","SATA":"Serial Advanced Technology Attachment",
  "SDS":"safety data sheet","SIM":"subscriber identity module","SOHO":"small office/home office","SSD":"solid-state drive","UAC":"User Account Control",
  "UEFI":"Unified Extensible Firmware Interface","USB":"Universal Serial Bus","UTP":"unshielded twisted pair","VDI":"virtual desktop infrastructure",
- "VGA":"Video Graphics Array","WPA":"Wi-Fi Protected Access","TKIP":"Temporal Key Integrity Protocol","UPnP":"Universal Plug and Play","CFO":"chief financial officer","PID":"process ID","CCMP":"Counter Mode Cipher Block Chaining Message Authentication Code Protocol","RC4":"Rivest Cipher 4","DES":"Data Encryption Standard","PHI":"protected health information","RMM":"remote monitoring and management","VNC":"Virtual Network Computing","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
+ "VGA":"Video Graphics Array","WPA":"Wi-Fi Protected Access","TKIP":"Temporal Key Integrity Protocol","ONT":"optical network terminal","DVI":"Digital Visual Interface","GPS":"Global Positioning System","ISC2":"International Information System Security Certification Consortium","CISSP":"Certified Information Systems Security Professional","UPnP":"Universal Plug and Play","CFO":"chief financial officer","PID":"process ID","CCMP":"Counter Mode Cipher Block Chaining Message Authentication Code Protocol","RC4":"Rivest Cipher 4","DES":"Data Encryption Standard","PHI":"protected health information","RMM":"remote monitoring and management","VNC":"Virtual Network Computing","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
  "ASLR":"address space layout randomization","VM":"virtual machine","HIPS":"host-based intrusion prevention system","NIDS":"network intrusion detection system",
  "UTM":"unified threat management","NGFW":"next-generation firewall","CASB":"cloud access security broker","EAP":"Extensible Authentication Protocol",
  "COPE":"corporate-owned, personally enabled","CYOD":"choose your own device","MDM":"mobile device management","CVSS":"Common Vulnerability Scoring System",
@@ -1515,7 +1515,7 @@ function menuHorde(cv){
 /* ---------------- Settings ---------------- */
 function viewSettings(){
   const rows=[
-    ...EXAM_IDS.map(id=>{const n=EXAMS[id].name;return [id,n+" progress",`Stats, review queue, miss history, mock exams and high scores for ${n}.`,n+" progress"];}),
+    ...EXAM_IDS.filter(id=>EXAMS[id].ready).map(id=>{const n=EXAMS[id].name;return [id,n+" progress",`Stats, review queue, miss history, mock exams and high scores for ${n}.`,n+" progress"];}),
     ["outpost","Outpost","Nights, scrap, stockpiled ammo, base upgrades and weapons for every exam. XP you spent on weapons is refunded.","the outpost"],
     ["all","Everything","All progress, XP, level, streak, outpost and settings. The game starts over from the main menu.","everything"]];
   let armed=null,done="";
@@ -1582,14 +1582,14 @@ function viewScores(){
         </div>
       </div>
     </div>
-    ${EXAM_IDS.map(exBoard).join("")}
+    ${EXAM_IDS.filter(id=>EXAMS[id].ready).map(exBoard).join("")}
   </div>`;
   setupScoreCard();
 }
 
 /* Score card: a 1200x630 image of the player's best scores, drawn on a canvas. */
 function scoreCardData(){
-  const B=S.base,ex=EXAM_IDS.map(id=>{const X=EXAMS[id],p=S.ex[id];
+  const B=S.base,ex=EXAM_IDS.filter(id=>EXAMS[id].ready).map(id=>{const X=EXAMS[id],p=S.ex[id];
     return {X,p,used:!!(p.answered||p.best.quick||p.best.mock||X.games.some(k=>GAMES[k].rec(p)))};});
   let shown=ex.filter(e=>e.used);if(!shown.length)shown=ex;
   return {B,shown,name:(S.settings.playerName||"").trim()};
@@ -3224,7 +3224,79 @@ const A1_Q = [ // [domain, question, correct, [wrong x3], explanation, objective
  [5,"Wi-Fi drops every time someone uses the microwave in the break room. What's the best fix?","Move clients to the 5 GHz band",["Lower the DHCP lease time","Turn on MAC filtering","Disable WPA3"],"Microwave ovens leak energy around 2.4 GHz. The 5 GHz band avoids that interference.","5.7"],
  [5,"A PC on a gigabit switch connects at only 100 Mbps. What should you check first?","The patch cable, for a damaged pair or the wrong category",["The DNS settings","The browser cache","The printer driver"],"Gigabit needs all four pairs working. A damaged or low-grade cable often drops the link to 100 Mbps.","5.7"],
  [5,"Windows warns that another device on the network has the same IP address. What's the likely cause?","A duplicate statically assigned address",["A failed DNS server","Weak Wi-Fi signal","An expired certificate"],"Two devices can't share one address. A static address inside the DHCP pool often causes this, so use reservations or exclude static ranges from the pool.","5.7"],
- [5,"A desktop shows no network connection, and the link light on its port is off. What should you check first?","The cable and the switch port",["The DNS server","The browser settings","The DHCP scope"],"No link light means no physical connection. Check the cable at both ends, try another cable, and make sure the switch port is enabled.","5.7"]
+ [5,"A desktop shows no network connection, and the link light on its port is off. What should you check first?","The cable and the switch port",["The DNS server","The browser settings","The DHCP scope"],"No link light means no physical connection. Check the cable at both ends, try another cable, and make sure the switch port is enabled.","5.7"],
+ [1,"Several keys on a laptop stopped working after a spill. What's the usual repair?","Replace the keyboard, or the top case it's built into",["Replace the battery","Update the BIOS","Reinstall the keyboard driver only"],"Liquid damages the keyboard's membrane and contacts. Many laptops build the keyboard into the palm rest, so the whole top case is replaced.","1.1"],
+ [1,"A laptop has a 2.5-inch hard drive. Which SSD can replace it directly in the same bay?","A 2.5-inch SATA SSD",["An M.2 NVMe SSD","A 3.5-inch hard drive","A PCIe expansion card SSD"],"A 2.5-inch SATA SSD uses the same size and connector as the old drive. An M.2 drive needs an M.2 slot.","1.1"],
+ [1,"Which port do most current Android phones use for charging and data?","USB-C",["Micro-USB","Lightning","Mini-USB"],"USB-C is reversible and carries power, data and video. Micro-USB was common on older Android phones.","1.2"],
+ [1,"A smartwatch keeps its notifications in sync with the user's phone. Which wireless connection does it usually use?","Bluetooth",["NFC","Infrared","Ethernet"],"Bluetooth keeps a low-power link to the phone over several meters. NFC only works when devices nearly touch.","1.2"],
+ [1,"A user has weak cell signal in the office but strong Wi-Fi. Which feature lets them still make normal phone calls?","Wi-Fi calling",["Airplane mode","NFC","Location services"],"Wi-Fi calling routes calls and texts through the carrier over Wi-Fi when the cell signal is weak.","1.3"],
+ [1,"Which details do you need to add a company mailbox to a phone by hand?","The mail server address, port, encryption setting and the user's credentials",["The phone's IMEI and battery level","The Wi-Fi channel and SSID only","The phone's screen resolution"],"Manual setup needs the incoming and outgoing servers, their ports, TLS settings and a sign-in. Many accounts set themselves up automatically instead.","1.3"],
+ [2,"Which port does DNS use?","53",["25","67","110"],"DNS uses port 53, over UDP for most lookups and TCP for zone transfers. Port 25 is SMTP, 67 is DHCP, and 110 is POP3.","2.1"],
+ [2,"Which ports does DHCP use?","67 and 68",["20 and 21","161 and 162","137 and 139"],"DHCP servers listen on UDP 67, and clients use 68. Ports 20 and 21 are FTP, and 161 and 162 are SNMP.","2.1"],
+ [2,"Which protocol reads mail while keeping it on the server, so every device stays in sync?","IMAP",["POP3","SMTP","SNMP"],"IMAP keeps mail and folders on the server. POP3 usually downloads and removes messages, and SMTP sends mail.","2.1"],
+ [2,"Which device connects separate networks and forwards packets by IP address?","A router",["A switch","A hub","An access point"],"Routers move traffic between networks, such as between a LAN and the internet. Switches forward frames inside one network.","2.2"],
+ [2,"Which device sits between the internet and a LAN and allows or blocks traffic by rules?","A firewall",["A repeater","A patch panel","A cable modem"],"Firewalls filter traffic by address, port and protocol, and newer ones also by application.","2.2"],
+ [2,"Which device extends Wi-Fi by connecting wirelessly to the main router and rebroadcasting the signal?","A wireless range extender",["A patch panel","A PoE injector","A hub"],"Extenders reach dead spots but cut throughput, because they relay everything over the air. Mesh systems or wired access points perform better.","2.2"],
+ [2,"Which device ends a fiber-to-the-home connection at the customer's house?","An ONT",["A DSL modem","A punchdown block","A KVM switch"],"An optical network terminal converts the provider's fiber signal to Ethernet for the home router.","2.2"],
+ [2,"Which Wi-Fi standard is also called Wi-Fi 5?","802.11ac",["802.11ax","802.11n","802.11b"],"802.11ac is Wi-Fi 5 and runs on 5 GHz. Wi-Fi 6 is 802.11ax, and Wi-Fi 4 is 802.11n.","2.3"],
+ [2,"Which low-power wireless technology builds mesh networks for smart home sensors?","Zigbee",["LTE","802.11ac","NFC"],"Zigbee and Z-Wave are low-power mesh protocols for sensors, locks and lights. Each device can relay for others.","2.3"],
+ [2,"What do you call combining adjacent Wi-Fi channels into one wider channel for more speed?","Channel bonding",["Band steering","Port forwarding","MAC filtering"],"Wider channels, such as 80 or 160 MHz, carry more data but leave fewer non-overlapping channels and pick up more interference.","2.3"],
+ [2,"Which device spreads incoming web requests across several servers?","A load balancer",["A proxy server","A DNS server","A syslog server"],"Load balancers share the work and route around failed servers, which improves performance and availability.","2.4"],
+ [2,"Which server stores and delivers email for an organization?","A mail server",["A DHCP server","A file server","A print server"],"Mail servers accept messages over SMTP and let users read them over IMAP or POP3.","2.4"],
+ [2,"Which server checks users' sign-ins and holds the directory of accounts in a Windows domain?","An authentication server, such as a domain controller",["A web server","A proxy server","A syslog server"],"Domain controllers authenticate users and computers and apply policies. RADIUS servers handle authentication for network access.","2.4"],
+ [2,"A home's public IP address changes often, but the owner wants to reach a camera by name. Which feature helps?","Dynamic DNS",["MAC filtering","A DHCP reservation","WPS"],"Dynamic DNS updates a host name whenever the router's public address changes.","2.5"],
+ [2,"How should a small office handle cheap smart devices such as TVs and cameras?","Put them on a separate network from computers",["Give them static public IP addresses","Turn off their passwords","Plug them into the server switch"],"IoT devices often have weak security. A separate VLAN or guest network keeps a compromised device away from PCs and file shares.","2.5"],
+ [2,"Where should a SOHO wireless router be placed for the best coverage?","Centrally, raised up, and away from metal and microwaves",["In a metal cabinet","On the floor in a corner","Next to the microwave"],"Signal spreads out from the router. Central, elevated placement with few obstructions covers the most area.","2.5"],
+ [2,"Which DHCP setting defines the range of addresses the server hands out?","The scope",["The lease time","The default gateway","The DNS suffix"],"The scope, or pool, sets the range of addresses. Exclusions and reservations work inside it.","2.5"],
+ [2,"Which DNS record points one name to another name?","CNAME",["A","MX","TXT"],"A canonical name record creates an alias, such as www pointing to the main host name.","2.6"],
+ [2,"What does a PC's default gateway do?","It forwards traffic to other networks",["It assigns IP addresses","It resolves names","It encrypts Wi-Fi"],"Traffic for addresses outside the local subnet goes to the default gateway, usually the router. A wrong gateway means local access only.","2.6"],
+ [2,"Which email record tells receiving servers what to do with mail that fails SPF or DKIM checks?","DMARC",["MX","CNAME","AAAA"],"DMARC policies say to do nothing, quarantine or reject failing mail, and request reports.","2.6"],
+ [2,"Which internet connection uses the same coaxial cable as cable TV?","Cable",["DSL","Fiber","Satellite"],"Cable internet shares coax in the neighborhood, so speeds can dip at busy times. DSL uses phone lines.","2.7"],
+ [2,"Which wired internet connection usually gives the highest speeds, often with equal upload and download?","Fiber",["DSL","Dial-up","Cable over coax"],"Fiber carries light, so it supports very high, often symmetrical speeds over long distances.","2.7"],
+ [2,"A company links its offices in different cities. What type of network is this?","A WAN",["A LAN","A PAN","A WLAN"],"A wide area network spans large distances, often through provider links or VPNs over the internet.","2.7"],
+ [2,"Which tool measures the voltage at a power supply connector?","A multimeter",["A toner probe","A cable tester","A Wi-Fi analyzer"],"Multimeters measure voltage, resistance and continuity. Use the right setting and probes.","2.8"],
+ [2,"Which tool removes the outer jacket from a cable without nicking the wires inside?","A cable stripper",["A punchdown tool","A loopback plug","A toner probe"],"Strippers cut only the jacket, so the twisted pairs stay intact for termination.","2.8"],
+ [2,"Which tool shows nearby networks' channels and signal strength to plan Wi-Fi?","A Wi-Fi analyzer",["A multimeter","A crimper","A cable stripper"],"Wi-Fi analyzers reveal crowded channels and weak spots, so you can choose better channels and AP placement.","2.8"],
+ [2,"Which tool tests whether a NIC port can send and receive?","A loopback plug",["A toner probe","A crimper","A punchdown tool"],"A loopback plug feeds the port's transmit pins back to its receive pins for a self-test.","2.8"],
+ [3,"Which cable category supports 10 Gbps Ethernet over the full 100 meters?","Cat 6a",["Cat 5","Cat 5e","Cat 6 at any length"],"Cat 6a reaches 10 Gbps at 100 m. Plain Cat 6 manages it only up to about 55 m, and Cat 5e is rated for 1 Gbps.","3.1"],
+ [3,"Which cable is best for a long run between two buildings, where lightning and EMI are risks?","Fiber optic",["Unshielded twisted pair","Coaxial cable","USB"],"Fiber carries light, so it doesn't conduct electricity and ignores electrical interference. It also reaches much farther.","3.1"],
+ [3,"A monitor has a DVI-D input. What does DVI-D carry?","Digital video only",["Analog video only","Audio only","USB data"],"DVI-D is digital-only. DVI-A is analog-only, and DVI-I carries both.","3.1"],
+ [3,"A PC has two matching modules, and you add a third module with a lower speed rating. What usually happens?","All the memory runs at the slowest module's speed",["The PC won't boot ever again","The faster modules overclock the slow one","Only the new module is used"],"Memory runs at a speed every module supports. Matching modules gives the best performance.","3.2"],
+ [3,"What is the Windows page file?","Disk space Windows uses as overflow when RAM is full",["A list of printed pages","A type of graphics memory","A firmware setting"],"Virtual memory keeps programs running when RAM is full, but disk is far slower than RAM. Heavy paging means you need more RAM.","3.2"],
+ [3,"Which memory does a dedicated graphics card use for textures and frames?","Its own VRAM",["The CMOS","The page file","The CPU cache only"],"Dedicated cards carry their own VRAM. Integrated graphics share system RAM instead.","3.2"],
+ [3,"Which drive size is standard for desktop hard drives?","3.5-inch",["2.5-inch","1.8-inch","M.2 2280"],"Desktop hard drives are 3.5-inch, while laptops and SSDs commonly use 2.5-inch. M.2 2280 is an SSD card size.","3.3"],
+ [3,"What's a downside of SSDs compared with hard drives?","A higher cost per gigabyte",["Slower random access","More moving parts","More noise"],"SSDs are faster, quieter and tougher, but hard drives still store more for the money, which suits bulk storage and backups.","3.3"],
+ [3,"Which connector supplies dedicated power to the CPU on a desktop motherboard?","The 4-pin or 8-pin 12 V CPU connector",["The 15-pin SATA power connector","The 4-pin Molex connector","The front-panel header"],"The CPU power connector, usually near the socket, feeds the processor's voltage regulators. The board won't start without it.","3.4"],
+ [3,"A PC must start from a USB installer. Which firmware setting do you change?","The boot order",["The fan curve","The memory timings","The date and time"],"Put USB first in the UEFI boot order, or use the one-time boot menu key at startup.","3.4"],
+ [3,"What does an auto-switching power supply do?","Accepts input voltages from about 100 to 240 V without a manual switch",["Changes the PC's wattage automatically","Switches between two batteries","Turns the PC on at a set time"],"Auto-switching supplies work in any country's outlets. Older supplies had a red switch that had to match the local voltage.","3.5"],
+ [3,"How do you choose the wattage for a new power supply?","Add up the components' power draw and leave some headroom",["Match the size of the monitor","Pick the lowest wattage available","Match the hard drive's capacity"],"Leaving headroom keeps the supply efficient and leaves room for upgrades. Graphics cards usually list a recommended wattage.","3.5"],
+ [3,"Which power connector do SATA drives use?","A 15-pin SATA power connector",["A 24-pin ATX connector","An 8-pin PCIe connector","A 4-pin CPU connector"],"SATA drives have a 15-pin power plug next to the 7-pin data port.","3.5"],
+ [3,"What does a PC need to print to a new network printer?","The correct driver and the printer's address or share",["A parallel cable","A second network card","A Bluetooth adapter"],"Add the printer by its IP address or host name, or through a print server share, with the right driver installed.","3.6"],
+ [3,"Which print setting uses less toner for internal drafts?","Draft or economy mode",["Duplex","Collate","Landscape"],"Economy modes lighten the output to make consumables last longer.","3.6"],
+ [3,"Phones and tablets need to print without installing drivers. Which feature helps?","Driverless mobile printing such as AirPrint or Mopria",["A parallel port","A TWAIN scanner driver","PCL only"],"Driverless standards let mobile devices find and print to compatible printers on the network.","3.6"],
+ [3,"Which laser printing step moves toner from the drum onto the paper?","Transferring",["Developing","Fusing","Charging"],"The transfer roller or corona charges the paper so toner jumps from the drum. Fusing then bonds it.","3.7"],
+ [3,"Which inkjet part sprays tiny drops of ink onto the page?","The print head",["The fuser","The drum","The ribbon"],"Print heads fire ink through tiny nozzles. Fusers and drums are laser printer parts, and ribbons belong to impact printers.","3.7"],
+ [3,"What's the first step in the laser printing process?","Processing",["Charging","Exposing","Cleaning"],"Processing turns the job into an image of the page. Then come charging, exposing, developing, transferring, fusing and cleaning.","3.7"],
+ [4,"What is a VM snapshot for?","Saving a point in time you can roll the VM back to",["Taking a screenshot of the VM's desktop","Making the VM faster","Encrypting the VM"],"Take a snapshot before risky changes, then revert if something breaks. Snapshots aren't backups and grow over time.","4.1"],
+ [4,"A host runs more VMs than its RAM can support. What happens?","The VMs slow down as the host runs short of resources",["The VMs get extra memory for free","Nothing, since VMs need no RAM","The host shuts down safely"],"Over-provisioning makes VMs compete for CPU and memory. Plan the host's capacity for every guest.","4.1"],
+ [4,"In IaaS, who patches the operating system on the virtual servers?","The customer",["The cloud provider","The internet service provider","Nobody, since IaaS has no OS"],"Under the shared responsibility model, IaaS customers manage the OS and everything above it. In SaaS, the provider handles almost everything.","4.2"],
+ [5,"While identifying a problem, which question often reveals the cause fastest?","What changed recently?",["What's your favorite browser?","How old is your monitor?","Who installed the printer?"],"Recent updates, new software or new hardware are common causes. Also check logs and reproduce the problem.","5.1"],
+ [5,"Before putting a fix in place, what should your plan of action consider?","Corporate policies, procedures and the impact on users",["Only the fastest way to finish","The technician's own preferences","Nothing, if the theory is confirmed"],"Plan the fix so it follows policy, change procedures and timing, and avoids disrupting users.","5.1"],
+ [5,"A PC powers on and its fans spin, but there's no display and no beeps. What should you check first?","That the RAM, CPU and power connectors are seated",["The browser settings","The printer driver","The network cable"],"No POST and no beeps usually point to memory, CPU, CPU power or the board. Reseat the parts and check the connectors before replacing anything.","5.2"],
+ [5,"A desktop makes a loud grinding noise that changes with temperature. What's the likely cause?","A failing fan",["A bad DNS server","A full hard drive","An outdated driver"],"Worn fan bearings grind or rattle. Replace the fan before it fails and the PC overheats.","5.2"],
+ [5,"A new M.2 SSD isn't detected. What should you check?","That the slot supports that drive's type, NVMe or SATA, and is enabled",["The printer queue","The Wi-Fi password","The monitor's resolution"],"M.2 slots differ in keying and protocol, and some share lanes with SATA ports. Check the board manual.","5.3"],
+ [5,"A drive reports read errors and bad sectors that keep increasing. What should you do?","Back up the data and replace the drive",["Defragment it every day","Increase the page file","Format it and keep using it"],"A growing number of bad sectors means the drive is failing. Save the data while you still can.","5.3"],
+ [5,"After a failed RAID controller is replaced, the array doesn't appear. What should you check?","The new controller's configuration and driver, and whether it can import the array",["The keyboard layout","The DHCP scope","The screen brightness"],"Arrays depend on the controller's metadata. A matching controller can usually import the existing configuration.","5.3"],
+ [5,"A laptop screen flickers when the lid is moved. What's the likely cause?","A loose or damaged display cable in the hinge",["A failing hard drive","A wrong DNS server","Low RAM"],"Movement that changes the symptom points to the cable running through the hinge.","5.4"],
+ [5,"An external monitor shows wrong colors, with one color missing. What should you check first?","The video cable and its connectors",["The power supply wattage","The keyboard","The Wi-Fi driver"],"A loose or bent-pin connection can drop one color channel. Reseat or swap the cable.","5.4"],
+ [5,"A projected image is wider at the top than at the bottom. What should you adjust?","The keystone correction",["The brightness","The input source","The aspect ratio only"],"Keystone correction fixes the trapezoid shape caused by the projector's angle to the screen.","5.4"],
+ [5,"A laptop overheats and shuts down when used on a bed. What's the fix?","Use it on a hard surface so the vents aren't blocked",["Turn up the screen brightness","Replace the keyboard","Disable Wi-Fi"],"Soft surfaces block the air intakes. Clean vents and a hard surface keep it cool.","5.5"],
+ [5,"After the office Wi-Fi password changed, a phone won't connect. What should you do?","Forget the network and rejoin it with the new password",["Factory reset the phone","Replace the battery","Turn on airplane mode"],"The phone keeps trying the old saved password. Forgetting the network clears it.","5.5"],
+ [5,"A phone's map app shows the wrong location. What should you check first?","Location services and the app's location permission, including precise location",["The screen brightness","The ringtone","The SIM tray"],"Precise location uses GPS, Wi-Fi and cell data. Turn on location services, allow the app precise location, and recalibrate if needed.","5.5"],
+ [5,"Pages come out of a laser printer creased and wrinkled. What's a likely cause?","Damp paper or worn feed rollers",["A wrong IP address","Low toner","An outdated driver"],"Paper that has absorbed moisture curls and creases. Store it dry and check the rollers and the paper path.","5.6"],
+ [5,"An inkjet printer leaves gaps and missing lines in its prints. What should you do first?","Run the print head cleaning cycle",["Replace the fuser","Reinstall the operating system","Change the paper size"],"Dried ink clogs nozzles. Run a cleaning cycle and nozzle check, and replace the cartridge or head if it's still bad.","5.6"],
+ [5,"Wi-Fi is slow, and an analyzer shows many neighbors' networks on the same channel. What should you do?","Move the access point to a less crowded channel",["Lower the DHCP lease time","Turn off WPA3","Replace the clients' RAM"],"Co-channel interference forces networks to share airtime. Pick a clear channel, or move clients to 5 or 6 GHz.","5.7"],
+ [5,"Users can reach local servers but not the internet. What should you check?","The default gateway, the router, and the internet connection",["The users' monitors","The printer queue","The local file shares"],"Working local access means the LAN is fine. The problem is on the path out, through the gateway or the provider.","5.7"]
 ];
 const A2_Q = [ // [domain, question, correct, [wrong x3], explanation, objective] — original items written against the 220-1202 objectives
  [1,"Which operating system is open source and comes in many distributions, such as Ubuntu and Fedora?","Linux",["Windows","macOS","iPadOS"],"Linux is open source, and each distribution bundles the kernel with its own tools. Windows and macOS are proprietary.","1.1"],
@@ -3483,6 +3555,16 @@ const SEC_DOMAINS = {
   4:{name:"Security Operations", w:28, c:"var(--brown)"},
   5:{name:"Security Program Management and Oversight", w:20, c:"var(--muted)"}
 };
+const CISSP_DOMAINS = {
+  1:{name:"Security and Risk Management", w:16, c:"var(--orange)"},
+  2:{name:"Asset Security", w:10, c:"var(--green)"},
+  3:{name:"Security Architecture and Engineering", w:13, c:"var(--blue)"},
+  4:{name:"Communication and Network Security", w:13, c:"var(--brown)"},
+  5:{name:"Identity and Access Management (IAM)", w:13, c:"var(--muted)"},
+  6:{name:"Security Assessment and Testing", w:12, c:"var(--orange)"},
+  7:{name:"Security Operations", w:13, c:"var(--green)"},
+  8:{name:"Software Development Security", w:10, c:"var(--blue)"}
+};
 const GAMES={
   ports:{n:"Port Blitz",lbl:"60 seconds",d:"Match services to port numbers. A wrong answer costs 3 seconds.",c:"var(--green)",rec:p=>p.best.ports,fmt:v=>`Best: ${v}`},
   osi:{n:"OSI Stack",lbl:"Scavenging · 12 items",d:"Place devices, protocols and PDUs on the correct layer. Every correct answer scavenges scrap and XP.",c:"var(--blue)",rec:p=>p.best.osi,fmt:v=>`Best: ${v}/12`},
@@ -3518,7 +3600,11 @@ const EXAMS={
     tagline:"Operating systems, security, software troubleshooting and operational procedures.",
     blurb:"Answer practice questions across all four 220-1202 domains, and match commands and Windows tools to the job against the clock.",
     DOMAINS:A2_DOMAINS,Q:A2_Q,OBJ:A2_OBJ,GUIDE:null,TIER:{1:2,2:2,3:3,4:1},MOCK_SPLIT:{1:25,2:25,3:21,4:19},PASS:700,UPG:A2_UPG,WPN:A2_WPN,
-    games:["command","wintool"]}
+    games:["command","wintool"]},
+  // CISSP (ISC2) has a menu slot but no content yet (ready:false). Its eight domains and weights are set for when it's built.
+  cissp:{id:"cissp",name:"CISSP",full:"ISC2 CISSP",code:"ISC2 · CISSP",ready:false,color:"#B388FF",
+    foes:"",tagline:"Security leadership across eight domains, from risk management to software security.",blurb:"",
+    DOMAINS:CISSP_DOMAINS,Q:[],OBJ:{},GUIDE:null,TIER:{},MOCK_SPLIT:{},PASS:700,UPG:NET_UPG,WPN:NET_WPN,games:[]}
 };
 // The current exam's content and progress. setExam() points these at one exam.
 let EX=null,P=null,DOMAINS=NET_DOMAINS,Q=NET_Q,OBJ=NET_OBJ,GUIDE=NET_GUIDE,TIER=NET_TIER,MOCK_SPLIT=NET_MOCK_SPLIT,PASS=720,UPG=NET_UPG,WPN=NET_WPN;
