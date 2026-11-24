@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Net+ Patch Bay</title>
+<title>Cyber Zombie Attack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -216,12 +216,56 @@ details.obj summary .chips{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
 .src small{color:var(--muted);font-size:12px}
 .note{padding:10px 12px;border-left:3px solid var(--blue);background:var(--surface-2);border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:4px;font-size:14px}
 .note .nq{color:var(--muted)}
+.zlogo{width:34px;height:34px;color:var(--ink);flex:none}
+.hdr-r{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.hdr-links{display:flex;gap:14px;font-size:13px}
+.hdr-links a{color:var(--muted);text-decoration:none}
+.hdr-links a:hover{color:var(--ink);text-decoration:underline}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.set-row{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.set-row:first-of-type{border-top:0}
+.set-row b{display:block;font-size:16px}
+.set-row p{margin:2px 0 0;color:var(--muted);font-size:14px;max-width:60ch}
+.set-row .confirm{grid-column:1/-1;margin:0}
+.set-done{color:var(--ok);font-weight:600}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.board div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.board b{font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums}
+.board small{color:var(--muted);font-size:12px}
+/* Main menu: a deliberately dark title screen in the outpost's tech-punk look */
+body.menu-mode{background:#05080B}
+body.menu-mode .cable,body.menu-mode header.top,body.menu-mode nav.tabs,body.menu-mode footer{display:none}
+body.global-mode nav.tabs{display:none}
+.menu{position:relative;overflow:hidden;margin-top:16px;border:1px solid var(--tp-line);background:radial-gradient(120% 80% at 50% 0%,#0E1B24 0%,var(--tp-bg) 60%);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px))}
+.menu canvas{position:absolute;left:0;right:0;bottom:0;width:100%;height:58%;pointer-events:none}
+.menu-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;padding:44px clamp(16px,4vw,40px) 36px}
+.czt{font-family:var(--f-display);font-weight:700;font-size:clamp(44px,10vw,104px);line-height:.9;letter-spacing:.02em;margin:6px 0 0;display:flex;flex-direction:column;color:var(--tp-ink);text-shadow:3px 0 rgba(255,43,214,.65),-3px 0 rgba(25,240,255,.65)}
+.czt .z{color:var(--tp-tox);text-shadow:0 0 24px rgba(156,255,87,.45),3px 0 rgba(255,43,214,.5)}
+.menu .tag{color:var(--tp-dim);font-size:16px;margin:10px 0 0;max-width:46ch}
+.ostrip{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
+.ostrip span{padding:5px 10px;border:1px solid var(--tp-line);background:rgba(12,19,26,.8)}
+.ostrip b{color:var(--tp-ink)} .ostrip b.x{color:var(--tp-mag)}
+.ocards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ocard{display:flex;flex-direction:column;gap:10px;text-align:left;padding:18px;background:rgba(12,19,26,.92);border:1px solid var(--tp-line);color:var(--tp-ink);clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);transition:border-color .15s,transform .15s}
+.ocard:hover:not(.off){border-color:var(--oc);transform:translateY(-2px)}
+.ocard .ocode{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;color:var(--oc)}
+.ocard h2{font-family:var(--f-display);font-size:32px;letter-spacing:.03em}
+.ocard .osub{color:var(--tp-dim);font-size:14px}
+.ostats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding-top:6px;border-top:1px solid var(--tp-line)}
+.ostats div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ostats b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.ostats span{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tp-dim)}
+.ocard .ogo{font-family:var(--f-mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--oc)}
+.ocard.off{opacity:.7;cursor:default}
+.mrow{display:flex;gap:10px;flex-wrap:wrap}
+.mrow .tpbtn{text-decoration:none;padding:9px 16px}
+@media (max-width:520px){.ostats{grid-template-columns:repeat(2,1fr)}}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
 /* Outpost: a deliberately single dark tech-punk look, used for the defense dock and the home armory */
 :root{--dock-h:clamp(230px,46vh,460px)}
-.tp{--tp-bg:#06090D;--tp-panel:#0C131A;--tp-line:#1C2E3B;--tp-cyan:#19F0FF;--tp-mag:#FF2BD6;--tp-amb:#FFB020;--tp-ink:#D6F4FF;--tp-dim:#7A93A2;color:var(--tp-ink);color-scheme:dark}
+.tp{--tp-tox:#9CFF57;--tp-bg:#06090D;--tp-panel:#0C131A;--tp-line:#1C2E3B;--tp-cyan:#19F0FF;--tp-mag:#FF2BD6;--tp-amb:#FFB020;--tp-ink:#D6F4FF;--tp-dim:#7A93A2;color:var(--tp-ink);color-scheme:dark}
 .tp :focus-visible{outline:2px solid var(--tp-amb);outline-offset:2px}
 body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px) + 24px)}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;height:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--tp-bg);border-top:1px solid var(--tp-cyan);box-shadow:0 -10px 40px rgba(25,240,255,.15)}
@@ -300,23 +344,15 @@ body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px
     <i class="w" style="--c:var(--brown)"></i><i style="--c:var(--brown)"></i>
   </div>
   <header class="top">
-    <a class="brand" href="#home">
-      <div class="jack" aria-hidden="true"></div>
-      <div><h1>Net+ Patch Bay</h1><small>COMPTIA NETWORK+ · N10-009</small></div>
+    <a class="brand" href="#menu" aria-label="Cyber Zombie Attack main menu">
+      <svg class="zlogo" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 13c0-6 4-10 9-10s9 4 9 10v7l-2 2-2-2-2 3-3-3-3 3-2-3-2 2-2-2z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="13" r="2.4" fill="var(--green)"/><circle cx="20.5" cy="12.5" r="1.8" fill="var(--green)"/><path d="M13 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <div><h1>Cyber Zombie Attack</h1><small id="brandSub">CHOOSE AN EXAM</small></div>
     </a>
-    <div class="hud" id="hud"></div>
+    <div class="hdr-r"><div class="hud" id="hud"></div><div class="hdr-links"><a href="#scores">High scores</a><a href="#settings">Settings</a></div></div>
   </header>
-  <nav class="tabs" id="tabs">
-    <a href="#home">Home</a>
-    <a href="#quiz">Quick Exams</a>
-    <a href="#mock">Mock Exam</a>
-    <a href="#ports">Port Blitz</a>
-    <a href="#osi">OSI Stack</a>
-    <a href="#subnet">Subnet Sprint</a>
-    <a href="#review">Review</a>
-  </nav>
+  <nav class="tabs" id="tabs"></nav>
   <main id="app" aria-live="polite"></main>
-  <footer>Progress is saved in this browser only. Questions are original practice items written against the N10-009 objectives, not real exam questions.</footer>
+  <footer>Progress is saved in this browser only. Questions are original practice items written against the official CompTIA exam objectives, not real exam questions.</footer>
 </div>
 
 <script>
@@ -324,7 +360,7 @@ body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px
 "use strict";
 
 /* ---------------- Content ---------------- */
-const DOMAINS = {
+const NET_DOMAINS = {
   1:{name:"Networking Concepts", w:23, c:"var(--orange)"},
   2:{name:"Network Implementation", w:20, c:"var(--green)"},
   3:{name:"Network Operations", w:19, c:"var(--blue)"},
@@ -333,7 +369,7 @@ const DOMAINS = {
 };
 
 // [domain, question, correct, [wrong x3], explanation]
-const Q = [
+const NET_Q = [
  [1,"Which OSI layer handles logical addressing and routing between networks?","Layer 3, Network",["Layer 2, Data Link","Layer 4, Transport","Layer 5, Session"],"The Network layer uses logical (IP) addresses and routers make forwarding decisions here. Layer 2 uses MAC addresses within a single segment.","1.1"],
  [1,"A Windows host shows the address 169.254.33.10. What kind of address is this?","APIPA (link-local) address",["RFC 1918 private address","Loopback address","Carrier-grade NAT address"],"169.254.0.0/16 is APIPA. A host assigns itself one when it cannot reach a DHCP server.","1.7"],
  [1,"Which range is one of the RFC 1918 private IPv4 blocks?","172.16.0.0/12",["172.32.0.0/12","192.169.0.0/16","100.64.0.0/10"],"Private blocks are 10.0.0.0/8, 172.16.0.0/12 (172.16–172.31) and 192.168.0.0/16. 100.64.0.0/10 is reserved for carrier-grade NAT.","1.7"],
@@ -612,8 +648,30 @@ const OSI_ITEMS = [
 
 /* ---------------- State ---------------- */
 const KEY = "netplus-patch-bay-v1";
-function freshState(){return {xp:0,qs:{},dom:{},review:[],best:{ports:0,osi:0,subnet:0},missedPorts:{},streak:0,lastDay:null,answered:0,reviewHits:{},missedEver:[],settings:{expandChoices:true},mock:null,mockLast:null,mockHistory:[],base:{scrap:0,up:{},night:1,bestNight:0,xpSpent:0,stock:0}};}
-function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){Object.assign(d,r);d.best=Object.assign(freshState().best,r.best||{});d.base=Object.assign(freshState().base,r.base||{});d.base.up=Object.assign({},(r.base&&r.base.up)||{});d.settings=Object.assign(freshState().settings,r.settings||{});d.reviewHits=r.reviewHits||{};d.missedEver=Array.from(new Set((r.missedEver||[]).concat(r.review||[])));}}catch(e){}return d;}
+// Progress is kept per exam (S.ex.net, S.ex.sec). XP, streak, settings and the outpost are shared,
+// except base upgrades and weapons, which each exam has its own set of (S.base.up.net / .sec).
+const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
+function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,mock:null},missedPorts:{},answered:0};}
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true},ex:{net:exFresh(),sec:exFresh()},
+  base:{scrap:0,up:{net:{},sec:{}},night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
+function mergeEx(src){
+  const e=exFresh();if(!src||typeof src!=="object")return e;
+  EX_FIELDS.forEach(f=>{if(src[f]!==undefined&&src[f]!==null)e[f]=src[f];});
+  if(src.mock)e.mock=src.mock;if(src.mockLast)e.mockLast=src.mockLast;
+  e.best=Object.assign(exFresh().best,src.best||{});e.reviewHits=src.reviewHits||{};
+  if(!e.best.mock&&e.mockHistory.length){const m=e.mockHistory.reduce((a,h)=>h.scaled>a.scaled?h:a);e.best.mock=Object.assign({},m);}
+  e.missedEver=Array.from(new Set((src.missedEver||[]).concat(src.review||[])));
+  return e;
+}
+function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object"){
+  d.xp=r.xp||0;d.streak=r.streak||0;d.lastDay=r.lastDay||null;d.exam=r.exam||null;
+  d.settings=Object.assign(d.settings,r.settings||{});
+  const old=!r.ex; // saves from before Security+ kept Network+ progress at the top level
+  d.ex.net=mergeEx(old?r:r.ex.net);d.ex.sec=mergeEx(old?null:r.ex.sec);
+  d.base=Object.assign(freshState().base,r.base||{});
+  const up=(r.base&&r.base.up)||{};
+  d.base.up=(up.net||up.sec)?{net:Object.assign({},up.net),sec:Object.assign({},up.sec)}:{net:Object.assign({},up),sec:{}};
+}}catch(e){}return d;}
 let S = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function dayStr(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
@@ -712,18 +770,18 @@ function renderHud(){
 
 /* ---------------- Outpost economy ---------------- */
 // Section difficulty: every correct answer sends ammo; harder sections also send scrap for upgrades.
-const TIER={1:1,2:2,3:1,4:2,5:3};
+const NET_TIER={1:1,2:2,3:1,4:2,5:3};
 const TIERS={1:{n:"Standard",ammo:20,scrap:0},2:{n:"Hard",ammo:25,scrap:10},3:{n:"Elite",ammo:30,scrap:15}};
 const reward=d=>TIERS[TIER[d]];
 function xpAvail(){return Math.max(0,S.xp-(S.base.xpSpent||0));}
-const UPG=[ // bought with scrap
+const NET_UPG=[ // bought with scrap
  {k:"caliber",n:"Heavy caliber",d:"+35% turret damage",max:5,cost:l=>40+40*l},
  {k:"autoload",n:"Autoloader",d:"+20% turret fire rate",max:5,cost:l=>40+35*l},
  {k:"turrets",n:"Turret mount",d:"Adds another turret to the wall",max:3,cost:l=>90+70*l},
  {k:"plating",n:"Wall plating",d:"+40 wall integrity",max:5,cost:l=>35+30*l},
  {k:"cache",n:"Ammo cache",d:"+20 starting ammo and +5 per correct answer",max:5,cost:l=>30+30*l}
 ];
-const WPN=[ // unlocked with XP, then upgraded with scrap
+const NET_WPN=[ // unlocked with XP, then upgraded with scrap
  {k:"flame",n:"Flame bunker",d:"Burns hostiles that reach the wall. Uses no ammo.",xp:150,max:3,cost:l=>90+70*(l-1)},
  {k:"tesla",n:"Tesla coil",d:"Chain lightning that jumps between hostiles.",xp:300,max:3,cost:l=>130+90*(l-1)},
  {k:"mortar",n:"Mortar pit",d:"Shells the densest pack for splash damage.",xp:450,max:3,cost:l=>150+100*(l-1)},
@@ -741,13 +799,14 @@ function buySupply(k){
   if(!D.addAmmo(it.amt))S.base.stock=(S.base.stock||0)+it.amt;
   save();renderHud();return true;
 }
-const upL=k=>(S.base.up&&S.base.up[k])||0;
+const upSet=()=>S.base.up[S.exam]||(S.base.up[S.exam]={});
+const upL=k=>upSet()[k]||0;
 function buy(k){
   const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);
-  if(w&&l===0){if(xpAvail()<w.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+w.xp;S.base.up[k]=1;save();renderHud();return true;}
+  if(w&&l===0){if(xpAvail()<w.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+w.xp;upSet()[k]=1;save();renderHud();return true;}
   const it=u||w;if(!it||l>=it.max)return false;
   const c=it.cost(l);if(S.base.scrap<c)return false;
-  S.base.scrap-=c;S.base.up[k]=l+1;save();return true;
+  S.base.scrap-=c;upSet()[k]=l+1;save();return true;
 }
 function pips(l,m){let s="";for(let i=0;i<m;i++)s+=`<i class="${i<l?"on":""}"></i>`;return `<span class="up-p" aria-label="Level ${l} of ${m}">${s}</span>`;}
 function shopHTML(){
@@ -860,9 +919,9 @@ const D=(function(){
   }
   function win(){
     G.status="won";const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
-    S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.night=G.night+1;save();showBanner("won");
+    S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);S.base.night=G.night+1;save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
@@ -969,7 +1028,7 @@ const D=(function(){
     }
     G.enemies=G.enemies.filter(e=>{
       if(e.hp>0)return true;
-      G.kills++;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
+      G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
       if(G.splats.length>70)G.splats.shift();
       G.splats.push({x:e.x,y:e.y,r:(e.t==="b"?10:5)*u*depth(e.y),life:8});
       if(e.t==="b")text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
@@ -1111,45 +1170,176 @@ const D=(function(){
   return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,setNext:f=>{nextFn=f;}};
 })();
 
+function setExam(id){
+  EX=EXAMS[id];S.exam=id;P=S.ex[id];
+  ({DOMAINS,Q,OBJ,GUIDE,TIER,MOCK_SPLIT,PASS,UPG,WPN}=EX);
+  checkGuide(GUIDE);
+}
+function gameCards(){
+  return EX.games.map(k=>{const g=GAMES[k];return `<a class="mode" href="#${k}" style="--c:${g.c}"><span class="label">${g.lbl}</span><h3>${g.n}</h3><p>${g.d}</p><span class="best">${g.fmt(g.rec(P))}</span></a>`;}).join("");
+}
+function renderChrome(view){
+  document.getElementById("brandSub").textContent=EX?`${EX.full} · ${EX.code}`.toUpperCase():"CHOOSE AN EXAM";
+  const tabs=EX?[["menu","Menu"],["home","Home"],["quiz","Quick Exams"],["mock","Mock Exam"],...EX.games.map(k=>[k,GAMES[k].n]),["review","Review"]]:[];
+  document.getElementById("tabs").innerHTML=tabs.map(([h,n])=>`<a href="#${h}"${h===view?' aria-current="page"':""}>${n}</a>`).join("");
+}
+
+/* ---------------- Main menu ---------------- */
+function examStats(id){
+  const X=EXAMS[id],p=S.ex[id];let c=0,w=0;Object.values(p.dom).forEach(r=>{c+=r.c;w+=r.w;});
+  return {acc:pct(c,w),seen:Object.keys(p.qs).length,total:X.Q.length,review:p.review.length,mock:p.best.mock};
+}
+function viewMenu(){
+  const card=id=>{const X=EXAMS[id];
+    if(!X.ready)return `<div class="ocard off" style="--oc:${X.color}"><span class="ocode">${X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
+      <div class="ostats" style="grid-template-columns:1fr"><div><span>Status</span><b style="font-size:16px">Arriving soon</b></div></div><span class="ogo">Questions are being written</span></div>`;
+    const t=examStats(id);
+    return `<button class="ocard" data-ex="${id}" style="--oc:${X.color}"><span class="ocode">${X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
+      <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
+      <span class="ogo">Defend with ${X.name} →</span></button>`;};
+  $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
+    <div><span class="tp-label">CompTIA study game</span><h1 class="czt"><span>CYBER</span><span class="z">ZOMBIE</span><span>ATTACK</span></h1>
+      <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div>
+    <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
+    <div class="ocards">${card("net")}${card("sec")}</div>
+    <div class="mrow"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
+  </div></section>`;
+  $app.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{setExam(b.dataset.ex);save();location.hash="home";});
+  cleanup=menuHorde(document.getElementById("mz"));
+}
+// A slow horde shuffling across the bottom of the title screen.
+function menuHorde(cv){
+  const ctx=cv.getContext("2d");let W=0,H=0,raf=0,last=performance.now();
+  const still=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const Z=Array.from({length:22},()=>({x:Math.random(),d:Math.random(),ph:Math.random()*6,sp:0.008+Math.random()*0.01}));
+  function size(){const r=cv.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
+  function draw(dt){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"rgba(6,9,13,0)");g.addColorStop(1,"rgba(20,40,28,.55)");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    Z.sort((a,b)=>a.d-b.d).forEach(z=>{
+      z.x-=z.sp*dt*(0.6+z.d);z.ph+=dt*2.5;if(z.x<-0.08){z.x=1.08;z.d=Math.random();}
+      const s=(0.55+z.d*0.9)*Math.max(1,H/180),x=z.x*W,y=H*0.45+z.d*H*0.5,sw=Math.sin(z.ph);
+      ctx.globalAlpha=0.35+z.d*0.55;ctx.strokeStyle="#0F1A14";ctx.fillStyle="#0F1A14";ctx.lineCap="round";ctx.lineWidth=2.4*s;
+      ctx.beginPath();ctx.moveTo(x,y-9*s);ctx.lineTo(x+sw*3*s,y);ctx.moveTo(x,y-9*s);ctx.lineTo(x-sw*3*s,y);ctx.stroke();
+      ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
+      ctx.lineWidth=1.8*s;ctx.beginPath();ctx.moveTo(x-1*s,y-16*s);ctx.lineTo(x-8*s,y-15*s+sw*1.5*s);ctx.moveTo(x+1*s,y-15*s);ctx.lineTo(x-7*s,y-13*s-sw*1.5*s);ctx.stroke();
+      ctx.beginPath();ctx.arc(x-1.5*s,y-22*s,3.2*s,0,7);ctx.fill();
+      ctx.globalAlpha=0.5+z.d*0.5;ctx.fillStyle="rgba(156,255,87,.35)";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2*s,0,7);ctx.fill();
+      ctx.fillStyle="#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
+    });
+    ctx.globalAlpha=1;
+  }
+  function frame(t){raf=requestAnimationFrame(frame);const dt=Math.min(0.05,(t-last)/1000);last=t;if(!document.hidden)draw(dt);}
+  size();draw(0);
+  const onR=()=>{size();draw(0);};window.addEventListener("resize",onR);
+  if(!still)raf=requestAnimationFrame(frame);
+  return ()=>{cancelAnimationFrame(raf);window.removeEventListener("resize",onR);};
+}
+
+/* ---------------- Settings ---------------- */
+function viewSettings(){
+  const rows=[
+    ["net","Network+ progress","Stats, review queue, miss history, mock exams and high scores for Network+.","Network+ progress"],
+    ["sec","Security+ progress","Stats, review queue, miss history, mock exams and high scores for Security+.","Security+ progress"],
+    ["outpost","Outpost","Nights, scrap, stockpiled ammo, base upgrades and weapons for both exams. XP you spent on weapons is refunded.","the outpost"],
+    ["all","Everything","All progress, XP, level, streak, outpost and settings. The game starts over from the main menu.","everything"]];
+  let armed=null,done="";
+  function draw(){
+    $app.innerHTML=`<div class="stack">
+      <div class="panel stack">
+        <div class="row" style="justify-content:space-between"><div><span class="label">Settings</span><h2 style="font-size:28px;margin-top:4px">Settings</h2></div><a class="btn" href="#menu">Main menu</a></div>
+        <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in answer choices. When a question tests what a term means, its choices stay abbreviated until you answer. Questions and explanations always spell abbreviations out.</span></label>
+      </div>
+      <div class="panel">
+        <span class="label">Reset</span><h3 style="font-size:20px;margin:4px 0 6px">Start fresh</h3>
+        ${done?`<p class="set-done" role="status">${esc(done)}</p>`:""}
+        ${rows.map(([k,n,d,c])=>`<div class="set-row"><div><b>${n}</b><p>${d}</p></div><button class="btn" data-r="${k}">Reset</button>
+          ${armed===k?`<div class="confirm"><b>Reset ${c}?</b><span class="muted">This can't be undone.</span><div class="row"><button class="btn danger" id="yes">Reset ${c}</button><button class="btn" id="no">Cancel</button></div></div>`:""}</div>`).join("")}
+      </div></div>`;
+    document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
+    $app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{armed=b.dataset.r;done="";draw();});
+    if(armed){document.getElementById("no").onclick=()=>{armed=null;draw();};document.getElementById("yes").onclick=()=>{done=resetPart(armed);armed=null;draw();};}
+  }
+  draw();
+}
+function resetPart(k){
+  if(k==="all"){S=freshState();EX=null;P=null;save();renderHud();renderChrome("settings");return "Everything was reset. Pick an exam from the main menu to start again.";}
+  if(k==="outpost"){S.base=freshState().base;save();renderHud();return "The outpost was reset to night 1, and the XP spent on weapons was refunded.";}
+  S.ex[k]=exFresh();if(S.exam===k)P=S.ex[k];save();return `${EXAMS[k].name} progress was reset.`;
+}
+
+/* ---------------- High scores ---------------- */
+function viewScores(){
+  const B=S.base;
+  const exBoard=id=>{const X=EXAMS[id],p=S.ex[id],m=p.best.mock,hist=p.mockHistory.slice(-5).reverse();
+    return `<div class="panel stack"><div class="row" style="justify-content:space-between"><div><span class="label">${X.code}</span><h3 style="font-size:22px;margin-top:2px">${X.name}</h3></div>${X.ready?"":`<span class="chip-s">Arriving soon</span>`}</div>
+      <div class="board">
+        <div><small>Best mock exam</small><b>${m?m.scaled:"—"}</b><small>${m?`${m.pass?"Pass":"Below "+X.PASS} · ${esc(m.date)}`:"Not taken yet"}</small></div>
+        <div><small>Best quick exam</small><b>${p.best.quick?p.best.quick+"/10":"—"}</b><small>10-question rounds</small></div>
+        ${X.games.map(k=>{const g=GAMES[k],v=g.rec(p);return `<div><small>${g.n}</small><b>${v||"—"}</b><small>${esc(g.fmt(v||0).replace(/^Best[^:]*: /,"best "))}</small></div>`;}).join("")}
+      </div>
+      ${hist.length?`<div class="tbl-wrap"><table><thead><tr><th>Recent mock</th><th>Score</th><th>Correct</th><th>Result</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${esc(h.date)}</td><td class="p">${h.scaled}</td><td class="p">${h.correct}/${h.n}</td><td><span class="passchip ${h.pass?"pass":"fail"}">${h.pass?"PASS":"FAIL"}</span></td></tr>`).join("")}</tbody></table></div>`:""}
+    </div>`;};
+  $app.innerHTML=`<div class="stack">
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between"><div><span class="label">High scores</span><h2 style="font-size:28px;margin-top:4px">High scores</h2></div><a class="btn" href="#menu">Main menu</a></div>
+      <span class="label">The outpost · shared by both exams</span>
+      <div class="board">
+        <div><small>Highest night survived</small><b>${B.bestNight||"—"}</b><small>Now on night ${B.night}</small></div>
+        <div><small>Most undead in one night</small><b>${B.bestKills||"—"}</b><small>Single quick exam</small></div>
+        <div><small>Undead destroyed</small><b>${B.kills||0}</b><small>All time</small></div>
+        <div><small>Level</small><b>${level()}</b><small>${S.xp} XP earned</small></div>
+      </div>
+    </div>
+    ${exBoard("net")}${exBoard("sec")}
+  </div>`;
+}
+
 /* ---------------- Router ---------------- */
 let cleanup = null;
 const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet};
+const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
 function route(){
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
-  const name = (location.hash||"#home").slice(1);
-  const v = VIEWS[name]?name:"home";
-  document.querySelectorAll("#tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+v?"page":"false"));
-  VIEWS[v]();
+  let name=(location.hash||"").slice(1)||"menu";
+  if(S.exam&&EXAMS[S.exam]&&EXAMS[S.exam].ready&&(!EX||EX.id!==S.exam))setExam(S.exam);
+  document.body.classList.toggle("menu-mode",name==="menu");
+  document.body.classList.toggle("global-mode",name==="scores"||name==="settings");
+  if(GLOBAL_VIEWS[name]){renderChrome(name);window.scrollTo(0,0);return GLOBAL_VIEWS[name]();}
+  if(!EX){location.hash="menu";return;}
+  if(!VIEWS[name]||(GAMES[name]&&!EX.games.includes(name)))name="home";
+  renderChrome(name);
+  VIEWS[name]();
 }
 window.addEventListener("hashchange",route);
 document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest('a[href^="#"]');
-  if(a&&a.getAttribute("href")===(location.hash||"#home")){e.preventDefault();route();}
+  if(a&&a.getAttribute("href")===(location.hash||"#menu")){e.preventDefault();route();}
 });
 
 /* ---------------- Home ---------------- */
 function viewHome(){
   const doms = Object.entries(DOMAINS).map(([k,d])=>{
-    const r=S.dom[k]||{c:0,w:0};const a=pct(r.c,r.w);
+    const r=P.dom[k]||{c:0,w:0};const a=pct(r.c,r.w);
     return `<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${a===null?"—":a+"%"}</span>
       <span class="meter" style="grid-column:2/3"><i style="width:${a||0}%;background:${d.c}"></i></span></div>`;}).join("");
-  let wsum=0,wacc=0;Object.entries(DOMAINS).forEach(([k,d])=>{const r=S.dom[k];if(r&&(r.c+r.w)){wsum+=d.w;wacc+=d.w*r.c/(r.c+r.w);}});
+  let wsum=0,wacc=0;Object.entries(DOMAINS).forEach(([k,d])=>{const r=P.dom[k];if(r&&(r.c+r.w)){wsum+=d.w;wacc+=d.w*r.c/(r.c+r.w);}});
   const ready = wsum?Math.round(100*wacc/wsum)+"%":"—";
-  const seen = Object.keys(S.qs).length;
+  const seen = Object.keys(P.qs).length;
   $app.innerHTML = `<div class="stack">
     <section class="hero">
       <div class="panel" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
         <span class="label">Daily drill</span>
         <h2>Short rounds that build exam recall.</h2>
-        <p>Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand. Anything you miss goes into your review queue.</p>
-        <div class="row"><a class="btn primary" href="#quiz">Start a quick exam</a>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}</div>
+        <p>${EX.blurb} Anything you miss goes into your review queue.</p>
+        <div class="row"><a class="btn primary" href="#quiz">Start a quick exam</a>${P.review.length?`<a class="btn" href="#review">Review ${P.review.length} missed</a>`:""}</div>
       </div>
       <div class="stats">
         <div><span class="label">Weighted accuracy</span><b>${ready}</b></div>
         <div><span class="label">Questions seen</span><b>${seen}<span class="muted" style="font-size:16px"> / ${Q.length}</span></b></div>
-        <div><span class="label">Review queue</span><b>${S.review.length}</b></div>
-        <div><span class="label">Answers logged</span><b>${S.answered}</b></div>
+        <div><span class="label">Review queue</span><b>${P.review.length}</b></div>
+        <div><span class="label">Answers logged</span><b>${P.answered}</b></div>
       </div>
     </section>
     <section class="panel">
@@ -1160,10 +1350,8 @@ function viewHome(){
       <div class="label" style="margin-bottom:10px">Training modes</div>
       <div class="modes">
         <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Quick Exams</h3><p>Each quick exam is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
-        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">90 min</span><h3>Mock Exam</h3><p>A timed 90-question exam weighted like the real N10-009.</p><span class="best">${S.mock?"In progress: "+fmtTime(S.mock.ends-Date.now())+" left":S.mockHistory.length?"Last score: "+S.mockHistory[S.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
-        <a class="mode" href="#ports" style="--c:var(--green)"><span class="label">60 seconds</span><h3>Port Blitz</h3><p>Match services to port numbers. A wrong answer costs 3 seconds.</p><span class="best">Best: ${S.best.ports}</span></a>
-        <a class="mode" href="#osi" style="--c:var(--blue)"><span class="label">12 items</span><h3>OSI Stack</h3><p>Place devices, protocols and PDUs on the correct layer.</p><span class="best">Best: ${S.best.osi}/12</span></a>
-        <a class="mode" href="#subnet" style="--c:var(--brown)"><span class="label">Endless</span><h3>Subnet Sprint</h3><p>Work out network, broadcast, host ranges and masks by hand.</p><span class="best">Best streak: ${S.best.subnet}</span></a>
+        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">90 min</span><h3>Mock Exam</h3><p>A timed 90-question exam weighted like the real ${EX.code}.</p><span class="best">${P.mock?"In progress: "+fmtTime(P.mock.ends-Date.now())+" left":P.mockHistory.length?"Last score: "+P.mockHistory[P.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
+        ${gameCards()}
       </div>
     </section>
     <section class="tp outpost" id="outpost">
@@ -1173,14 +1361,8 @@ function viewHome(){
       <div class="tiers">${[1,2,3,4,5].map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
     </section>
-    <div class="row"><button class="btn small" id="reset" style="font-size:13px;padding:6px 12px">Reset progress</button><span id="resetMsg" class="muted small"></span></div>
   </div>`;
   bindShop(document.getElementById("outpost"),viewHome);
-  let armed=false;
-  document.getElementById("reset").onclick=e=>{
-    if(!armed){armed=true;e.target.textContent="Click again to erase all progress";return;}
-    S=freshState();save();renderHud();viewHome();
-  };
 }
 
 /* ---------------- Quiz ---------------- */
@@ -1201,13 +1383,13 @@ function viewQuizSetup(){
 }
 function buildPool(dom){
   let ids = Q.map((_,i)=>i).filter(i=>dom==="all"||String(Q[i][0])===dom);
-  const prio = i => S.review.includes(i)?0:(!S.qs[i]?1:2+(pct(S.qs[i].c,S.qs[i].w)/100));
+  const prio = i => P.review.includes(i)?0:(!P.qs[i]?1:2+(pct(P.qs[i].c,P.qs[i].w)/100));
   ids = shuffle(ids).sort((a,b)=>prio(a)-prio(b));
   return shuffle(ids.slice(0,10));
 }
 /* ---------------- Exam objectives and study sources ---------------- */
 // N10-009 exam objectives, with a short topic used to search for study videos.
-const OBJ={
+const NET_OBJ={
  "1.1":["Explain concepts related to the Open Systems Interconnection (OSI) reference model","OSI model"],
  "1.2":["Compare and contrast networking appliances, applications, and functions","networking appliances"],
  "1.3":["Summarize cloud concepts and connectivity options","cloud concepts"],
@@ -1237,7 +1419,7 @@ const OBJ={
 // The owner's study guide: Sybex CompTIA Network+ Study Guide, Sixth Edition (Lammle, Buhagiar), in guides/ via Git LFS.
 // GUIDE.ch: chapter -> [title, book page, PDF page]. GUIDE.obj: objective -> chapters, from the book's objective map
 // plus chapter openings (1.2 is also covered in chapter 5, and 2.4 in chapter 15).
-const GUIDE={
+const NET_GUIDE={
   title:"CompTIA Network+ Study Guide, 6th ed.",
   pdf:"guides/Network%2B/CompTIA%20Network%2B%20Study%20Guide.pdf",
   ch:{1:["Introduction to Networks",1,51],2:["The OSI Reference Model",35,85],3:["Networking Connectors and Wiring Standards",61,111],
@@ -1253,40 +1435,42 @@ const GUIDE={
     "4.1":[20,21],"4.2":[21],"4.3":[21],"5.1":[18],"5.2":[3,18],"5.3":[11,18],"5.4":[11,18],"5.5":[19]}
 };
 // The PDF only opens where the repo is checked out with Git LFS (opened locally or served from the repo), not in hosted previews.
-let guidePdfOk=location.protocol==="file:";
-if(!guidePdfOk&&/^https?:$/.test(location.protocol)){
-  try{fetch(GUIDE.pdf,{method:"HEAD"}).then(r=>{guidePdfOk=r.ok&&/pdf/i.test(r.headers.get("content-type")||"");}).catch(()=>{});}catch(e){}
+function checkGuide(G){
+  if(!G||G.checked)return;G.checked=true;G.ok=location.protocol==="file:";
+  if(!G.ok&&/^https?:$/.test(location.protocol)){
+    try{fetch(G.pdf,{method:"HEAD"}).then(r=>{G.ok=r.ok&&/pdf/i.test(r.headers.get("content-type")||"");}).catch(()=>{});}catch(e){}
+  }
 }
 const guideShort=o=>(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", ");
 const SRC={
-  messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent("Professor Messer N10-009 "+o+" "+OBJ[o][1]),
+  messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent("Professor Messer "+EX.code+" "+o+" "+OBJ[o][1]),
   messerSite:"https://www.professormesser.com/",
-  comptiaObjectives:"https://www.google.com/search?q="+encodeURIComponent("CompTIA Network+ N10-009 exam objectives PDF"),
+  objectives:()=>"https://www.google.com/search?q="+encodeURIComponent("CompTIA "+EX.name+" "+EX.code+" exam objectives PDF"),
   comptiaSite:"https://www.comptia.org/"
 };
 const REVIEW_CLEAR=2; // correct answers in a row needed to clear a missed question
 // Updates stats and the review queue for one answered question; returns a short status note.
 function recordAnswer(id,ok){
-  const d=Q[id][0],r=S.qs[id]||(S.qs[id]={c:0,w:0}),dr=S.dom[d]||(S.dom[d]={c:0,w:0});
-  S.answered++;
+  const d=Q[id][0],r=P.qs[id]||(P.qs[id]={c:0,w:0}),dr=P.dom[d]||(P.dom[d]={c:0,w:0});
+  P.answered++;
   if(ok){r.c++;dr.c++;
-    if(!S.review.includes(id))return "";
-    const h=(S.reviewHits[id]||0)+1;
-    if(h>=REVIEW_CLEAR){S.review=S.review.filter(x=>x!==id);delete S.reviewHits[id];return "Cleared from your review queue.";}
-    S.reviewHits[id]=h;return `Review progress: ${h} of ${REVIEW_CLEAR} correct answers in a row to clear this one.`;
+    if(!P.review.includes(id))return "";
+    const h=(P.reviewHits[id]||0)+1;
+    if(h>=REVIEW_CLEAR){P.review=P.review.filter(x=>x!==id);delete P.reviewHits[id];return "Cleared from your review queue.";}
+    P.reviewHits[id]=h;return `Review progress: ${h} of ${REVIEW_CLEAR} correct answers in a row to clear this one.`;
   }
-  r.w++;dr.w++;if(!S.review.includes(id))S.review.push(id);S.reviewHits[id]=0;
-  if(!S.missedEver.includes(id))S.missedEver.push(id);
+  r.w++;dr.w++;if(!P.review.includes(id))P.review.push(id);P.reviewHits[id]=0;
+  if(!P.missedEver.includes(id))P.missedEver.push(id);
   return `In your review queue. Answer it correctly ${REVIEW_CLEAR} times in a row to clear it.`;
 }
 function startExam(){startQuiz(buildPool(quizDomain),"Quick Exam",startExam);}
-function startReview(){if(!S.review.length)return viewReview();startQuiz(shuffle(S.review).slice(0,15),"Review",startReview);}
-function startMissed(){if(!S.missedEver.length)return viewReview();startQuiz(shuffle(S.missedEver).slice(0,15),"Missed practice",startMissed);}
+function startReview(){if(!P.review.length)return viewReview();startQuiz(shuffle(P.review).slice(0,15),"Review",startReview);}
+function startMissed(){if(!P.missedEver.length)return viewReview();startQuiz(shuffle(P.missedEver).slice(0,15),"Missed practice",startMissed);}
 function weakObjectives(){
   const rows={};
   Q.forEach((q,i)=>{const o=q[5],r=rows[o]||(rows[o]={o,ids:[],c:0,w:0,queue:[],past:[]});
-    r.ids.push(i);const st=S.qs[i];if(st){r.c+=st.c;r.w+=st.w;}
-    if(S.review.includes(i))r.queue.push(i);else if(S.missedEver.includes(i))r.past.push(i);});
+    r.ids.push(i);const st=P.qs[i];if(st){r.c+=st.c;r.w+=st.w;}
+    if(P.review.includes(i))r.queue.push(i);else if(P.missedEver.includes(i))r.past.push(i);});
   return Object.values(rows)
     .filter(r=>r.queue.length||((r.c+r.w)>=3&&r.c/(r.c+r.w)<0.7))
     .sort((a,b)=>b.queue.length-a.queue.length||(pct(a.c,a.w)??101)-(pct(b.c,b.w)??101));
@@ -1298,7 +1482,7 @@ function startObjective(o){
 function viewReview(){
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
-  const q=S.review.length,m=S.missedEver.length,weak=weakObjectives();
+  const q=P.review.length,m=P.missedEver.length,weak=weakObjectives();
   const link=(href,label,sub)=>`<a class="src" href="${href}" target="_blank" rel="noopener">${label} <small>${sub}</small> ↗</a>`;
   $app.innerHTML=`<div class="stack">
   <div class="panel stack">
@@ -1312,15 +1496,15 @@ function viewReview(){
   <div class="panel">
     <span class="label">Study plan</span>
     <h3 style="font-size:22px;margin:4px 0 6px">What to go over next</h3>
-    <p class="muted" style="margin:0 0 14px;max-width:64ch">Built from your review queue and your accuracy on each N10-009 exam objective. Read the key facts, watch the matching Professor Messer video, then practice that objective until it clears.</p>
+    <p class="muted" style="margin:0 0 14px;max-width:64ch">Built from your review queue and your accuracy on each ${EX.code} exam objective. Read the key facts, watch the matching Professor Messer video, then practice that objective until it clears.</p>
     ${weak.length?weak.map((r,ix)=>{
       const a=pct(r.c,r.w),notes=r.queue.concat(r.past).slice(0,6);
       return `<details class="obj"${ix<3?" open":""}>
         <summary><span class="oc">${r.o}</span><span class="ot">${esc(OBJ[r.o][0])}</span><span class="chips">${r.queue.length?`<span class="chip-s bad">${r.queue.length} to review</span>`:""}${a!==null?`<span class="chip-s">${a}% correct over ${r.c+r.w} answers</span>`:""}<span class="chip-s">Domain ${r.o[0]}.0 · ${esc(DOMAINS[r.o[0]].name)}</span></span></summary>
         <div class="obj-body">
           <div class="guide-ch"><span class="label">In your study guide</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
-            return guidePdfOk?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}</div>
-          <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.comptiaObjectives,"CompTIA exam objectives","official PDF")}</div>
+            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}</div>
+          <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.objectives(),"CompTIA exam objectives","official PDF")}</div>
           ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
           <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
         </div></details>`;}).join("")
@@ -1330,10 +1514,10 @@ function viewReview(){
     <span class="label">Study sources</span>
     <h3 style="font-size:18px;margin:4px 0 10px">Where to learn more</h3>
     <div class="srcs">
-      ${link(SRC.messerSite,"Professor Messer","free N10-009 video course and notes")}
-      ${link(SRC.comptiaSite,"CompTIA","official Network+ certification page")}
-      ${link(SRC.comptiaObjectives,"N10-009 exam objectives","find the official PDF")}
-      ${guidePdfOk?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
+      ${link(SRC.messerSite,"Professor Messer",`free ${EX.code} video course and notes`)}
+      ${link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
+      ${link(SRC.objectives(),`${EX.code} exam objectives`,"find the official PDF")}
+      ${GUIDE.ok?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
     </div>
     <p class="muted small" style="margin:12px 0 0">The objectives PDF is CompTIA's own list of everything the exam covers. Use it as a checklist alongside the study plan.</p>
   </div>
@@ -1386,21 +1570,22 @@ function showQ(st){
 }
 function quizResult(st){
   D.final();
+  if(st.label==="Quick Exam"&&st.pool.length===10)P.best.quick=Math.max(P.best.quick||0,st.correct);
   const p=Math.round(100*st.correct/st.pool.length);
-  const msg=p>=90?"Exam-ready on this set.":p>=72?"Solid. The real exam needs 720 on a 100–900 scale, so aim for 80% or better in practice.":"Your misses are now in the review queue. Clear them next.";
+  const msg=p>=90?"Exam-ready on this set.":p>=72?`Solid. The real exam needs ${PASS} on a 100–900 scale, so aim for ${Math.round((PASS-100)/8)+3}% or better in practice.`:"Your misses are now in the review queue. Clear them next.";
   $app.innerHTML=`<div class="panel result stack">
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
     <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
     <p class="small" style="margin:0 auto;max-width:48ch">A bomber is clearing the field below. Once it passes, the next night begins.</p>
-    <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${S.review.length?`<a class="btn" href="#review">Review ${S.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
+    <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${P.review.length?`<a class="btn" href="#review">Review ${P.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
   document.getElementById("again").onclick=()=>st.again();
 }
 
 /* ---------------- Mock exam ---------------- */
-const MOCK_N=90, MOCK_MS=90*60000, PASS=720;
-const MOCK_SPLIT={1:21,2:18,3:17,4:13,5:21}; // N10-009 weights (23/20/19/14/24%) applied to 90 questions
+const MOCK_N=90, MOCK_MS=90*60000;
+const NET_MOCK_SPLIT={1:21,2:18,3:17,4:13,5:21}; // N10-009 weights (23/20/19/14/24%) applied to 90 questions
 const fmtTime=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");};
 const scaled=pct=>Math.round(100+800*pct);
 function buildMock(){
@@ -1411,27 +1596,27 @@ function buildMock(){
   return {ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1),flag:ids.map(()=>0),cur:0,ends:Date.now()+MOCK_MS,start:Date.now()};
 }
 function viewMock(){
-  if(S.mock){if(Date.now()>=S.mock.ends)return submitMock(true);return runMock();}
-  if(S.mockLast)return mockResults();
+  if(P.mock){if(Date.now()>=P.mock.ends)return submitMock(true);return runMock();}
+  if(P.mockLast)return mockResults();
   mockIntro();
 }
 function mockIntro(){
-  const hist=S.mockHistory.slice(-5).reverse();
+  const hist=P.mockHistory.slice(-5).reverse();
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">90 questions. 90 minutes.</h2></div>
-      <p class="muted" style="margin:0;max-width:64ch">This runs like the real N10-009. Questions are split across the five domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The clock keeps running if you leave this page, and your answers are saved. The pass mark is ${PASS} on the 100–900 scale.</p>
+      <p class="muted" style="margin:0;max-width:64ch">This runs like the real ${EX.code}. Questions are split across the five domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The clock keeps running if you leave this page, and your answers are saved. The pass mark is ${PASS} on the 100–900 scale.</p>
       <div class="domains">${Object.entries(DOMAINS).map(([k,d])=>`<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${MOCK_SPLIT[k]} Qs</span></div>`).join("")}</div>
       <p class="muted small" style="margin:0">The real exam also has performance-based questions (simulations), which this mock doesn't include. Keys: 1–4 to answer, ← and → to move, F to flag.</p>
       <div><button class="btn primary" id="mstart">Start mock exam</button></div>
     </div>
     ${hist.length?`<div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Recent attempts</h3><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Result</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${esc(h.date)}</td><td class="p">${h.scaled}</td><td class="p">${h.correct}/${h.n}</td><td><span class="passchip ${h.pass?"pass":"fail"}">${h.pass?"PASS":"FAIL"}</span></td></tr>`).join("")}</tbody></table></div></div>`:""}
   </div>`;
-  document.getElementById("mstart").onclick=()=>{S.mock=buildMock();S.mockLast=null;save();runMock();};
+  document.getElementById("mstart").onclick=()=>{P.mock=buildMock();P.mockLast=null;save();runMock();};
 }
 function runMock(){
   if(cleanup){cleanup();cleanup=null;}
-  const M=S.mock;let confirmOpen=false;
+  const M=P.mock;let confirmOpen=false;
   const go=i=>{M.cur=Math.max(0,Math.min(M.ids.length-1,i));confirmOpen=false;save();draw();window.scrollTo({top:0});};
   function draw(){
     const i=M.cur,id=M.ids[i],a=Q[id][2],hideC=isTermQ(a);
@@ -1463,7 +1648,7 @@ function runMock(){
     if(confirmOpen){
       document.getElementById("myes").onclick=()=>submitMock(false);
       document.getElementById("mno").onclick=()=>{confirmOpen=false;draw();};
-      document.getElementById("mquit").onclick=()=>{S.mock=null;save();if(cleanup){cleanup();cleanup=null;}mockIntro();};
+      document.getElementById("mquit").onclick=()=>{P.mock=null;save();if(cleanup){cleanup();cleanup=null;}mockIntro();};
     }
     tick();
   }
@@ -1486,7 +1671,7 @@ function runMock(){
 }
 function submitMock(timedOut){
   if(cleanup){cleanup();cleanup=null;}
-  const M=S.mock;if(!M)return mockIntro();
+  const M=P.mock;if(!M)return mockIntro();
   let correct=0;const dom={};
   M.ids.forEach((id,i)=>{
     const ok=M.ans[i]>=0&&M.opts[i][M.ans[i]]===Q[id][2];if(ok)correct++;
@@ -1495,20 +1680,21 @@ function submitMock(timedOut){
   });
   const n=M.ids.length,pct=correct/n,sc=scaled(pct),pass=sc>=PASS;
   const used=Math.min(MOCK_MS,Date.now()-M.start);
-  S.mockLast={ids:M.ids,opts:M.opts,ans:M.ans,correct,n,scaled:sc,pass,dom,used,timedOut};
-  S.mockHistory.push({date:new Date().toLocaleDateString(),scaled:sc,correct,n,pass});
-  if(S.mockHistory.length>20)S.mockHistory.shift();
-  S.mock=null;S.base.scrap+=3*correct;award(5*correct);
+  P.mockLast={ids:M.ids,opts:M.opts,ans:M.ans,correct,n,scaled:sc,pass,dom,used,timedOut};
+  P.mockHistory.push({date:new Date().toLocaleDateString(),scaled:sc,correct,n,pass});
+  if(!P.best.mock||sc>P.best.mock.scaled)P.best.mock={scaled:sc,correct,n,pass,date:new Date().toLocaleDateString()};
+  if(P.mockHistory.length>20)P.mockHistory.shift();
+  P.mock=null;S.base.scrap+=3*correct;award(5*correct);
   if(location.hash!=="#mock")location.hash="mock";else mockResults();
 }
 function mockResults(){
-  const L=S.mockLast,pct=Math.round(100*L.correct/L.n);
+  const L=P.mockLast,pct=Math.round(100*L.correct/L.n);
   const missed=L.ids.map((id,i)=>({id,i})).filter(x=>!(L.ans[x.i]>=0&&L.opts[x.i][L.ans[x.i]]===Q[x.id][2]));
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div class="row" style="justify-content:space-between"><span class="label">Mock exam result${L.timedOut?" · time ran out":""}</span><span class="passchip ${L.pass?"pass":"fail"}">${L.pass?"PASS":"FAIL"}</span></div>
       <div class="result" style="padding:0"><div class="big">${L.scaled}<span class="muted" style="font-size:28px"> / 900</span></div></div>
-      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. CompTIA doesn't publish how it scales scores, so this maps your percentage straight onto the 100–900 scale, where ${PASS} is about 78%. Aim for 85% or better on mocks before booking the real exam.</p>
+      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. CompTIA doesn't publish how it scales scores, so this maps your percentage straight onto the 100–900 scale, where ${PASS} is about ${Math.round((PASS-100)/8)}%. Aim for 85% or better on mocks before booking the real exam.</p>
       <div class="mstats">
         <div><span class="label">Correct</span><b>${L.correct}/${L.n}</b></div>
         <div><span class="label">Percent</span><b>${pct}%</b></div>
@@ -1526,18 +1712,18 @@ function mockResults(){
           <div><span class="label">Correct answer</span><br><b>${esc(expand(a))}</b></div>
           <div class="muted">${esc(expand(ex))}</div></div></details>`;}).join("")}</div>`:""}
   </div>`;
-  document.getElementById("mnew").onclick=()=>{S.mockLast=null;S.mock=buildMock();save();runMock();};
+  document.getElementById("mnew").onclick=()=>{P.mockLast=null;P.mock=buildMock();save();runMock();};
 }
 
 /* ---------------- Port Blitz ---------------- */
 function viewPorts(){
-  const missed=Object.entries(S.missedPorts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n])=>n);
+  const missed=Object.entries(P.missedPorts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n])=>n);
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div><span class="label">Port Blitz</span><h2 style="font-size:28px;margin-top:4px">60 seconds. As many ports as you can.</h2></div>
       <p class="muted" style="margin:0">Each prompt is either "service → port" or "port → service". A wrong answer costs 3 seconds. Keys 1–4 work too.</p>
       ${missed.length?`<p class="small" style="margin:0"><span class="label">Your trouble spots:</span> ${missed.map(esc).join(", ")}</p>`:""}
-      <div class="row"><button class="btn primary" id="start">Start blitz</button><span class="muted small mono">Best: ${S.best.ports}</span></div>
+      <div class="row"><button class="btn primary" id="start">Start blitz</button><span class="muted small mono">Best: ${P.best.ports}</span></div>
     </div>
     <div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Port reference</h3>
       <div class="tbl-wrap"><table><thead><tr><th>Port</th><th>Service</th><th>Note</th></tr></thead><tbody>
@@ -1571,7 +1757,7 @@ function runBlitz(){
     const ok=b.dataset.v===cur.ans;
     bz.classList.remove("flash-ok","flash-bad");void bz.offsetWidth;bz.classList.add(ok?"flash-ok":"flash-bad");
     if(ok){score++;S.base.scrap+=2;document.getElementById("sc").textContent=score;setTimeout(next,120);}
-    else{end-=3000;misses.push(cur.name);S.missedPorts[cur.name]=(S.missedPorts[cur.name]||0)+1;
+    else{end-=3000;misses.push(cur.name);P.missedPorts[cur.name]=(P.missedPorts[cur.name]||0)+1;
       document.querySelectorAll("#bo .opt").forEach(x=>{if(x.dataset.v===cur.ans)x.classList.add("right");else if(x===b)x.classList.add("wrong");});
       setTimeout(next,700);}
   }
@@ -1585,11 +1771,11 @@ function runBlitz(){
   cleanup=()=>{clearInterval(iv);document.removeEventListener("keydown",onKey);};
   function finish(){
     cleanup();cleanup=null;
-    const best=score>S.best.ports;if(best)S.best.ports=score;award(score*3);
+    const best=score>P.best.ports;if(best)P.best.ports=score;award(score*3);
     const uniq=[...new Set(misses)];
     $app.innerHTML=`<div class="panel result stack">
       <span class="label">Time</span><div class="big">${score}</div>
-      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+S.best.ports}</p>
+      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best.ports}</p>
       ${uniq.length?`<div class="tbl-wrap" style="max-width:420px;margin:0 auto;text-align:left"><table><thead><tr><th>Missed</th><th>Port</th></tr></thead><tbody>${uniq.map(n=>{const p=PORTS.find(x=>x[0]===n);return `<tr><td>${esc(n)} <span class="muted small">(${esc(p[3])})</span></td><td class="p">${p[1]}</td></tr>`;}).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">Run it again</button><a class="btn" href="#home">Home</a></div>
     </div>`;
@@ -1625,9 +1811,9 @@ function viewOsi(){
   }
   function done(){
     cleanup&&cleanup();cleanup=null;
-    const best=score>S.best.osi;if(best)S.best.osi=score;award(score*4);
+    const best=score>P.best.osi;if(best)P.best.osi=score;award(score*4);
     $app.innerHTML=`<div class="panel result stack"><span class="label">OSI Stack complete</span><div class="big">${score}<span class="muted" style="font-size:32px"> / 12</span></div>
-      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+S.best.osi+"/12"}</p>
+      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best.osi+"/12"}</p>
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">New stack</button><a class="btn" href="#home">Home</a></div></div>`;
     document.getElementById("again").onclick=viewOsi;
   }
@@ -1661,30 +1847,30 @@ function makeProblem(){
   const type=pick(Object.keys(ASK));
   return {ip,p,mask,net,bc,ans,type};
 }
-function working(P){
-  const p=P.p, oct=Math.min(3,Math.floor(p/8)), mOct=(P.mask>>>(24-8*oct))&255;
-  const block=256-mOct, ipOct=(P.ip>>>(24-8*oct))&255;
+function working(pr){
+  const p=pr.p, oct=Math.min(3,Math.floor(p/8)), mOct=(pr.mask>>>(24-8*oct))&255;
+  const block=256-mOct, ipOct=(pr.ip>>>(24-8*oct))&255;
   const bin=n=>{const b=n.toString(2).padStart(32,"0");let out="";for(let i=0;i<32;i++){out+=`<span class="${i<p?"n":"h"}">${b[i]}</span>`;if(i%8===7&&i<31)out+=".";}return out;};
   const lines=[];
-  lines.push(`/${p} = ${toIp(P.mask)}  →  ${p} network bits, ${32-p} host bits`);
+  lines.push(`/${p} = ${toIp(pr.mask)}  →  ${p} network bits, ${32-p} host bits`);
   if(p%8!==0){
     lines.push(`Interesting octet: #${oct+1} (mask ${mOct}). Block size = 256 − ${mOct} = ${block}`);
     lines.push(`${ipOct} falls in the block starting at ${Math.floor(ipOct/block)*block} (${Math.floor(ipOct/block)} × ${block})`);
   } else lines.push(`Mask ends on an octet boundary, so the host octets are all zero for the network and all 255 for broadcast.`);
-  lines.push(`Network ${P.ans.network} · Broadcast ${P.ans.broadcast}`);
-  lines.push(`Usable ${P.ans.first} – ${P.ans.last} · 2^${32-p} − 2 = ${P.ans.hosts} hosts`);
-  return `<div class="bits">IP   ${bin(P.ip)}\nMASK ${bin(P.mask)}\n<span class="muted">     blue = network bits, orange = host bits</span>\n\n${lines.map(esc).join("\n")}</div>`;
+  lines.push(`Network ${pr.ans.network} · Broadcast ${pr.ans.broadcast}`);
+  lines.push(`Usable ${pr.ans.first} – ${pr.ans.last} · 2^${32-p} − 2 = ${pr.ans.hosts} hosts`);
+  return `<div class="bits">IP   ${bin(pr.ip)}\nMASK ${bin(pr.mask)}\n<span class="muted">     blue = network bits, orange = host bits</span>\n\n${lines.map(esc).join("\n")}</div>`;
 }
 function viewSubnet(){
-  const P=makeProblem();let answered=false;
+  const pr=makeProblem();let answered=false;
   const cheat=[24,25,26,27,28,29,30].map(p=>`<div><b>/${p}</b><span>${(maskOf(p)&255)}</span><span>${Math.pow(2,32-p)-2}h</span></div>`).join("");
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
-      <div class="qhead"><span class="label">Subnet Sprint</span><span class="mono">Streak <b>${subStreak}</b> · Best ${S.best.subnet}</span></div>
-      <div class="ipline">${toIp(P.ip)}<span>/${P.p}</span></div>
-      <label for="sa" style="font-weight:600;font-size:17px">${ASK[P.type].q}?</label>
+      <div class="qhead"><span class="label">Subnet Sprint</span><span class="mono">Streak <b>${subStreak}</b> · Best ${P.best.subnet}</span></div>
+      <div class="ipline">${toIp(pr.ip)}<span>/${pr.p}</span></div>
+      <label for="sa" style="font-weight:600;font-size:17px">${ASK[pr.type].q}?</label>
       <form class="answer" id="sf" autocomplete="off">
-        <input id="sa" inputmode="${ASK[P.type].kind==="num"?"numeric":"decimal"}" placeholder="${ASK[P.type].kind==="num"?"e.g. 62":"e.g. 10.1.4.0"}" spellcheck="false">
+        <input id="sa" inputmode="${ASK[pr.type].kind==="num"?"numeric":"decimal"}" placeholder="${ASK[pr.type].kind==="num"?"e.g. 62":"e.g. 10.1.4.0"}" spellcheck="false">
         <button class="btn primary" type="submit">Check</button>
         <button class="btn" type="button" id="skip">Show answer</button>
       </form>
@@ -1696,9 +1882,9 @@ function viewSubnet(){
   const inp=document.getElementById("sa");inp.focus({preventScroll:true});
   function finish(ok,given){
     if(answered)return;answered=true;
-    if(ok){subStreak++;S.base.scrap+=5;if(subStreak>S.best.subnet)S.best.subnet=subStreak;award(8);}else{subStreak=0;save();bumpDay();}
-    document.getElementById("sres").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":given===null?"Answer":"Not quite"}: ${esc(P.ans[P.type])}</b></div>
-      <div style="margin-top:12px">${working(P)}</div>
+    if(ok){subStreak++;S.base.scrap+=5;if(subStreak>P.best.subnet)P.best.subnet=subStreak;award(8);}else{subStreak=0;save();bumpDay();}
+    document.getElementById("sres").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":given===null?"Answer":"Not quite"}: ${esc(pr.ans[pr.type])}</b></div>
+      <div style="margin-top:12px">${working(pr)}</div>
       <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" id="next">Next subnet</button></div>`;
     inp.disabled=true;
     document.getElementById("next").onclick=viewSubnet;document.getElementById("next").focus({preventScroll:true});
@@ -1707,13 +1893,41 @@ function viewSubnet(){
     e.preventDefault();if(answered)return;
     const v=inp.value.trim();if(!v)return;
     let ok;
-    if(ASK[P.type].kind==="num")ok=v.replace(/,/g,"")===P.ans.hosts;
-    else{const n=parseIp(v);ok=n!==null&&toIp(n)===P.ans[P.type];}
+    if(ASK[pr.type].kind==="num")ok=v.replace(/,/g,"")===pr.ans.hosts;
+    else{const n=parseIp(v);ok=n!==null&&toIp(n)===pr.ans[pr.type];}
     finish(ok,v);
   });
   document.getElementById("skip").onclick=()=>finish(false,null);
 }
 
+/* ---------------- Exams ---------------- */
+// Security+ content arrives in phase 2; until then its menu card is shown as coming soon.
+const SEC_DOMAINS = {
+  1:{name:"General Security Concepts", w:12, c:"var(--orange)"},
+  2:{name:"Threats, Vulnerabilities, and Mitigations", w:22, c:"var(--green)"},
+  3:{name:"Security Architecture", w:18, c:"var(--blue)"},
+  4:{name:"Security Operations", w:28, c:"var(--brown)"},
+  5:{name:"Security Program Management and Oversight", w:20, c:"var(--muted)"}
+};
+const GAMES={
+  ports:{n:"Port Blitz",lbl:"60 seconds",d:"Match services to port numbers. A wrong answer costs 3 seconds.",c:"var(--green)",rec:p=>p.best.ports,fmt:v=>`Best: ${v}`},
+  osi:{n:"OSI Stack",lbl:"12 items",d:"Place devices, protocols and PDUs on the correct layer.",c:"var(--blue)",rec:p=>p.best.osi,fmt:v=>`Best: ${v}/12`},
+  subnet:{n:"Subnet Sprint",lbl:"Endless",d:"Work out network, broadcast, host ranges and masks by hand.",c:"var(--brown)",rec:p=>p.best.subnet,fmt:v=>`Best streak: ${v}`}
+};
+const EXAMS={
+  net:{id:"net",name:"Network+",full:"CompTIA Network+",code:"N10-009",ready:true,color:"#19F0FF",
+    tagline:"Networking concepts, implementation, operations, security and troubleshooting.",
+    blurb:"Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand.",
+    DOMAINS:NET_DOMAINS,Q:NET_Q,OBJ:NET_OBJ,GUIDE:NET_GUIDE,TIER:NET_TIER,MOCK_SPLIT:NET_MOCK_SPLIT,PASS:720,UPG:NET_UPG,WPN:NET_WPN,
+    games:["ports","osi","subnet"]},
+  sec:{id:"sec",name:"Security+",full:"CompTIA Security+",code:"SY0-701",ready:false,color:"#FF2BD6",
+    tagline:"Threats, architecture, security operations and governance.",
+    blurb:"Answer practice questions across all five SY0-701 domains.",
+    DOMAINS:SEC_DOMAINS,Q:[],OBJ:{},GUIDE:null,TIER:{1:1,2:2,3:1,4:3,5:2},MOCK_SPLIT:{1:11,2:20,3:16,4:25,5:18},PASS:750,UPG:NET_UPG,WPN:NET_WPN,
+    games:["ports"]}
+};
+// The current exam's content and progress. setExam() points these at one exam.
+let EX=null,P=null,DOMAINS=NET_DOMAINS,Q=NET_Q,OBJ=NET_OBJ,GUIDE=NET_GUIDE,TIER=NET_TIER,MOCK_SPLIT=NET_MOCK_SPLIT,PASS=720,UPG=NET_UPG,WPN=NET_WPN;
 /* ---------------- Boot ---------------- */
 renderHud();route();
 })();

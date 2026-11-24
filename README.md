@@ -1,8 +1,15 @@
-# Net+ Patch Bay
+# Cyber Zombie Attack
 
-A browser study game for the **CompTIA Network+ (N10-009)** exam. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
+A browser study game for **CompTIA Network+ (N10-009)**, with **Security+ (SY0-701)** being added. You answer exam questions to keep a zombie horde off your outpost. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
 
-## Modes
+## Main menu, settings and high scores
+
+- **Main menu:** the title screen where you pick the exam to study. Each exam card shows your accuracy, questions seen, review queue and best mock score. Use **Menu** in the tabs, or the logo, to switch exams.
+- **Settings:** turn spelled-out abbreviations in answer choices on or off, and reset Network+ progress, Security+ progress, the outpost, or everything. Each reset asks you to confirm first.
+- **High scores:** the outpost's records (highest night, most undead in one night, total kills, level) and, for each exam, the best mock score, best quick exam, mini-game records and recent mock attempts.
+- **Progress:** each exam keeps its own stats, review queue, mock exams and high scores. XP, your level, your streak and the outpost are shared, but each exam has its own base upgrades and weapons.
+
+## Network+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds drawn from 219 practice questions across all five exam domains, with an explanation after every answer. Every question is tagged with its N10-009 objective. Each quick exam is also a night of defense in the bottom half of the screen. The undead spawn without end until you answer the last question, and correct answers resupply the guns. Then a bomber flies over, clears the field, and the next night begins. Press 1–4 to answer and Enter to continue.
 - **Mock Exam:** a timed 90-question, 90-minute exam split by the N10-009 domain weights (21/18/17/13/21 questions). You get no feedback until you submit. You can flag questions, jump around with the question grid, and close the page and resume, since the clock keeps running. Results show an estimated 100–900 score (pass at 720), a breakdown by domain, and every missed question with its explanation. Misses go into your review queue.
@@ -24,16 +31,16 @@ A browser study game for the **CompTIA Network+ (N10-009)** exam. It is a single
   | 5.0 Network Troubleshooting | Elite | +30 ammo, +15 scrap |
 
 - **Wrong answers** draw an extra brute into the fight. Three correct answers in a row earn bonus scrap.
-- **Scrap** buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights, Port Blitz, OSI Stack and Subnet Sprint.
+- **Scrap** is shared by both exams. It buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights, Port Blitz, OSI Stack and Subnet Sprint.
 - **Ammo supplies:** buy ammo crates and pallets with scrap, or an airdrop of 200 rounds with XP. During a night the ammo goes straight to the guns. Otherwise it's stockpiled for your next night.
-- **XP is currency:** spend it in the Armory to attach new weapons to the base: Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Your level still counts all the XP you've ever earned.
+- **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Your level still counts all the XP you've ever earned.
 - **Nights:** keep the wall standing until the bomber clears the field to advance to the next night, where the horde gets bigger and tougher.
 
 The home screen shows your accuracy in each domain next to that domain's exam weight. It also tracks XP, levels, a daily streak and your best scores.
 
 ## Abbreviations
 
-Questions, explanations, the port table and OSI items spell out abbreviations the first time they appear, for example "UDP (User Datagram Protocol)". When a question tests what a term means (its correct answer is an abbreviation), the answer choices stay abbreviated until you answer, so the full name does not give the answer away. A setting on the quiz screen turns spelled-out choices off entirely.
+Questions, explanations, the port table and OSI items spell out abbreviations the first time they appear, for example "UDP (User Datagram Protocol)". When a question tests what a term means (its correct answer is an abbreviation), the answer choices stay abbreviated until you answer, so the full name does not give the answer away. A setting on the quiz screen and in Settings turns spelled-out choices off entirely.
 
 ## Study guides
 
@@ -60,4 +67,4 @@ To publish it, enable GitHub Pages (Settings → Pages → deploy from the `main
 ## Notes
 
 - Progress is stored in your browser's `localStorage`, so it stays on the device and browser you use.
-- The questions are original practice items written against the N10-009 objectives, not real exam questions.
+- The questions are original practice items written against the official CompTIA exam objectives, not real exam questions.

@@ -1,27 +1,32 @@
-# Net+ Patch Bay
+# Cyber Zombie Attack
 
-A browser study game for the CompTIA Network+ exam (N10-009), with a tower-defense game ("the outpost") built into the quizzes. The owner studies with it daily and plans to add Security+ (SY0-701) as a second exam track.
+A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. Network+ (N10-009) is complete; Security+ (SY0-701) is being added as a second exam. The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it; the repo name still says net-plus.
 
 ## How it's built
 
 - Everything is in **`index.html`**: HTML, CSS and one script wrapped in an IIFE. There is no build step, no framework and no dependencies except Google Fonts (Chakra Petch, IBM Plex Sans, IBM Plex Mono).
 - Open the file in a browser to run it, or serve the folder: `python3 -m http.server 8000`.
-- Hash routing: `#home`, `#quiz` (Quick Exams), `#mock`, `#ports`, `#osi`, `#subnet`, `#review`. `VIEWS` maps hashes to view functions. A click on a link to the current hash re-runs `route()`, so "Review" links work from the review screen.
+- Hash routing. Global views: `#menu` (the title screen, and the default with no hash), `#scores` (High Scores), `#settings`. Exam views: `#home`, `#quiz` (Quick Exams), `#mock`, `#review`, plus each exam's mini-games (`#ports`, `#osi`, `#subnet` for Network+). `GLOBAL_VIEWS` and `VIEWS` map hashes to view functions. An exam view with no exam chosen sends you to the menu, and a mini-game the current exam doesn't have falls back to home. A click on a link to the current hash re-runs `route()`.
+- **Exams:** `EXAMS` (the `Exams` section, just before Boot) registers each exam: name, code, pass mark, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, armory (`UPG`, `WPN`) and mini-game list (`games`, keys of `GAMES`). Network+ content is defined as `NET_*` constants. `setExam(id)` points the shared names (`EX`, `P`, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, `PASS`, `UPG`, `WPN`) at one exam, so most code just uses those names. `EXAMS.sec.ready` is false until the Security+ content exists, and the menu shows it as coming soon.
+- The menu, Settings and High Scores are global (`body.menu-mode` hides the header and tabs on the menu; `body.global-mode` hides the tabs). The menu is a deliberately dark title screen with an animated horde on a canvas, which stays still when the device asks for reduced motion.
 - Every view that adds timers or key listeners sets the global `cleanup`. `route()` calls it and also calls `D.unmount()`.
 
 ### Main sections of the script (in order)
 
 | Section | What it holds |
 |---|---|
-| Content | `DOMAINS` (name, exam weight %, color), `Q` (question bank), `PORTS`, `LAYERS`, `OSI_ITEMS` |
-| State | `KEY`, `freshState()`, `load()`, `save()`, `award(xp)` |
+| Content | `NET_DOMAINS` (name, exam weight %, color), `NET_Q` (question bank), `PORTS`, `LAYERS`, `OSI_ITEMS` |
+| State | `KEY`, `exFresh()`, `freshState()`, `mergeEx()`, `load()`, `save()`, `award(xp)` |
 | Abbreviations | `GL` glossary, `expand(text)`, `isTermQ(answer)`, `choice(option)` |
-| Outpost economy | `TIER`/`TIERS` (rewards per domain), `UPG` (scrap upgrades), `WPN` (XP weapons), `SUPPLY` (ammo), shop HTML |
+| Outpost economy | `NET_TIER`/`TIERS` (rewards per domain), `NET_UPG` (scrap upgrades), `NET_WPN` (XP weapons), `SUPPLY` (ammo), shop HTML |
 | Outpost defense | `D`, a canvas tower-defense module in a fixed bottom dock |
 | Quiz | `startQuiz(pool,label,again)`, `showQ`, `quizResult`, `recordAnswer(id,ok)` |
 | Objectives | `OBJ` (N10-009 objective titles plus a video search topic), `SRC` (study links), study plan in `viewReview` |
 | Mock exam | `MOCK_SPLIT`, `buildMock`, `runMock`, `submitMock`, `mockResults` |
+| Menu, Settings, High Scores | `viewMenu`, `menuHorde`, `viewSettings`, `resetPart`, `viewScores` |
+| Router | `VIEWS`, `GLOBAL_VIEWS`, `route()`, `renderChrome()` (header subtitle and tabs) |
 | Mini games | Port Blitz, OSI Stack, Subnet Sprint |
+| Exams | `SEC_DOMAINS`, `GAMES`, `EXAMS`, and the `let` bindings that `setExam` sets |
 
 ## Question bank rules
 
@@ -32,7 +37,8 @@ Each question is one line in `Q`:
 // e.g. [5, "Which tool ...?", "OTDR", ["Toner probe", "Loopback plug", "Multimeter"], "An optical ...", "5.5"]
 ```
 
-- **Append new questions to the end of `Q`. Never insert in the middle or reorder.** Saved progress (`S.qs`, `S.review`, `S.reviewHits`, `S.missedEver`, mock exam state) refers to questions by array index. Inserting earlier in the list shifts every later question and scrambles saved progress. This already happened once, when 10 domain 2 and 3 questions were inserted mid-list in commit `eeac48e`. Since then, new questions only go at the end.
+- Each exam has its own bank (`NET_Q`, and later `SEC_Q`), and `Q` points at the current one.
+- **Append new questions to the end of the bank.** Never insert in the middle or reorder.** Saved progress (`S.qs`, `S.review`, `S.reviewHits`, `S.missedEver`, mock exam state) refers to questions by array index. Inserting earlier in the list shifts every later question and scrambles saved progress. This already happened once, when 10 domain 2 and 3 questions were inserted mid-list in commit `eeac48e`. Since then, new questions only go at the end.
 - The objective tag must be a key of `OBJ` and must start with the question's domain number.
 - Write explanations that teach: give the right answer, then why the distractors are wrong or how they differ.
 - Questions are original practice items, never copied from real exams or third-party question banks.
@@ -72,7 +78,12 @@ Each question is one line in `Q`:
 
 ## Saved state
 
-`localStorage["netplus-patch-bay-v1"]`. Every read and write is wrapped in try/catch, and `load()` merges onto `freshState()`. When you add fields, add defaults to `freshState()` and merge nested objects in `load()` so older saves still work. Never rename `KEY`, or users lose their progress.
+`localStorage["netplus-patch-bay-v1"]`. Every read and write is wrapped in try/catch, and `load()` merges onto `freshState()`. When you add fields, add defaults to `freshState()` or `exFresh()` and merge nested objects in `load()` so older saves still work. Never rename `KEY`, or users lose their progress.
+
+- **Per exam** (`S.ex.net`, `S.ex.sec`, made by `exFresh()`; the current one is `P`): `qs`, `dom`, `review`, `reviewHits`, `missedEver`, `mock`, `mockLast`, `mockHistory`, `best` (`ports`, `osi`, `subnet`, `quick`, `control`, `attack`, `mock`), `missedPorts`, `answered`. Use `P.<field>` in exam code, never `S.<field>`.
+- **Shared:** `xp`, `streak`, `lastDay`, `exam` (last chosen exam), `settings`, and `base` (scrap, night, bestNight, xpSpent, stock, kills, bestKills). Upgrade levels are per exam in `S.base.up.net` and `S.base.up.sec`.
+- **Migration:** saves from before the exam split kept Network+ progress at the top level with flat `base.up`. `load()` moves them into `S.ex.net` and `S.base.up.net`, and fills `best.mock` from mock history.
+- Don't name a local variable `P`; it hides the current exam's progress. Subnet Sprint's problem variable is `pr` for this reason.
 
 ## Keeping things in sync
 
@@ -83,7 +94,7 @@ Each question is one line in `Q`:
 ## Testing
 
 - **Syntax:** extract the `<script>` body and run `node --check` on it.
-- **Behavior:** Playwright with Chromium. The script is an IIFE, so test against a copy that exposes internals before boot. For example, replace `renderHud();route();\n})();` with `window.Q=Q;window.expand=expand;Object.defineProperty(window,'S',{get:()=>S});\nrenderHud();route();\n})();`.
+- **Behavior:** Playwright with Chromium. The script is an IIFE, so test against a copy that exposes internals before boot. For example, replace `renderHud();route();\n})();` with `Object.defineProperty(window,'S',{get:()=>S});Object.defineProperty(window,'P',{get:()=>P});\nrenderHud();route();\n})();`. The app opens on the menu, so pick an exam (click `.ocard[data-ex="net"]`) before testing exam views. Test old-format saves still load when you touch `load()`.
 - Check for page errors, horizontal overflow at 390px width, and the flows you changed.
 
 ## Planned next
