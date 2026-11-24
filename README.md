@@ -35,6 +35,18 @@ The home screen shows your accuracy in each domain next to that domain's exam we
 
 Questions, explanations, the port table and OSI items spell out abbreviations the first time they appear, for example "UDP (User Datagram Protocol)". When a question tests what a term means (its correct answer is an abbreviation), the answer choices stay abbreviated until you answer, so the full name does not give the answer away. A setting on the quiz screen turns spelled-out choices off entirely.
 
+## Study guides
+
+The `guides/` folder holds PDF study guides to read alongside the game:
+
+| Exam | Guide | Size |
+|---|---|---|
+| Network+ | [CompTIA Network+ Study Guide](guides/Network%2B/CompTIA%20Network%2B%20Study%20Guide.pdf) | 561 MB |
+| Security+ (SY0-701) | [Security+ Study Guide, Ninth Edition](guides/Security%2B/Security%2B%20SY0-701%20Study%20Guide/09102025_Security%2B%C2%AE%20Study%20Guide%20Ninth%20Edition.pdf) | 189 MB |
+| Security+ (SY0-701) | [Security+ Practice Tests, Third Edition](guides/Security%2B/Security%2B%20Practice%20Tests%20SY0-701/09102025_Security%2B%20Practice%20Tests%20Exam%20SYO-701%20Third%20Edition.pdf) | 48 MB |
+
+The PDFs are stored with [Git LFS](https://git-lfs.com). Install it before you clone (`brew install git-lfs`, then `git lfs install`), or the files download as small text pointers instead of the PDFs. These are copyrighted books, so keep this repository private.
+
 ## Run it
 
 Open `index.html` in any browser, or serve the folder:
