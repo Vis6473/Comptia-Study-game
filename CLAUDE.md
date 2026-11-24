@@ -1,6 +1,6 @@
 # Cyber Zombie Attack
 
-A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. It covers Network+ (N10-009) and Security+ (SY0-701). The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it; the repo name still says net-plus.
+A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. It covers Network+ (N10-009) and Security+ (SY0-701). The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it. The GitHub repo is `Vis6473/Comptia-Study-game` (renamed from `net-plus-study-game`; the local folder may still use the old name).
 
 ## How it's built
 
