@@ -246,10 +246,12 @@ body.global-mode nav.tabs{display:none}
 .menu{position:relative;overflow:hidden;margin-top:16px;border:1px solid var(--tp-line);background:radial-gradient(120% 80% at 50% 0%,#0E1B24 0%,var(--tp-bg) 60%);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px))}
 .menu canvas{position:absolute;left:0;right:0;bottom:0;width:100%;height:58%;pointer-events:none}
 .menu-in{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;padding:44px clamp(16px,4vw,40px) 36px}
-.czt{font-family:var(--f-display);font-weight:700;font-size:clamp(44px,10vw,104px);line-height:.9;letter-spacing:.02em;margin:6px 0 0;display:flex;flex-direction:column;color:var(--tp-ink);text-shadow:3px 0 rgba(255,43,214,.65),-3px 0 rgba(25,240,255,.65)}
+.czt{font-family:var(--f-display);font-weight:700;font-size:clamp(32px,10vw,96px);line-height:.92;letter-spacing:.02em;margin:0;display:flex;flex-direction:column;align-items:center;color:var(--tp-ink);text-shadow:3px 0 rgba(255,43,214,.65),-3px 0 rgba(25,240,255,.65)}
 .czt .z{color:var(--tp-tox);text-shadow:0 0 24px rgba(156,255,87,.45),3px 0 rgba(255,43,214,.5)}
-.menu .tag{color:var(--tp-dim);font-size:16px;margin:10px 0 0;max-width:46ch}
-.ostrip{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
+.mhead{text-align:center;margin-top:14px}
+.czt .l2{white-space:nowrap}
+.menu .tag{color:var(--tp-dim);font-size:16px;margin:14px auto 0;max-width:46ch}
+.ostrip{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
 .ostrip span{padding:5px 10px;border:1px solid var(--tp-line);background:rgba(12,19,26,.8)}
 .ostrip b{color:var(--tp-ink)} .ostrip b.x{color:var(--tp-mag)}
 .ocards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
@@ -1430,11 +1432,11 @@ function viewMenu(){
       <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
       <span class="ogo">Defend with ${X.name} →</span></button>`;};
   $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
-    <div><span class="tp-label">CompTIA study game</span><h1 class="czt"><span>CYBER</span><span class="z">ZOMBIE</span><span>ATTACK</span></h1>
-      <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div>
+    <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
+      <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
     <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
     <div class="ocards">${card("net")}${card("sec")}</div>
-    <div class="mrow"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
+    <div class="mrow" style="justify-content:center"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
   </div></section>`;
   $app.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{setExam(b.dataset.ex);save();location.hash="home";});
   cleanup=menuHorde(document.getElementById("mz"));
