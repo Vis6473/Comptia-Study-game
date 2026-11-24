@@ -265,6 +265,8 @@ body.global-mode nav.tabs{display:none}
 .chip.right{background:var(--ok-bg);border-color:var(--ok);color:var(--ink)}
 .chip.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--ink)}
 .chip[disabled]{cursor:default}
+.loot{display:inline-block;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--ok-bg);color:var(--ok);animation:lootpop .35s ease-out}
+@keyframes lootpop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
@@ -1826,26 +1828,37 @@ function runBlitz(){
   next();
 }
 
+/* ---------------- Scavenging missions ---------------- */
+// OSI Stack and Control Sort pay out per correct answer: scrap for the outpost plus a little XP.
+const SCAV={osi:{scrap:6,xp:4},control:{scrap:4,xp:2}};
+function scavenge(g,n,haul){
+  if(!n)return "";const sc=SCAV[g].scrap*n,xp=SCAV[g].xp*n;
+  S.base.scrap+=sc;haul.scrap+=sc;haul.xp+=xp;award(xp);
+  return `<span class="loot">+${sc} scrap · +${xp} XP</span>`;
+}
+const haulLine=h=>h.scrap?`<p style="margin:0"><span class="loot">Scavenged ${h.scrap} scrap · ${h.xp} XP</span></p><p class="muted small" style="margin:0">Scrap goes to the outpost armory for upgrades and ammo.</p>`:`<p class="muted small" style="margin:0">No scrap this time. Every correct answer brings some back.</p>`;
+
 /* ---------------- OSI Stack ---------------- */
 function viewOsi(){
-  const items=shuffle(OSI_ITEMS).slice(0,12);let i=0,score=0,locked=false;
+  const items=shuffle(OSI_ITEMS).slice(0,12),haul={scrap:0,xp:0};let i=0,score=0,locked=false;
   function render(){
     if(i>=items.length)return done();
     locked=false;const it=items[i];
     $app.innerHTML=`<div class="panel">
-      <div class="qhead"><span class="label">OSI Stack · ${i+1} of ${items.length}</span><span class="mono">${score} correct</span></div>
+      <div class="qhead"><span class="label">OSI Stack · scavenging mission · ${i+1} of ${items.length}</span><span class="mono" id="osiTally">${score} correct · ${haul.scrap} scrap</span></div>
       <div class="progress"><i style="width:${100*i/items.length}%"></i></div>
       <div class="osi">
         <div class="item-card"><span class="label">Which layer?</span><div class="it">${esc(expand(it[0]))}</div><div id="why" class="muted small"></div><div id="nx"></div></div>
         <div class="layers">${LAYERS.map(L=>`<button class="layer" data-l="${L[0]}" style="--lc:${L[3]}"><span class="n">${L[0]}</span><span>${L[1]}</span><span class="pdu">${L[2]}</span></button>`).join("")}</div>
       </div>
-      <p class="muted small" style="margin:16px 0 0">Top to bottom: <b>A</b>ll <b>P</b>eople <b>S</b>eem <b>T</b>o <b>N</b>eed <b>D</b>ata <b>P</b>rocessing. Press 1–7 for the layer number.</p>
+      <p class="muted small" style="margin:16px 0 0">Top to bottom: <b>A</b>ll <b>P</b>eople <b>S</b>eem <b>T</b>o <b>N</b>eed <b>D</b>ata <b>P</b>rocessing. Press 1–7 for the layer number. Each correct layer scavenges ${SCAV.osi.scrap} scrap and ${SCAV.osi.xp} XP.</p>
     </div>`;
     $app.querySelectorAll(".layer").forEach(b=>b.onclick=()=>{
       if(locked)return;locked=true;
-      const ok=+b.dataset.l===it[1];if(ok){score++;S.base.scrap+=3;}
+      const ok=+b.dataset.l===it[1];let loot="";if(ok){score++;loot=scavenge("osi",1,haul);}
+      document.getElementById("osiTally").textContent=`${score} correct · ${haul.scrap} scrap`;
       $app.querySelectorAll(".layer").forEach(x=>{x.disabled=true;if(+x.dataset.l===it[1])x.classList.add("right");else if(x===b)x.classList.add("wrong");});
-      document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(expand(it[2]))}`;
+      document.getElementById("why").innerHTML=`<b style="color:var(${ok?"--ok":"--bad"})">${ok?"Correct.":"Layer "+it[1]+"."}</b> ${esc(expand(it[2]))}${loot?`<div style="margin-top:6px">${loot}</div>`:""}`;
       document.getElementById("nx").innerHTML=`<button class="btn primary" id="next">Next</button>`;
       document.getElementById("next").onclick=()=>{i++;render();};
       document.getElementById("next").focus({preventScroll:true});
@@ -1853,9 +1866,10 @@ function viewOsi(){
   }
   function done(){
     cleanup&&cleanup();cleanup=null;
-    const best=score>P.best.osi;if(best)P.best.osi=score;award(score*4);
+    const best=score>P.best.osi;if(best)P.best.osi=score;save();
     $app.innerHTML=`<div class="panel result stack"><span class="label">OSI Stack complete</span><div class="big">${score}<span class="muted" style="font-size:32px"> / 12</span></div>
       <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best.osi+"/12"}</p>
+      ${haulLine(haul)}
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">New stack</button><a class="btn" href="#home">Home</a></div></div>`;
     document.getElementById("again").onclick=viewOsi;
   }
@@ -2226,33 +2240,34 @@ const ATTACKS=[
 
 /* ---------------- Control Sort ---------------- */
 function viewControl(){
-  const items=shuffle(CONTROLS).slice(0,10);let i=0,score=0,cat=null,typ=null,checked=false;
+  const items=shuffle(CONTROLS).slice(0,10),haul={scrap:0,xp:0};let i=0,score=0,cat=null,typ=null,checked=false,loot="";
   function render(){
     if(i>=items.length)return done();
     const it=items[i];
     const grp=(list,cur,k,ans)=>list.map(v=>{let cls="chip";if(checked){if(v===ans)cls+=" right";else if(v===cur)cls+=" wrong";}
       return `<button class="${cls}" data-${k}="${v}" aria-pressed="${v===cur}"${checked?" disabled":""}>${v}</button>`;}).join("");
     $app.innerHTML=`<div class="panel">
-      <div class="qhead"><span class="label">Control Sort · ${i+1} of ${items.length}</span><span class="mono">${score} / ${(i+(checked?1:0))*2} points</span></div>
+      <div class="qhead"><span class="label">Control Sort · scavenging mission · ${i+1} of ${items.length}</span><span class="mono">${score} / ${(i+(checked?1:0))*2} points · ${haul.scrap} scrap</span></div>
       <div class="progress"><i style="width:${100*i/items.length}%"></i></div>
       <div class="item-card" style="min-height:0"><span class="label">Classify this control</span><div class="it">${esc(expand(it[0]))}</div></div>
       <div class="cs-groups">
         <div><span class="label">Category</span><div class="cs-g">${grp(CTRL_CATS,cat,"c",it[1])}</div></div>
         <div><span class="label">Type</span><div class="cs-g">${grp(CTRL_TYPES,typ,"t",it[2])}</div></div>
       </div>
-      ${checked?`<div class="explain ${cat===it[1]&&typ===it[2]?"verdict-ok":"verdict-bad"}"><b>${esc(it[1])} · ${esc(it[2])}</b>${esc(expand(it[3]))}</div>`:""}
+      ${checked?`<div class="explain ${cat===it[1]&&typ===it[2]?"verdict-ok":"verdict-bad"}"><b>${esc(it[1])} · ${esc(it[2])}</b>${esc(expand(it[3]))}${loot?`<div style="margin-top:6px">${loot}</div>`:""}</div>`:""}
       <div class="row" style="justify-content:flex-end;margin-top:16px">${checked?`<button class="btn primary" id="next">${i+1<items.length?"Next control":"See results"}</button>`:`<button class="btn primary" id="check"${cat&&typ?"":" disabled"}>Check</button>`}</div>
-      <p class="muted small" style="margin:14px 0 0">Pick one category and one type. Each correct pick is a point.</p>
+      <p class="muted small" style="margin:14px 0 0">Pick one category and one type. Each correct pick is a point and scavenges ${SCAV.control.scrap} scrap and ${SCAV.control.xp} XP.</p>
     </div>`;
     $app.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{cat=b.dataset.c;render();});
     $app.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{typ=b.dataset.t;render();});
-    const c=document.getElementById("check");if(c)c.onclick=()=>{checked=true;const pts=(cat===it[1])+(typ===it[2]);score+=pts;S.base.scrap+=pts;render();document.getElementById("next").focus({preventScroll:true});};
-    const n=document.getElementById("next");if(n)n.onclick=()=>{i++;cat=null;typ=null;checked=false;render();};
+    const c=document.getElementById("check");if(c)c.onclick=()=>{checked=true;const pts=(cat===it[1])+(typ===it[2]);score+=pts;loot=scavenge("control",pts,haul);render();document.getElementById("next").focus({preventScroll:true});};
+    const n=document.getElementById("next");if(n)n.onclick=()=>{i++;cat=null;typ=null;checked=false;loot="";render();};
   }
   function done(){
-    const max=items.length*2,best=score>(P.best.control||0);if(best)P.best.control=score;award(score*2);
+    const max=items.length*2,best=score>(P.best.control||0);if(best)P.best.control=score;save();
     $app.innerHTML=`<div class="panel result stack"><span class="label">Control Sort complete</span><div class="big">${score}<span class="muted" style="font-size:32px"> / ${max}</span></div>
       <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best.control+"/"+max}</p>
+      ${haulLine(haul)}
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">New controls</button><a class="btn" href="#home">Home</a></div></div>`;
     document.getElementById("again").onclick=viewControl;
   }
@@ -2325,8 +2340,8 @@ const SEC_DOMAINS = {
 };
 const GAMES={
   ports:{n:"Port Blitz",lbl:"60 seconds",d:"Match services to port numbers. A wrong answer costs 3 seconds.",c:"var(--green)",rec:p=>p.best.ports,fmt:v=>`Best: ${v}`},
-  osi:{n:"OSI Stack",lbl:"12 items",d:"Place devices, protocols and PDUs on the correct layer.",c:"var(--blue)",rec:p=>p.best.osi,fmt:v=>`Best: ${v}/12`},
-  control:{n:"Control Sort",lbl:"10 controls",d:"Classify each security control by category and by type.",c:"var(--orange)",rec:p=>p.best.control,fmt:v=>`Best: ${v}/20`},
+  osi:{n:"OSI Stack",lbl:"Scavenging · 12 items",d:"Place devices, protocols and PDUs on the correct layer. Every correct answer scavenges scrap and XP.",c:"var(--blue)",rec:p=>p.best.osi,fmt:v=>`Best: ${v}/12`},
+  control:{n:"Control Sort",lbl:"Scavenging · 10 controls",d:"Classify each security control by category and by type. Every correct pick scavenges scrap and XP.",c:"var(--orange)",rec:p=>p.best.control,fmt:v=>`Best: ${v}/20`},
   attack:{n:"Attack Match",lbl:"60 seconds",d:"Name the attack from its indicator. A wrong answer costs 3 seconds.",c:"var(--blue)",rec:p=>p.best.attack,fmt:v=>`Best: ${v}`},
   subnet:{n:"Subnet Sprint",lbl:"Endless",d:"Work out network, broadcast, host ranges and masks by hand.",c:"var(--brown)",rec:p=>p.best.subnet,fmt:v=>`Best streak: ${v}`}
 };
