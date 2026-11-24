@@ -98,7 +98,7 @@ Each question is one line in `Q`:
 ## Keeping things in sync
 
 - **README.md** describes every mode and the economy. Update it with every feature change.
-- **Artifact copy:** a hosted preview lives at https://claude.ai/artifact/QwEmVjoMpUWVVaMmCt8Nsb (private to the owner). It is built from `index.html` by removing the `<!doctype>`, `<html>`, `<head>` and `<body>` wrapper and the charset and viewport meta tags, then adding `<meta name="claude:viewport-fit-sides" content="cover">` after the `<title>`. Republish it after changes if the session has the Artifact tool.
+- **Artifact copy:** a hosted preview lives at https://claude.ai/artifact/QwEmVjoMpUWVVaMmCt8Nsb (private to the owner). It is built from `index.html` by removing the `<!doctype>`, `<html>`, `<head>` and `<body>` wrapper and the charset and viewport meta tags, then adding `<meta name="claude:viewport-fit-sides" content="cover">` after the `<title>`. Republish it after changes if the session has the Artifact tool. It declares the `downloads` capability so the score card's Save button works there (`claude.use("downloads")`); omit `capabilities` on republish to keep it.
 - Commits go to `main`, but only when the owner asks. The owner has asked for a push after each round of changes so far.
 
 ## Testing
