@@ -38,7 +38,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 
 ## A+ Core 2 modes (220-1202)
 
-- **Quick Exams + Outpost Defense:** 10-question rounds from 130 original questions covering all 36 Core 2 objectives across operating systems, security, software troubleshooting and operational procedures.
+- **Quick Exams + Outpost Defense:** 10-question rounds from 186 original questions covering all 36 Core 2 objectives across operating systems, security, software troubleshooting and operational procedures.
 - **Mock Exam:** 90 questions in 90 minutes, split 25/25/21/19 by the domain weights (28/28/23/21%). The pass mark is 700.
 - **Command Match:** 60 seconds to pick the Windows or Linux command for each job, from ipconfig /flushdns to chmod.
 - **Tool Match:** 60 seconds to pick the Windows tool or settings page for each job, such as Event Viewer, Disk Management or msconfig.
