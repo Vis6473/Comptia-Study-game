@@ -1,6 +1,6 @@
 # Cyber Zombie Attack
 
-A browser study game for **CompTIA Network+ (N10-009)**, with **Security+ (SY0-701)** being added. You answer exam questions to keep a zombie horde off your outpost. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
+A browser study game for **CompTIA Network+ (N10-009)** and **CompTIA Security+ (SY0-701)**. You answer exam questions to keep a zombie horde off your outpost. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
 
 ## Main menu, settings and high scores
 
@@ -18,6 +18,13 @@ A browser study game for **CompTIA Network+ (N10-009)**, with **Security+ (SY0-7
 - **Subnet Sprint:** endless random subnetting problems (network and broadcast address, host range, host count, mask) with a worked binary breakdown after each one.
 - **Review:** every question you miss goes into a review queue and stays there until you answer it correctly twice in a row. You can also practice every question you've ever missed. A study plan lists the exam objectives you're weakest on, with the key facts from the questions you missed, the chapters and pages that cover it in the Network+ study guide in `guides/`, links to Professor Messer's videos and CompTIA's exam objectives, and a button to practice just that objective. When you open the app from a checkout of this repo with the PDFs downloaded, the chapter links open the guide at the right page.
 
+## Security+ modes
+
+- **Quick Exams + Outpost Defense:** 10-question rounds from 150 original Security+ questions covering all 28 SY0-701 objectives, at least 5 per objective. Security+ nights bring their own zombies (see below).
+- **Mock Exam:** 90 questions in 90 minutes, split 11/20/16/25/18 across the five domains by their exam weights (12/22/18/28/20%). The pass mark is 750 on the 100–900 scale.
+- **Port Blitz:** the same port drill as Network+, with its own high score.
+- **Review:** the same review queue and study plan as Network+. Each weak objective links to its chapters in the Security+ Study Guide and to that domain's chapter in the Security+ Practice Tests book, with the question and answer pages.
+
 ## Outpost Defense
 
 - **Ammo:** every correct answer sends ammo to the wall. Domains are rated by difficulty, and harder ones also send scrap:
@@ -30,10 +37,21 @@ A browser study game for **CompTIA Network+ (N10-009)**, with **Security+ (SY0-7
   | 4.0 Network Security | Hard | +25 ammo, +10 scrap |
   | 5.0 Network Troubleshooting | Elite | +30 ammo, +15 scrap |
 
-- **Wrong answers** draw an extra brute into the fight. Three correct answers in a row earn bonus scrap.
+- **Security+ rewards:**
+
+  | Domain | Tier | Reward per correct answer |
+  |---|---|---|
+  | 1.0 General Security Concepts | Standard | +20 ammo |
+  | 3.0 Security Architecture | Standard | +20 ammo |
+  | 2.0 Threats, Vulnerabilities, and Mitigations | Hard | +25 ammo, +10 scrap |
+  | 5.0 Security Program Management and Oversight | Hard | +25 ammo, +10 scrap |
+  | 4.0 Security Operations | Elite | +30 ammo, +15 scrap |
+
+- **Zombies:** Network+ nights bring walkers and brutes. Security+ nights bring botnet zombies, fast fragile worms and ransomware brutes, which encrypt (wipe) 3 rounds of ammo every second they stay at the wall.
+- **Wrong answers** draw an extra brute into the fight (a ransomware brute in Security+). Three correct answers in a row earn bonus scrap.
 - **Scrap** is shared by both exams. It buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights, Port Blitz, OSI Stack and Subnet Sprint.
 - **Ammo supplies:** buy ammo crates and pallets with scrap, or an airdrop of 200 rounds with XP. During a night the ammo goes straight to the guns. Otherwise it's stockpiled for your next night.
-- **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Your level still counts all the XP you've ever earned.
+- **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Security+ has the Sandbox trap, EDR pulse, Honeypot mine and Kill switch at the same prices, and its base upgrades are Patch level, Threat feed, Sensor node, Hardened firewall and Backup cache. Your level still counts all the XP you've ever earned.
 - **Nights:** keep the wall standing until the bomber clears the field to advance to the next night, where the horde gets bigger and tougher.
 
 The home screen shows your accuracy in each domain next to that domain's exam weight. It also tracks XP, levels, a daily streak and your best scores.

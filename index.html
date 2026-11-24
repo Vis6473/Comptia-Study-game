@@ -727,7 +727,18 @@ const GL={
  "IEEE":"Institute of Electrical and Electronics Engineers","DORA":"Discover, Offer, Request, Acknowledge","TX":"transmit","RX":"receive",
  "RPC":"Remote Procedure Call","NetBIOS":"Network Basic Input/Output System","IPFIX":"IP Flow Information Export","ISP":"internet service provider",
  "CNAME":"Canonical Name","MX":"Mail Exchanger","PTR":"Pointer","SOA":"Start of Authority","SRV":"Service","NS":"Name Server","TXT":"Text",
- "UPS":"uninterruptible power supply","IPS":"intrusion prevention system","NAS":"network-attached storage","SAN":"storage area network",
+ "UPS":"uninterruptible power supply","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
+ "ASLR":"address space layout randomization","VM":"virtual machine","HIPS":"host-based intrusion prevention system","NIDS":"network intrusion detection system",
+ "UTM":"unified threat management","NGFW":"next-generation firewall","CASB":"cloud access security broker","EAP":"Extensible Authentication Protocol",
+ "COPE":"corporate-owned, personally enabled","CYOD":"choose your own device","MDM":"mobile device management","CVSS":"Common Vulnerability Scoring System",
+ "CVE":"Common Vulnerabilities and Exposures","SCAP":"Security Content Automation Protocol","OSINT":"open-source intelligence","SOC":"security operations center",
+ "EDR":"endpoint detection and response","XDR":"extended detection and response","FIM":"file integrity monitoring","SELinux":"Security-Enhanced Linux",
+ "OAuth":"Open Authorization","ABAC":"attribute-based access control","SOAR":"security orchestration, automation and response","MSA":"master service agreement",
+ "SOW":"statement of work","MOA":"memorandum of agreement","BPA":"business partners agreement","TPM":"Trusted Platform Module","HSM":"hardware security module",
+ "CRL":"certificate revocation list","OCSP":"Online Certificate Status Protocol","CSR":"certificate signing request","SOP":"standard operating procedure",
+ "PBKDF2":"Password-Based Key Derivation Function 2","RTOS":"real-time operating system","RAID":"redundant array of independent disks",
+ "SLE":"single loss expectancy","ALE":"annualized loss expectancy","ARO":"annualized rate of occurrence","MFA":"multifactor authentication",
+ "SCADA":"supervisory control and data acquisition","IPS":"intrusion prevention system","NAS":"network-attached storage","SAN":"storage area network",
  "CDN":"content delivery network","iSCSI":"Internet Small Computer Systems Interface","NFS":"Network File System","DSCP":"Differentiated Services Code Point",
  "VPC":"virtual private cloud","NFV":"network functions virtualization","ESP":"Encapsulating Security Payload","AH":"Authentication Header",
  "L2TP":"Layer 2 Tunneling Protocol","DAC":"direct attach copper","PVC":"polyvinyl chloride","QSFP":"quad small form-factor pluggable",
@@ -887,7 +898,11 @@ const D=(function(){
   function spawn(t){
     const n=G.night,b=t==="b",span=W-wallX();
     const hp=b?14+5*(n-1):2+0.5*(n-1);
-    G.enemies.push({t,x:W+rnd(10,40),y:rnd(fTop()+10,fBot()-2),hp,max:hp,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1)),dps:b?9:2.2,ph:rnd(0,6),hit:0});
+    // Variants: Network+ has walkers and brutes. Security+ has botnet zombies, fast fragile worms,
+    // and ransomware brutes that encrypt (wipe) ammo while they're at the wall.
+    const sec=S.exam==="sec",v=b?(sec?"ransom":"brute"):(sec?(Math.random()<0.3?"worm":"bot"):"walker"),worm=v==="worm";
+    const h=worm?hp*0.6:hp;
+    G.enemies.push({t,v,x:W+rnd(10,40),y:rnd(fTop()+10,fBot()-2),hp:h,max:h,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(worm?1.7:1),dps:b?9:(worm?1.4:2.2),ph:rnd(0,6),hit:0,lk:0});
   }
   function text(x,y,s,c){if(G)G.fx.push({k:"t",x,y,s,c,life:1.5});}
   // The horde spawns without end from the first question until the last one is answered.
@@ -974,7 +989,8 @@ const D=(function(){
         G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
     }
     const u=U(),wx=wallX(),line=wx+8*u;
-    for(const e of G.enemies){e.hit-=dt;if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;G.wall-=e.dps*dt;}}
+    for(const e of G.enemies){e.hit-=dt;if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;
+      if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
     const vis=G.enemies.filter(e=>e.x<W-6).sort((a,b)=>a.x-b.x);
     G.turrets.forEach((t,i)=>{
       t.cd-=dt;t.fl-=dt;const e=vis[Math.min(i%3,vis.length-1)];if(!e)return;
@@ -1076,18 +1092,29 @@ const D=(function(){
     b.restore();
   }
 
+  function drawWorm(e){
+    const u=U(),s=depth(e.y)*u,x=e.x,y=e.y;
+    ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x+6*s,y,11*s,2*s,0,0,7);ctx.fill();
+    for(let k=4;k>=0;k--){const sx=x+k*3.6*s,sy=y-3*s-Math.sin(e.ph*1.6+k*0.9)*1.6*s;
+      ctx.fillStyle=e.hit>0?"#FFFFFF":(k?"#3E7C66":"#5FB894");ctx.beginPath();ctx.arc(sx,sy,(3.4-k*0.35)*s,0,7);ctx.fill();}
+    ctx.fillStyle="rgba(25,240,255,.4)";ctx.beginPath();ctx.arc(x-1.4*s,y-4*s,1.8*s,0,7);ctx.fill();
+    ctx.fillStyle="#BFFBFF";ctx.beginPath();ctx.arc(x-1.4*s,y-4*s,0.7*s,0,7);ctx.fill();
+  }
   function drawZ(e){
-    const u=U(),s=depth(e.y)*(e.t==="b"?1.9:1)*u,x=e.x,y=e.y,sw=Math.sin(e.ph),b=e.t==="b";
+    if(e.v==="worm")return drawWorm(e);
+    const u=U(),s=depth(e.y)*(e.t==="b"?1.9:1)*u,x=e.x,y=e.y,sw=Math.sin(e.ph),b=e.t==="b",bot=e.v==="bot",ran=e.v==="ransom",red=bot||ran;
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y,6*s,2*s,0,0,7);ctx.fill();
     ctx.lineCap="round";ctx.strokeStyle=b?"#3A2630":"#26332B";ctx.lineWidth=2.2*s;
     ctx.beginPath();ctx.moveTo(x,y-9*s);ctx.lineTo(x+sw*3*s,y);ctx.moveTo(x,y-9*s);ctx.lineTo(x-sw*3*s,y);ctx.stroke();
-    ctx.fillStyle=e.hit>0?"#E8FFF0":(b?"#6B3B4A":"#4A5E4C");ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
-    const skin=e.hit>0?"#FFFFFF":(b?"#9A6A72":"#7C9A74");
+    ctx.fillStyle=e.hit>0?"#E8FFF0":(ran?"#4A2A2E":bot?"#3D4A57":b?"#6B3B4A":"#4A5E4C");ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
+    if(ran){ctx.strokeStyle="#FFB020";ctx.lineWidth=0.9*s;ctx.beginPath();ctx.arc(x,y-15.5*s,1.4*s,Math.PI,0);ctx.stroke();ctx.fillStyle="#FFB020";ctx.fillRect(x-1.9*s,y-15.5*s,3.8*s,3*s);}
+    const skin=e.hit>0?"#FFFFFF":(ran?"#A8786E":bot?"#8FA3B3":b?"#9A6A72":"#7C9A74");
     ctx.strokeStyle=skin;ctx.lineWidth=1.8*s;
     ctx.beginPath();ctx.moveTo(x-1*s,y-16*s);ctx.lineTo(x-8*s,y-15*s+sw*1.5*s);ctx.moveTo(x+1*s,y-15*s);ctx.lineTo(x-7*s,y-13*s-sw*1.5*s);ctx.stroke();
     ctx.fillStyle=skin;ctx.beginPath();ctx.arc(x-1.5*s,y-22*s,3.2*s,0,7);ctx.fill();
-    ctx.fillStyle=b?"rgba(255,43,214,.35)":"rgba(156,255,87,.35)";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2.2*s,0,7);ctx.fill();
-    ctx.fillStyle=b?"#FF7BEA":"#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
+    if(bot){ctx.strokeStyle="#8FA3B3";ctx.lineWidth=0.7*s;ctx.beginPath();ctx.moveTo(x-0.5*s,y-25*s);ctx.lineTo(x+1.5*s,y-29*s);ctx.stroke();ctx.fillStyle="#FF3B3B";ctx.beginPath();ctx.arc(x+1.5*s,y-29*s,0.9*s,0,7);ctx.fill();}
+    ctx.fillStyle=red?"rgba(255,59,59,.4)":b?"rgba(255,43,214,.35)":"rgba(156,255,87,.35)";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2.2*s,0,7);ctx.fill();
+    ctx.fillStyle=red?"#FF8A8A":b?"#FF7BEA":"#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
     if(b){const w=14*s;ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(x-w/2,y-30*s,w,2.5*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(x-w/2,y-30*s,w*Math.max(0,e.hp/e.max),2.5*u);}
   }
   function drawBomber(x,y,u){
@@ -1139,7 +1166,7 @@ const D=(function(){
       ctx.fillStyle="#FFE2A0";ctx.beginPath();ctx.arc(x,y,2.5*u,0,7);ctx.fill();}
     ctx.globalCompositeOperation="lighter";
     for(const f of G.fx){
-      if(f.k==="tr"){ctx.strokeStyle=`rgba(255,190,60,${f.life/0.09})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(f.x1,f.y1);ctx.lineTo(f.x2,f.y2);ctx.stroke();}
+      if(f.k==="tr"){ctx.strokeStyle=S.exam==="sec"?`rgba(120,240,255,${f.life/0.09})`:`rgba(255,190,60,${f.life/0.09})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(f.x1,f.y1);ctx.lineTo(f.x2,f.y2);ctx.stroke();}
       else if(f.k==="f"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,${(90+120*a)|0},30,${0.55*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(2+5*(1-a))*u,0,7);ctx.fill();}
       else if(f.k==="z"){const a=f.life/f.m;ctx.lineWidth=2.2;ctx.strokeStyle=`rgba(25,240,255,${a})`;ctx.beginPath();
         f.pts.forEach((p2,i)=>{if(!i){ctx.moveTo(p2[0],p2[1]);return;}const q=f.pts[i-1];for(let s=1;s<=5;s++){const tt=s/5;ctx.lineTo(q[0]+(p2[0]-q[0])*tt+(s<5?rnd(-6,6):0),q[1]+(p2[1]-q[1])*tt+(s<5?rnd(-6,6):0));}});ctx.stroke();}
@@ -1357,7 +1384,7 @@ function viewHome(){
     <section class="tp outpost" id="outpost">
       <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
         <div class="op-stats"><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
-      <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base.</p>
+      <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base. ${EX.foes} Each exam has its own upgrades and weapons.</p>
       <div class="tiers">${[1,2,3,4,5].map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
     </section>
@@ -1436,10 +1463,19 @@ const NET_GUIDE={
 };
 // The PDF only opens where the repo is checked out with Git LFS (opened locally or served from the repo), not in hosted previews.
 function checkGuide(G){
-  if(!G||G.checked)return;G.checked=true;G.ok=location.protocol==="file:";
-  if(!G.ok&&/^https?:$/.test(location.protocol)){
-    try{fetch(G.pdf,{method:"HEAD"}).then(r=>{G.ok=r.ok&&/pdf/i.test(r.headers.get("content-type")||"");}).catch(()=>{});}catch(e){}
-  }
+  if(!G)return;
+  [G,G.practice].forEach(T=>{
+    if(!T||T.checked)return;T.checked=true;T.ok=location.protocol==="file:";
+    if(!T.ok&&/^https?:$/.test(location.protocol)){
+      try{fetch(T.pdf,{method:"HEAD"}).then(r=>{T.ok=r.ok&&/pdf/i.test(r.headers.get("content-type")||"");}).catch(()=>{});}catch(e){}
+    }
+  });
+}
+// Security+ also points to the practice tests book's chapter for the objective's domain.
+function practiceLink(d){
+  const T=GUIDE&&GUIDE.practice;if(!T)return "";const [bp,pp,abp]=T.dom[d];
+  const txt=`Practice Tests · Domain ${d}.0 <small>questions p. ${bp}, answers p. ${abp}</small>`;
+  return T.ok?`<a class="src" href="${T.pdf}#page=${pp}" target="_blank" rel="noopener">${txt} ↗</a>`:`<span class="src static">${txt}</span>`;
 }
 const guideShort=o=>(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", ");
 const SRC={
@@ -1502,8 +1538,8 @@ function viewReview(){
       return `<details class="obj"${ix<3?" open":""}>
         <summary><span class="oc">${r.o}</span><span class="ot">${esc(OBJ[r.o][0])}</span><span class="chips">${r.queue.length?`<span class="chip-s bad">${r.queue.length} to review</span>`:""}${a!==null?`<span class="chip-s">${a}% correct over ${r.c+r.w} answers</span>`:""}<span class="chip-s">Domain ${r.o[0]}.0 · ${esc(DOMAINS[r.o[0]].name)}</span></span></summary>
         <div class="obj-body">
-          <div class="guide-ch"><span class="label">In your study guide</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
-            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}</div>
+          <div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
+            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>
           <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.objectives(),"CompTIA exam objectives","official PDF")}</div>
           ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
           <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
@@ -1518,6 +1554,7 @@ function viewReview(){
       ${link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
       ${link(SRC.objectives(),`${EX.code} exam objectives`,"find the official PDF")}
       ${GUIDE.ok?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
+      ${GUIDE.practice?(GUIDE.practice.ok?link(GUIDE.practice.pdf,"Your practice tests",GUIDE.practice.title):`<span class="src static">Your practice tests <small>${GUIDE.practice.title}, in the repo's guides folder</small></span>`):""}
     </div>
     <p class="muted small" style="margin:12px 0 0">The objectives PDF is CompTIA's own list of everything the exam covers. Use it as a checklist alongside the study plan.</p>
   </div>
@@ -1900,8 +1937,218 @@ function viewSubnet(){
   document.getElementById("skip").onclick=()=>finish(false,null);
 }
 
+/* ---------------- Security+ content ---------------- */
+const SEC_Q = [ // [domain, question, correct, [wrong x3], explanation, objective] — original items written against the SY0-701 objectives
+ [1,"A company posts signs warning that an area is under video surveillance. What type of control is the sign?","Deterrent",["Detective","Corrective","Compensating"],"A deterrent control discourages an attacker before they try. The camera recording is detective, a corrective control fixes a problem after it happens, and a compensating control stands in when the preferred control isn't possible.","1.1"],
+ [1,"Which control category describes a security awareness training program run by staff?","Operational",["Technical","Managerial","Physical"],"Operational controls are carried out by people day to day, such as training, guards and procedures. Managerial controls cover planning and oversight, like risk assessments. Technical controls are enforced by systems, and physical controls protect facilities.","1.1"],
+ [1,"A legacy system can't support multifactor authentication, so the team isolates it on its own segment with strict firewall rules. What type of control is the isolation?","Compensating",["Preventive","Directive","Deterrent"],"A compensating control meets the intent of a requirement when the original control can't be used. Isolation reduces the risk the missing MFA would have covered.","1.1"],
+ [1,"An acceptable use policy tells employees what they must and must not do with company systems. What control type is it?","Directive",["Detective","Corrective","Preventive"],"Directive controls tell people what to do through policies, procedures and standards. They rely on people following them rather than technically stopping anything.","1.1"],
+ [1,"After ransomware is found, the team restores the affected servers from backups. What type of control is the restore?","Corrective",["Detective","Deterrent","Directive"],"Corrective controls reduce damage and return systems to normal after an incident. Detective controls find the problem in the first place.","1.1"],
+ [1,"A signed email lets the recipient prove to a third party that the sender really sent it, and the sender can't deny it. What concept is this?","Non-repudiation",["Confidentiality","Availability","Authorization"],"Non-repudiation means a party can't credibly deny an action. Digital signatures provide it because only the sender holds the private key used to sign.","1.2"],
+ [1,"In a zero trust architecture, which component decides whether to grant access by evaluating policy, identity and device posture?","The policy engine in the control plane",["The policy enforcement point in the data plane","The implicit trust zone","The user's endpoint agent"],"The control plane holds the policy engine and policy administrator, which decide on and set up access. The policy enforcement point in the data plane carries out that decision on the traffic.","1.2"],
+ [1,"Which physical control stops vehicles from ramming a building entrance while still letting people walk through?","Bollards",["An access control vestibule","Fencing","Motion sensors"],"Bollards are short, sturdy posts that block vehicles. An access control vestibule controls people one at a time, fencing blocks a perimeter, and sensors only detect.","1.2"],
+ [1,"The security team plants a fake file named passwords.xlsx on a file server and alerts whenever anyone opens it. What is this?","A honeyfile",["A honeypot","A honeynet","A logic bomb"],"A honeyfile is a decoy file no legitimate user should touch, so any access is suspicious. A honeypot is a decoy system, a honeynet is a network of them, and a logic bomb is malware that waits for a trigger.","1.2"],
+ [1,"An organization compares its current security controls with a framework to find what is missing. What is this called?","A gap analysis",["A penetration test","A business impact analysis","A tabletop exercise"],"A gap analysis measures the difference between the current state and a target, such as a framework or standard, and drives a plan to close the gaps.","1.2"],
+ [1,"Before a firewall change, the change board asks what happens if the change breaks the network. What should the request include?","A backout plan",["An impact analysis","A maintenance window","A standard operating procedure"],"A backout plan says how to undo the change and return to the previous state. Impact analysis predicts effects, the maintenance window schedules the change, and an SOP documents routine tasks.","1.3"],
+ [1,"Why are changes to production systems usually scheduled in a maintenance window?","To limit the impact of downtime on users and the business",["To skip the approval process","To avoid documenting the change","So that testing isn't needed"],"Restarts and outages are expected with many changes, so they are scheduled when the business can tolerate them. Approval, testing and documentation still apply.","1.3"],
+ [1,"A patch needs a service restart on a legacy application that other systems rely on. What should change management identify before approving it?","The dependencies affected by the restart",["The vendor's marketing plan","Whether the change can skip testing","The newest version of every other application"],"Technical implications include downtime, restarts, legacy applications and dependencies. Knowing what relies on the service lets you plan for and notify everyone affected.","1.3"],
+ [1,"After a network change is finished, which step is often skipped and causes trouble later?","Updating network diagrams and procedures",["Deleting the change ticket","Removing the backout plan","Restarting the approval workflow"],"Changes must be reflected in diagrams, policies and procedures. Otherwise documentation drifts from reality and slows future troubleshooting and incident response.","1.3"],
+ [1,"A team keeps every version of its firewall configuration in git and can roll back to any of them. What practice is this?","Version control",["Allow listing","Ownership assignment","Impact analysis"],"Version control records each change, who made it and when, and allows rollback. It supports both change management and audits.","1.3"],
+ [1,"Which chip on a laptop's motherboard stores encryption keys and supports secure boot and full-disk encryption?","TPM",["HSM","CSR","CRL"],"A Trusted Platform Module is built into a device. An HSM is a dedicated appliance that manages keys for many systems at scale. A CSR is a certificate request, and a CRL lists revoked certificates.","1.4"],
+ [1,"A browser needs to check, in real time, whether one certificate has been revoked. Which protocol does it use?","OCSP",["CRL","CSR","PKI"],"OCSP asks the issuing CA's responder about a single certificate. A CRL is a whole list the client has to download. OCSP stapling lets the web server attach the response itself.","1.4"],
+ [1,"A company wants one certificate that covers www.example.com, shop.example.com and mail.example.com. What should it request?","A wildcard certificate",["A self-signed certificate","A root certificate","A code-signing certificate"],"A wildcard certificate (*.example.com) covers every subdomain at one level. A subject alternative name certificate lists specific names instead. Browsers don't trust self-signed certificates by default.","1.4"],
+ [1,"Before hashing passwords, a system adds a unique random value to each one so identical passwords produce different hashes. What is that value?","A salt",["A pepper","A digital signature","An initialization key"],"Salting defeats precomputed rainbow tables and hides identical passwords. A pepper is one secret value shared by all passwords and stored separately. Key stretching, as in bcrypt or PBKDF2, repeats the hash many times to slow brute force.","1.4"],
+ [1,"A database replaces real credit card numbers with random values and keeps the mapping in a separate secure vault. What is this?","Tokenization",["Data masking","Hashing","Steganography"],"Tokenization swaps sensitive data for a token that can only be mapped back through the vault. Masking hides part of the data, hashing is one-way, and steganography hides data inside other files.","1.4"],
+ [2,"Which threat actor usually has the most resources and targets other governments for long-term espionage?","Nation-state",["Hacktivist","Unskilled attacker","Organized crime"],"Nation-state actors are well funded and patient, often running advanced persistent threats (APTs). Hacktivists are driven by causes, organized crime by money, and unskilled attackers use tools others wrote.","2.1"],
+ [2,"A group defaces a company's website to protest its environmental record. What type of threat actor is this?","Hacktivist",["Nation-state","Insider threat","Organized crime"],"Hacktivists act on political or philosophical beliefs, often through defacement, leaks or DDoS attacks.","2.1"],
+ [2,"An employee who was passed over for promotion copies customer lists to a personal drive before quitting. What threat actor is this?","An insider threat",["Shadow IT","A hacktivist","An unskilled attacker"],"Insider threats already have legitimate access, which makes them hard to detect. Revenge and financial gain are common motivations.","2.1"],
+ [2,"A department signs up for an unapproved cloud file-sharing service without telling IT. What is this called?","Shadow IT",["An insider threat","A supply chain attack","Typosquatting"],"Shadow IT is technology used without IT's approval. It's usually well meant but creates unmanaged risk, such as data stored where security controls don't reach.","2.1"],
+ [2,"Someone with little skill runs a downloaded attack tool against random websites. What threat actor is this?","An unskilled attacker",["A nation-state","An advanced persistent threat","An insider threat"],"Unskilled attackers, once called script kiddies, rely on tools and exploits other people wrote. They have few resources but can still do damage with public tools.","2.1"],
+ [2,"Gangs that encrypt hospital systems and demand payment are most often which type of threat actor?","Organized crime",["Hacktivists","Nation-states","Shadow IT"],"Organized crime groups are motivated by financial gain and run ransomware, fraud and extortion like businesses.","2.1"],
+ [2,"Attackers compromise a website that a target company's engineers visit often and use it to infect their computers. What is this?","A watering hole attack",["Typosquatting","Pretexting","Business email compromise"],"A watering hole attack poisons a site the targets already trust. Typosquatting registers look-alike domains, pretexting uses an invented story, and business email compromise abuses a real or spoofed business email account.","2.2"],
+ [2,"An attacker registers examp1e.com, hoping users mistype example.com. What is this?","Typosquatting",["A watering hole attack","Smishing","Pretexting"],"Typosquatting, or URL hijacking, relies on typing mistakes and look-alike characters to send users to a malicious site.","2.2"],
+ [2,"An accounts payable clerk gets an email that appears to come from a regular supplier asking to change the bank account for future payments. What attack is this most likely?","Business email compromise",["Vishing","A watering hole attack","Smishing"],"Business email compromise uses a compromised or spoofed business account to redirect payments or data. Confirm such requests through a phone number you already know, not one in the email.","2.2"],
+ [2,"Which attack vector does a USB drive left in a company parking lot rely on?","A removable device",["An open service port","Default credentials","An unsecure wireless network"],"Removable media can carry malware or carry data out, and curiosity leads people to plug in drives they find. Many organizations block or control USB storage.","2.2"],
+ [2,"A new IP camera is installed with the manufacturer's admin password unchanged. Which attack surface does this create?","Default credentials",["A watering hole","A supply chain compromise","Typosquatting"],"Default credentials are published in manuals and online, so attackers try them first. Change them during installation.","2.2"],
+ [2,"Attackers break into a managed service provider and use its remote tools to reach the provider's customers. What type of attack is this?","A supply chain attack",["Shadow IT","An insider threat","Pretexting"],"Supply chain attacks go through a trusted third party, such as an MSP, a vendor or a software update, to reach the real targets.","2.2"],
+ [2,"A web form passes user input straight into a database query, and an attacker enters ' OR 1=1 --. What vulnerability is this?","SQL injection",["Cross-site scripting","Buffer overflow","Directory traversal"],"SQL injection lets input change the logic of a query. Parameterized queries and input validation prevent it. Cross-site scripting injects script into pages other users view.","2.3"],
+ [2,"An attacker posts a comment containing a script, and it runs in the browser of everyone who views the page. What is this?","Stored cross-site scripting",["SQL injection","Cross-site request forgery","Server-side request forgery"],"Stored XSS saves the script on the server, so it runs for every visitor. Reflected XSS bounces it off one request, often through a crafted link. Output encoding and input validation prevent both.","2.3"],
+ [2,"A program writes more data into a memory buffer than it can hold, overwriting nearby memory. What vulnerability is this?","Buffer overflow",["Race condition","Memory leak","Integer underflow"],"A buffer overflow can overwrite return addresses and let an attacker run code. Bounds checking, memory-safe languages and protections like ASLR reduce the risk. A race condition is about timing.","2.3"],
+ [2,"Code checks that a file is safe, but an attacker swaps the file before the program uses it. What is this flaw called?","A time-of-check to time-of-use race condition",["A buffer overflow","Memory injection","A malicious update"],"This flaw exploits the gap between when something is checked and when it is used. Locking the resource, or checking at the moment of use, closes the gap.","2.3"],
+ [2,"Malware inside a virtual machine breaks out and reaches the hypervisor and the other virtual machines on the host. What is this?","VM escape",["Resource reuse","Side loading","Jailbreaking"],"VM escape defeats the isolation virtualization relies on, and patching hypervisors quickly is the main defense. Resource reuse leaks data when memory or disk isn't cleared between tenants.","2.3"],
+ [2,"A user installs an app on a company phone from a website instead of the official app store. What is this?","Side loading",["Jailbreaking","Rooting the firmware","A zero-day exploit"],"Side loading bypasses app store vetting. Jailbreaking (iOS) or rooting (Android) removes the operating system's restrictions altogether. MDM policies can block both.","2.3"],
+ [2,"A user's account signs in from New York and, ten minutes later, from Singapore. What indicator of compromise is this?","Impossible travel",["Account lockout","Resource consumption","Out-of-cycle logging"],"Impossible travel means sign-ins from places too far apart for the time between them, which suggests stolen credentials. Concurrent sessions from different locations are a related warning sign.","2.4"],
+ [2,"Many accounts each get one or two login attempts with common passwords such as Spring2026!. What attack is this?","Password spraying",["Brute force","Credential replay","A birthday attack"],"Spraying tries a few common passwords across many accounts to stay under lockout limits. Brute force tries many passwords against one account.","2.4"],
+ [2,"An attacker sends small DNS queries with the victim's address as the source, so large responses flood the victim. What is this?","An amplified reflection DDoS attack",["DNS poisoning","An on-path attack","Credential replay"],"Reflection hides the attacker behind third-party servers, and amplification makes each response much bigger than the request. Open DNS resolvers and NTP or memcached servers are common amplifiers.","2.4"],
+ [2,"Malware hides by modifying the operating system kernel so security tools can't see its files or processes. What is it?","A rootkit",["A logic bomb","A worm","Bloatware"],"Rootkits run with high privilege and hide themselves, so detection often needs offline scanning or a rebuild. A logic bomb waits for a trigger, a worm spreads on its own, and bloatware is unwanted preinstalled software.","2.4"],
+ [2,"Malware spreads from computer to computer across the network by itself, with no user action. What is it?","A worm",["A virus","A Trojan","Spyware"],"Worms spread on their own, usually by exploiting a network vulnerability. Viruses need a user to run an infected file, and a Trojan pretends to be legitimate software.","2.4"],
+ [2,"A web request contains ../../etc/passwd in a file name parameter. What attack is being attempted?","Directory traversal",["SQL injection","Cross-site scripting","Privilege escalation"],"Directory traversal uses ../ sequences to read files outside the web root. Validating and normalizing file paths stops it.","2.4"],
+ [2,"Which mitigation lets only approved programs run on a server and blocks everything else?","An application allow list",["An application deny list","Patching","Decommissioning"],"An allow list blocks anything not explicitly approved, which stops unknown malware. A deny list only blocks programs already known to be bad.","2.5"],
+ [2,"Which hardening step shrinks the attack surface of a new server?","Remove unneeded software and disable unused ports and services",["Install every available feature for future use","Keep default passwords so support can sign in","Turn off the host-based firewall"],"Hardening means removing what isn't needed, changing defaults, enabling host firewalls and endpoint protection, and patching.","2.5"],
+ [2,"Which control detects and blocks malicious activity on a single server, such as suspicious process behavior?","HIPS",["NIDS","A WAF","A load balancer"],"A host-based intrusion prevention system watches one host's processes, files and traffic and blocks attacks there. A NIDS watches network traffic and only alerts, and a WAF protects web applications.","2.5"],
+ [2,"Old servers are being retired. What must happen to their drives as part of decommissioning?","Sanitize or destroy them so the data can't be recovered",["Store them in a closet in case they're needed","Reformat them once and resell them","Remove only the operating system"],"Decommissioning includes secure sanitization, such as overwriting or cryptographic erase, or physical destruction, with records of what was done.","2.5"],
+ [2,"Which principle should decide what permissions a new service account gets?","Least privilege",["Separation of duties","Implicit allow","Defense in depth"],"Service accounts should get only the permissions their task needs. Over-privileged service accounts are a common route to privilege escalation.","2.5"],
+ [2,"Why do organizations enforce configuration baselines with automated tools?","To find and fix systems that drift from the secure configuration",["To skip patching","To give users admin rights","To turn off monitoring"],"Configuration enforcement compares systems with the approved baseline and fixes or reports drift, which keeps hardening in place over time.","2.5"],
+ [3,"Under the shared responsibility model for IaaS, who patches the guest operating system?","The customer",["The cloud provider","The hardware manufacturer","Nobody, since it's automatic"],"In IaaS the provider secures the hardware and hypervisor, and the customer secures the OS, applications and data. In SaaS the provider handles almost everything except data and access.","3.1"],
+ [3,"An application runs as many small, independent services that talk to each other through APIs. What architecture is this?","Microservices",["Monolithic","Mainframe","Peer-to-peer"],"Microservices can be scaled and updated separately, but they add many API endpoints that each need authentication and monitoring.","3.1"],
+ [3,"Code runs only when an event triggers it, and the provider manages all the servers. What model is this?","Serverless",["Infrastructure as a service","Containers on your own hosts","A virtual machine"],"Serverless, or function as a service, removes server management. Security focus shifts to the code, its permissions and the events that trigger it.","3.1"],
+ [3,"A system that controls a power plant's turbines sits on a network with no connection to any other network. What is this?","An air-gapped network",["A screened subnet","Logical segmentation with VLANs","Software-defined networking"],"An air gap is physical isolation. It's strong but can be bridged by removable media, as several well-known attacks on industrial systems showed. VLANs separate networks logically, not physically.","3.1"],
+ [3,"Which type of system must respond within guaranteed time limits, such as the controller in a car's braking system?","A real-time operating system",["A general-purpose desktop OS","A hypervisor","A container platform"],"An RTOS must respond within strict deadlines. Embedded and RTOS devices are often hard to patch, which makes isolating them important.","3.1"],
+ [3,"What is a key security concern with containers compared with virtual machines?","Containers share the host's kernel, so a kernel flaw can affect all of them",["Containers can't be updated","Each container needs its own physical server","Containers can't use the network"],"Each VM has its own kernel on a hypervisor. Containers are lighter but share the host OS kernel, so host hardening and image scanning matter.","3.1"],
+ [3,"A firewall fails in a way that blocks all traffic until it is repaired. What failure mode is this?","Fail-closed",["Fail-open","Load shedding","Active-active"],"Fail-closed favors security, since nothing passes, at the cost of availability. Fail-open keeps traffic flowing without inspection, which favors availability.","3.2"],
+ [3,"Which firewall protects a web application by inspecting HTTP requests for attacks such as SQL injection and cross-site scripting?","A WAF",["A UTM appliance","A stateless packet filter","A Layer 4 firewall"],"A web application firewall works at Layer 7 on web traffic. A Layer 4 firewall only sees addresses, ports and protocols. UTM bundles several security functions into one appliance.","3.2"],
+ [3,"An IDS watches a copy of traffic from a network tap. Which device attribute describes it?","Passive, monitoring out of band",["Active and inline","Fail-closed","A jump server"],"A passive sensor can alert but not block. An inline IPS sits in the traffic path, so it can block attacks but also adds a point of failure.","3.2"],
+ [3,"Remote workers reach company resources through a cloud service that combines SD-WAN, a secure web gateway, CASB and zero trust access. What is this?","SASE",["A site-to-site VPN","NAC","A jump server"],"Secure access service edge delivers networking and security together from the cloud, close to users wherever they work.","3.2"],
+ [3,"Which protocol does 802.1X use to carry authentication between the client and the authentication server?","EAP",["SAML","OAuth","LDAP"],"802.1X carries EAP messages, which support many methods, such as EAP-TLS with certificates. The switch or access point passes them to a RADIUS server.","3.2"],
+ [3,"Administrators must connect to one hardened server in a secure zone before they can reach sensitive systems. What is that server?","A jump server",["A proxy server","A load balancer","A sensor"],"A jump server is the single controlled entry point into a secure zone, and every session through it can be logged and monitored.","3.2"],
+ [3,"Data loaded into memory while an application processes it is in which state?","Data in use",["Data at rest","Data in transit","Data sovereignty"],"Data in use is being processed in memory or the CPU. Data at rest is stored, and data in transit is moving across a network. Each state needs different protection.","3.3"],
+ [3,"A country's law requires its citizens' data to be stored and processed inside the country. What concept is this?","Data sovereignty",["Data classification","Data masking","Data in transit"],"Data sovereignty means data is subject to the laws of the country where it is stored. It limits where cloud data can live.","3.3"],
+ [3,"A help desk screen shows only the last four digits of a customer's card number. What technique is this?","Data masking",["Tokenization","Encryption","Hashing"],"Masking hides part of the data from people who don't need all of it. Tokenization replaces the whole value with a token.","3.3"],
+ [3,"A company's secret manufacturing process, which gives it an edge over competitors, is which data type?","A trade secret",["Regulated data","Public information","Legal information"],"Trade secrets get their value from staying secret, so protection relies on access control and NDAs. Regulated data, such as health or payment data, is governed by laws and standards.","3.3"],
+ [3,"Which method lets a company block access to its cloud data from countries where it doesn't operate?","Geographic restrictions",["Data masking","Hashing","Tokenization"],"Geographic restrictions, such as geofencing and geo-IP blocking, limit access based on location.","3.3"],
+ [3,"Which technique lets you verify that stored data hasn't changed, without being able to recover the original from the stored value?","Hashing",["Encryption","Tokenization","Masking"],"A hash is a one-way fingerprint. Comparing hashes proves integrity, and the original can't be recovered from the hash. Encryption is reversible with the key.","3.3"],
+ [3,"Which disaster recovery site costs the least to keep but takes the longest to bring online?","A cold site",["A hot site","A warm site","A mirrored site"],"A cold site has space and power but little equipment, so recovery takes days or weeks. A hot site is ready almost at once but costs the most.","3.4"],
+ [3,"Two servers share storage and take over each other's work if one fails, appearing to users as one system. What is this?","Clustering",["Load balancing","Journaling","Snapshots"],"Clustering joins servers so they act as one and fail over between members. Load balancing spreads requests across independent servers.","3.4"],
+ [3,"Running workloads on two different cloud providers so one provider's outage doesn't stop the business is called what?","Multi-cloud",["Hybrid cloud","Single-tenant cloud","Serverless"],"Multi-cloud adds platform diversity, so one provider's failure or compromise doesn't take everything down. Hybrid cloud combines on-premises and cloud resources.","3.4"],
+ [3,"What does a backup kept at another location protect against that an on-site backup doesn't?","A disaster that destroys the primary site",["A user deleting one file","A failed disk in a RAID array","A slow network"],"Off-site backups survive fires, floods and site-wide ransomware, while on-site backups restore faster for everyday losses. A common approach is 3-2-1: three copies, on two types of media, with one off-site.","3.4"],
+ [3,"Which feature logs every change so a database can be replayed to a point just before a failure?","Journaling",["Snapshots","Replication","Load balancing"],"Journaling records transactions so they can be replayed. Snapshots capture state at one moment, and replication copies data to another location continuously or on a schedule.","3.4"],
+ [3,"During a test, production traffic really moves to the secondary data center to prove it works. What type of test is this?","A failover test",["A tabletop exercise","A simulation","A parallel processing test"],"A failover test actually switches to the backup systems. A tabletop exercise is discussion only, and a simulation acts out a scenario without touching production.","3.4"],
+ [4,"Which deployment model lets employees use their own phones for work, with company data managed separately?","BYOD",["COPE","CYOD","Corporate-owned, business only"],"Bring your own device uses personal phones, usually with MDM or containerization to separate work data. COPE devices are company-owned but allow personal use, and CYOD lets employees choose from approved company devices.","4.1"],
+ [4,"Which tool lets a company enforce passcodes, push apps and remotely wipe lost phones?","MDM",["SIEM","EDR","DLP"],"Mobile device management enforces policy on phones and tablets. A SIEM correlates logs, EDR protects endpoints, and DLP stops sensitive data from leaving.","4.1"],
+ [4,"Before release, a tool scans an application's source code for vulnerabilities without running it. What is this?","Static code analysis",["Dynamic analysis","Fuzzing","Sandboxing"],"Static analysis reads the code. Dynamic analysis tests the running application, and fuzzing feeds it random input to find crashes.","4.1"],
+ [4,"A web application sets the Secure and HttpOnly flags on its session cookies. What does this protect against?","Cookies being sent over plain HTTP or read by scripts",["SQL injection","Buffer overflows","Denial of service"],"Secure keeps cookies off unencrypted connections, and HttpOnly stops JavaScript from reading them, which blunts most cookie theft through cross-site scripting.","4.1"],
+ [4,"A vendor signs its software updates so customers can confirm they came from the vendor and weren't changed. What is this?","Code signing",["Sandboxing","Input validation","Static analysis"],"Code signing uses the vendor's private key, and systems check the signature with the vendor's certificate before installing.","4.1"],
+ [4,"Before disposing of old drives, a company needs proof that the data was destroyed. What should the disposal vendor provide?","A certificate of destruction",["A purchase order","A service-level agreement","An acceptable use policy"],"A certificate of destruction records what was destroyed, when and how, which supports compliance and audits.","4.2"],
+ [4,"Which sanitization method makes data on a self-encrypting drive unrecoverable almost instantly?","Cryptographic erase",["Deleting the files","Quick formatting","Removing the partition table"],"Cryptographic erase destroys the encryption key, so the remaining data is unreadable. Deleting and formatting leave data recoverable.","4.2"],
+ [4,"Why should every asset have an assigned owner?","So someone is accountable for its classification, protection and lifecycle",["So it can be left out of the inventory","So it never needs patching","So it doesn't need monitoring"],"Owners decide classification and access, and make sure the asset is maintained and eventually retired properly.","4.2"],
+ [4,"A company uses software to find every device on its network, including ones nobody recorded. What is this activity?","Enumeration for the asset inventory",["Data retention","Sanitization","Penetration testing"],"Enumeration discovers assets so the inventory is complete. You can't protect devices you don't know about.","4.2"],
+ [4,"Regulations require keeping financial records for seven years and then deleting them. Which policy covers this?","Data retention",["Acceptable use","Change management","Incident response"],"Retention policies set how long data is kept and when it is destroyed, balancing legal requirements against the risk of keeping data too long.","4.2"],
+ [4,"A vulnerability scanner reports a flaw that, on inspection, isn't actually present. What is this?","A false positive",["A false negative","A true positive","A zero-day"],"False positives waste effort, while false negatives, real flaws that go unreported, are more dangerous. Confirm findings before acting on them.","4.3"],
+ [4,"Which system gives a vulnerability a severity score from 0 to 10?","CVSS",["CVE","SCAP","OSINT"],"The Common Vulnerability Scoring System rates severity. CVE gives each publicly known vulnerability an ID, SCAP standardizes how tools describe and check security settings, and OSINT is public information gathering.","4.3"],
+ [4,"A company pays outside researchers who find and report vulnerabilities in its products. What is this?","A bug bounty program",["A penetration test","A vulnerability scan","Threat hunting"],"Bug bounties reward responsible disclosure from anyone who finds a flaw. A penetration test is a contracted engagement with a set scope.","4.3"],
+ [4,"A critical vulnerability can't be patched for a month because the vendor has no fix yet. What should the team do meanwhile?","Apply compensating controls, such as segmentation or extra monitoring",["Ignore it until the patch arrives","Delete the vulnerability report","Turn off logging"],"When remediation isn't possible yet, compensating controls reduce the risk. Document the exception and review it until the patch is applied.","4.3"],
+ [4,"After patching a vulnerability, how should the team confirm it's fixed?","Rescan the affected systems",["Close the ticket without checking","Ask the user whether it seems fixed","Wait for next year's audit"],"Validating with a rescan, audit or other verification proves remediation worked before the issue is closed.","4.3"],
+ [4,"The SOC gets so many low-value alerts that analysts miss real ones. What should it do?","Tune the alert rules",["Turn off all alerts","Delete old logs","Add more alerts"],"Alert tuning cuts false positives and noise so real incidents stand out. Alert fatigue is a real risk.","4.4"],
+ [4,"Which standard lets automated tools check systems against security configuration benchmarks in a common format?","SCAP",["CVSS","SNMP","NetFlow"],"The Security Content Automation Protocol defines common formats for checklists and benchmarks so tools can scan for compliance consistently.","4.4"],
+ [4,"Which data shows who talked to whom, on which ports and how much data moved, without the full packet contents?","NetFlow",["Packet capture","Application logs","SNMP traps"],"Flow data is compact and good for spotting unusual connections or data exfiltration. Packet capture holds the contents but needs far more storage.","4.4"],
+ [4,"A monitoring agent finds a suspicious file on a laptop and moves it to a protected folder where it can't run. What response is this?","Quarantine",["Archiving","Alert tuning","Log aggregation"],"Quarantine isolates a suspicious file or device so it can be investigated without spreading.","4.4"],
+ [4,"Which agent-based or agentless tools compare systems with known vulnerabilities and missing patches?","Vulnerability scanners",["Load balancers","Password managers","Jump servers"],"Vulnerability scanners check systems for known flaws and misconfigurations. Agents run on the host for deeper checks, while agentless scans work over the network.","4.4"],
+ [4,"Which email authentication record lists the servers allowed to send mail for a domain?","SPF",["DKIM","DMARC","MX"],"SPF lists authorized senders. DKIM signs messages so changes can be detected, and DMARC tells receivers what to do when SPF or DKIM checks fail and sends reports back.","4.5"],
+ [4,"Which tool records activity on endpoints and can automatically isolate a compromised laptop?","EDR",["DLP","NAC","A WAF"],"Endpoint detection and response watches process and file behavior and can act, for example by isolating the host. XDR extends this across endpoints, network, cloud and email.","4.5"],
+ [4,"A company stops its users from resolving known malicious domain names. What control is this?","DNS filtering",["DNSSEC","Port security","Group Policy"],"DNS filtering refuses to resolve domains on block lists or in risky categories. DNSSEC proves DNS answers are authentic but doesn't block anything.","4.5"],
+ [4,"Which tool alerts when critical system files change unexpectedly?","File integrity monitoring",["A web filter","Data loss prevention","A load balancer"],"FIM hashes important files and alerts on changes, which can reveal malware or unauthorized changes.","4.5"],
+ [4,"Which Windows feature lets administrators push security settings, such as password rules, to every domain computer?","Group Policy",["SELinux","DNS filtering","A web proxy"],"Group Policy enforces settings across Active Directory. SELinux provides mandatory access control on Linux.","4.5"],
+ [4,"Users sign in with their company account to a partner's application, and the partner trusts the company's identity provider. What is this?","Federation",["Least privilege","Provisioning","Time-of-day restrictions"],"Federation links identity systems across organizations, often with SAML or OpenID Connect, so users don't need separate accounts.","4.6"],
+ [4,"An app lets users give it access to their calendar on another service without sharing their password. Which protocol is usually behind this?","OAuth",["LDAP","RADIUS","Kerberos"],"OAuth handles delegated authorization through access tokens. OpenID Connect adds authentication on top of it.","4.6"],
+ [4,"Access is granted based on attributes such as the user's department, the device's health and the time of day. What model is this?","Attribute-based access control",["Discretionary access control","Mandatory access control","Role-based access control"],"ABAC evaluates many attributes in a policy. RBAC uses job roles, discretionary access control lets owners decide, and mandatory access control uses labels and clearances set by the system.","4.6"],
+ [4,"Files are labeled Secret or Top Secret, and users can only read data at or below their clearance. What model is this?","Mandatory access control",["Discretionary access control","Rule-based access control","Attribute-based access control"],"Mandatory access control is enforced by the system using labels and clearances, and users can't change it.","4.6"],
+ [4,"An admin gets elevated rights only for the hour needed to finish a task, and they expire automatically. What is this?","Just-in-time permissions",["Password vaulting","Permanent admin rights","Single sign-on"],"Just-in-time access is part of privileged access management. It shrinks the window in which a stolen admin account is useful.","4.6"],
+ [4,"Which password practice does current guidance favor most for strength?","Long passphrases",["Forced changes every 30 days","Short passwords with special characters","Reusing one strong password across sites"],"Length adds the most strength, and frequent forced changes lead to predictable patterns. Password managers make long, unique passwords practical.","4.6"],
+ [4,"Which platform automates responses to alerts with playbooks, such as disabling an account and opening a ticket?","SOAR",["A SIEM on its own","DLP","NAC"],"Security orchestration, automation and response runs playbooks across tools. A SIEM collects and correlates events, and SOAR acts on them.","4.7"],
+ [4,"What is a benefit of scripting new user account creation?","Accounts are created consistently with the right baseline permissions",["Approvals are no longer needed","Accounts never expire","Logging is turned off"],"Automation enforces baselines, saves time and cuts the errors that come with manual setup.","4.7"],
+ [4,"What is a risk of relying heavily on security automation?","A broken script or integration can become a single point of failure",["It always brings costs to zero","It removes the need for monitoring","It can never be maintained"],"Automation adds complexity, cost, technical debt and support needs. If a critical automation fails, many processes can fail with it.","4.7"],
+ [4,"Automation that stops developers from deploying cloud resources that break security rules is called what?","Guard rails",["Technical debt","Escalation","Ticket creation"],"Guard rails let teams move fast while automatically blocking unsafe configurations.","4.7"],
+ [4,"How does automation act as a workforce multiplier for a small security team?","It handles repetitive tasks so analysts can focus on complex work",["It replaces the need for any staff","It removes all false positives","It makes incidents impossible"],"Automation speeds up reaction time and lets a few people do more.","4.7"],
+ [4,"What is the correct order of the incident response phases?","Preparation, detection, analysis, containment, eradication, recovery, lessons learned",["Detection, preparation, recovery, analysis, containment, eradication, lessons learned","Containment, preparation, detection, eradication, analysis, recovery, lessons learned","Preparation, containment, detection, analysis, recovery, eradication, lessons learned"],"Preparation comes first. Then you detect and analyze, contain the damage, eradicate the cause, recover, and capture lessons learned.","4.8"],
+ [4,"An infected server is disconnected from the network but left running for investigation. Which phase is this?","Containment",["Eradication","Recovery","Preparation"],"Containment limits the spread. Eradication removes the threat, such as deleting malware and closing the hole, and recovery returns systems to normal.","4.8"],
+ [4,"What records everyone who handled a piece of evidence, when they had it and why?","Chain of custody",["Legal hold","E-discovery","Root cause analysis"],"Chain of custody shows the evidence wasn't tampered with, so it can be used in court.","4.8"],
+ [4,"A lawsuit is expected, so the company is told to preserve all related email and documents. What is this?","A legal hold",["A data retention expiry","Chain of custody","Threat hunting"],"A legal hold overrides normal deletion schedules for the relevant data until the matter is resolved.","4.8"],
+ [4,"Analysts search logs proactively for signs of an attacker that no alert has flagged. What is this?","Threat hunting",["Alert tuning","Incident recovery","Vulnerability scanning"],"Threat hunting assumes attackers may already be inside and looks for them using hypotheses and threat intelligence.","4.8"],
+ [4,"Which data source best shows whether an internal host connected to a known malicious IP address?","Firewall logs",["Application logs from an unrelated server","A vulnerability scan","An asset inventory"],"Firewall logs record allowed and blocked connections with source and destination addresses and ports.","4.9"],
+ [4,"An investigator needs the exact contents of network traffic during an attack. What should they review?","A packet capture",["NetFlow records","A dashboard","Metadata only"],"Packet captures contain whole packets, including payloads. Flow data and metadata summarize traffic without the contents.","4.9"],
+ [4,"Email headers showing the sending server, route and timestamps are an example of which data source?","Metadata",["Packet capture","Vulnerability scan output","Firewall logs"],"Metadata is data about data, such as headers, file properties and timestamps, and it often reveals origins and timelines.","4.9"],
+ [4,"Which logs would show which user started a suspicious process on a workstation?","Endpoint and OS security logs",["Firewall logs","NetFlow","DNS filtering reports"],"Endpoint and OS security logs record logons, process creation and privilege use on the host.","4.9"],
+ [4,"Which source gives a manager a quick visual summary of security events and trends?","A dashboard",["A raw packet capture","A hex dump","A chain of custody form"],"Dashboards and automated reports summarize data for decisions. Investigators drill into logs and captures for the details.","4.9"],
+ [5,"Which document states what employees may and may not do with company IT resources?","An acceptable use policy",["A business continuity plan","A standard","A playbook"],"An AUP sets rules for using company systems, and users usually acknowledge it. Policies set direction, standards set specific requirements, and playbooks give step-by-step responses.","5.1"],
+ [5,"A requirement that all laptops use AES-256 full-disk encryption is best described as what?","A standard",["A guideline","A policy","A procedure"],"Standards are specific, mandatory requirements that support a policy. Guidelines are recommendations, and procedures are step-by-step instructions.","5.1"],
+ [5,"Under privacy law, which role decides why and how personal data is processed?","The data controller",["The data processor","The data custodian","The data subject"],"The controller sets the purposes and means of processing. A processor handles data for the controller, a custodian looks after it day to day, and the data subject is the person the data is about.","5.1"],
+ [5,"Who handles the day-to-day storage, backup and protection of data according to the owner's rules?","The data custodian",["The data owner","The data subject","The auditor"],"Custodians, also called stewards, put in place the controls that data owners decide on.","5.1"],
+ [5,"Step-by-step instructions for handling a reported phishing email are an example of what?","A playbook",["A policy","A standard","A guideline"],"Playbooks give repeatable steps for specific situations and are often automated with SOAR.","5.1"],
+ [5,"A server is worth $40,000, and a fire would destroy 50% of its value. What is the single loss expectancy?","$20,000",["$40,000","$80,000","$2,000"],"SLE = asset value × exposure factor, so $40,000 × 0.5 = $20,000.","5.2"],
+ [5,"An event has a single loss expectancy of $20,000 and is expected once every 4 years. What is the annualized loss expectancy?","$5,000",["$80,000","$20,000","$4,000"],"ALE = SLE × ARO. The annualized rate of occurrence is 1 in 4 years, or 0.25, so $20,000 × 0.25 = $5,000.","5.2"],
+ [5,"A company buys cyber insurance to cover the cost of a breach. Which risk strategy is this?","Transfer",["Accept","Avoid","Mitigate"],"Transferring shifts the financial impact to another party. Avoiding stops the risky activity, mitigating reduces likelihood or impact, and accepting knowingly takes the risk.","5.2"],
+ [5,"Which document tracks identified risks with their owners, ratings and treatment?","A risk register",["A business impact analysis","A playbook","A service-level agreement"],"The risk register is the central list of risks and how each one is being handled.","5.2"],
+ [5,"How much risk an organization is willing to take on to reach its goals is called its what?","Risk appetite",["Risk register","Risk transfer","Exposure factor"],"Risk appetite is the overall willingness to take risk, described as expansionary, neutral or conservative. Risk tolerance is the acceptable variation for specific risks.","5.2"],
+ [5,"Which contract clause lets a company inspect a vendor's security controls?","A right-to-audit clause",["A non-disclosure agreement","A memorandum of understanding","A work order"],"A right-to-audit clause gives contractual permission to review the vendor's controls or the evidence for them.","5.3"],
+ [5,"Which agreement sets the overall terms for an ongoing vendor relationship, with each project defined in later documents?","An MSA",["An SOW","An NDA","An SLA"],"A master service agreement sets the general terms, and each statement of work or work order defines a specific job. An SLA sets measurable service levels.","5.3"],
+ [5,"Which agreement defines measurable service commitments, such as 99.9% uptime and set response times?","An SLA",["An MOU","An NDA","A BPA"],"A service-level agreement sets measurable targets and what happens when they're missed. An MOU states shared intent, and an NDA protects confidential information.","5.3"],
+ [5,"Before signing with a new cloud vendor, a company reviews its security certifications, financial health and past breaches. What is this?","Due diligence",["A conflict of interest","A legal hold","Risk acceptance"],"Due diligence is the research done before choosing a vendor, and vendor monitoring continues it afterward.","5.3"],
+ [5,"Which document is a less formal statement of shared intent between two parties and often isn't legally binding?","An MOU",["An MSA","An SLA","A work order"],"A memorandum of understanding records shared goals. A memorandum of agreement is more specific about each party's responsibilities.","5.3"],
+ [5,"Under privacy laws such as GDPR, what lets a person ask an organization to delete their personal data?","The right to be forgotten",["Data sovereignty","A legal hold","Attestation"],"The right to erasure, or right to be forgotten, lets data subjects ask for deletion when there's no legal reason to keep the data.","5.4"],
+ [5,"Which is a possible consequence of failing a regulatory compliance requirement?","Fines and sanctions",["Automatic certification","Lower insurance premiums","A guaranteed contract renewal"],"Non-compliance can bring fines, sanctions, reputational damage, lost licenses and contract problems.","5.4"],
+ [5,"A company's leaders formally confirm in writing that required controls are in place. What is this?","Attestation",["Due diligence","A data inventory","A penetration test"],"Attestation is a formal statement that something is true, often required for compliance reporting.","5.4"],
+ [5,"A report on the organization's compliance status is sent to a regulator. What type of reporting is this?","External compliance reporting",["Internal compliance reporting","A risk register update","A playbook"],"External reporting goes to regulators, auditors or customers. Internal reporting goes to management and the board.","5.4"],
+ [5,"Why do organizations keep a data inventory for privacy compliance?","To know what personal data they hold, where it is and why",["To avoid retention rules","To share data freely","To skip encryption"],"You can't protect, retain or delete data you can't find. An inventory supports privacy requests and audits.","5.4"],
+ [5,"Testers get full network diagrams and source code before the test begins. What type of test environment is this?","A known environment",["An unknown environment","A partially known environment","Passive reconnaissance"],"A known environment test gives full information. An unknown environment test gives none, and a partially known one gives some.","5.5"],
+ [5,"A tester gathers information from public websites and DNS records without touching the target's systems. What is this?","Passive reconnaissance",["Active reconnaissance","Exploitation","Pivoting"],"Passive reconnaissance avoids direct contact, so it's hard to detect. Active reconnaissance, such as port scanning, touches the target.","5.5"],
+ [5,"An independent firm reviews a company's controls and issues a report for its customers. What type of audit is this?","An independent third-party audit",["A self-assessment","An internal audit","A tabletop exercise"],"Third-party audits give customers and regulators independent assurance. Internal audits are run by the organization's own audit function.","5.5"],
+ [5,"Attackers and defenders work together, sharing findings in real time to improve detection. What type of penetration test is this?","Integrated",["Offensive","Defensive","Physical"],"Integrated testing, often called purple teaming, combines offensive and defensive teams. Offensive testing simulates attackers, and defensive testing focuses on detection and response.","5.5"],
+ [5,"Which group usually oversees the internal audit function and reports to the board?","The audit committee",["The help desk","The data processors","The change advisory board"],"The audit committee gives independent oversight of audits and compliance.","5.5"],
+ [5,"The security team sends simulated phishing emails to employees and tracks who clicks. What is this?","A phishing campaign",["A watering hole attack","A server penetration test","Threat hunting"],"Phishing campaigns measure and build awareness. Follow-up training for people who click works better than punishment.","5.6"],
+ [5,"An employee receives a suspicious email asking for their password. What should training tell them to do?","Report it through the official reporting process",["Reply and ask for proof","Forward it to coworkers as a warning","Delete it and say nothing"],"Reporting lets the security team block the sender and warn others. Easy tools, such as a report button, increase reporting.","5.6"],
+ [5,"A user suddenly starts downloading large amounts of data at 3 AM. Which awareness topic covers spotting this?","Anomalous behavior recognition",["Password management","Removable media handling","Policy acknowledgment"],"Training helps staff and analysts notice risky, unexpected or unintentional behavior that may signal a compromise or an insider threat.","5.6"],
+ [5,"Why do remote and hybrid workers need specific security awareness training?","They work on home networks and in public places with different risks",["They never handle company data","They don't need passwords","Remote work has no security risk"],"Remote workers face shoulder surfing, insecure home Wi-Fi and shared family devices, so training covers those situations.","5.6"],
+ [5,"When should security awareness training happen?","At onboarding and then on a recurring schedule",["Only once, at hiring","Only after a breach","Never, if a policy exists"],"Initial training at hiring plus recurring refreshers keeps awareness current as threats change.","5.6"]
+];
+// SY0-701 exam objectives, with a short topic used to search for study videos.
+const SEC_OBJ={
+ "1.1":["Compare and contrast various types of security controls","security controls"],
+ "1.2":["Summarize fundamental security concepts","security concepts"],
+ "1.3":["Explain the importance of change management processes and the impact to security","change management"],
+ "1.4":["Explain the importance of using appropriate cryptographic solutions","cryptographic solutions"],
+ "2.1":["Compare and contrast common threat actors and motivations","threat actors"],
+ "2.2":["Explain common threat vectors and attack surfaces","threat vectors"],
+ "2.3":["Explain various types of vulnerabilities","vulnerabilities"],
+ "2.4":["Given a scenario, analyze indicators of malicious activity","indicators of malicious activity"],
+ "2.5":["Explain the purpose of mitigation techniques used to secure the enterprise","mitigation techniques"],
+ "3.1":["Compare and contrast security implications of different architecture models","architecture models"],
+ "3.2":["Given a scenario, apply security principles to secure enterprise infrastructure","secure infrastructure"],
+ "3.3":["Compare and contrast concepts and strategies to protect data","protecting data"],
+ "3.4":["Explain the importance of resilience and recovery in security architecture","resilience and recovery"],
+ "4.1":["Given a scenario, apply common security techniques to computing resources","securing computing resources"],
+ "4.2":["Explain the security implications of proper hardware, software, and data asset management","asset management"],
+ "4.3":["Explain various activities associated with vulnerability management","vulnerability management"],
+ "4.4":["Explain security alerting and monitoring concepts and tools","security monitoring"],
+ "4.5":["Given a scenario, modify enterprise capabilities to enhance security","enterprise security capabilities"],
+ "4.6":["Given a scenario, implement and maintain identity and access management","identity and access management"],
+ "4.7":["Explain the importance of automation and orchestration related to secure operations","automation and orchestration"],
+ "4.8":["Explain appropriate incident response activities","incident response"],
+ "4.9":["Given a scenario, use data sources to support an investigation","investigation data sources"],
+ "5.1":["Summarize elements of effective security governance","security governance"],
+ "5.2":["Explain elements of the risk management process","risk management"],
+ "5.3":["Explain the processes associated with third-party risk assessment and management","third-party risk"],
+ "5.4":["Summarize elements of effective security compliance","security compliance"],
+ "5.5":["Explain types and purposes of audits and assessments","audits and assessments"],
+ "5.6":["Given a scenario, implement security awareness practices","security awareness"]
+};
+// The owner's Security+ books (Sybex, in guides/ via Git LFS). ch: chapter -> [title, book page, PDF page].
+// obj: objective -> chapters, from the study guide's objective map.
+// practice.dom: domain -> [questions book page, questions PDF page, answers book page, answers PDF page].
+const SEC_GUIDE={
+  title:"CompTIA Security+ Study Guide, 9th ed.",
+  pdf:"guides/Security%2B/Security%2B%20SY0-701%20Study%20Guide/09102025_Security%2B%C2%AE%20Study%20Guide%20Ninth%20Edition.pdf",
+  ch:{1:["Today's Security Professional",1,39],2:["Cybersecurity Threat Landscape",21,59],3:["Malicious Code",49,87],
+    4:["Social Engineering and Password Attacks",69,106],5:["Security Assessment and Testing",85,121],6:["Application Security",141,176],
+    7:["Cryptography and the PKI",189,223],8:["Identity and Access Management",237,271],9:["Resilience and Physical Security",269,302],
+    10:["Cloud and Virtualization Security",299,331],11:["Endpoint Security",337,369],12:["Network Security",375,407],
+    13:["Wireless and Mobile Security",425,457],14:["Monitoring and Incident Response",455,486],15:["Digital Forensics",489,520],
+    16:["Security Governance and Compliance",515,546],17:["Risk Management and Privacy",561,592]},
+  obj:{"1.1":[1],"1.2":[1,8,9,12],"1.3":[16],"1.4":[1,7,11],"2.1":[2],"2.2":[2,4],"2.3":[2,6,7,10,11,13],"2.4":[3,4,6,9,12,13,14],
+    "2.5":[8,11,12,14,16],"3.1":[9,10,11,12],"3.2":[12],"3.3":[1,10,13,17],"3.4":[9,17],"4.1":[6,10,11,12,13],"4.2":[11],"4.3":[2,5,6],
+    "4.4":[5,11,12,14],"4.5":[11,12],"4.6":[8],"4.7":[6],"4.8":[14,15],"4.9":[14],"5.1":[16,17],"5.2":[17],"5.3":[16],"5.4":[16],"5.5":[5],"5.6":[16]},
+  practice:{title:"CompTIA Security+ Practice Tests, 3rd ed.",
+    pdf:"guides/Security%2B/Security%2B%20Practice%20Tests%20SY0-701/09102025_Security%2B%20Practice%20Tests%20Exam%20SYO-701%20Third%20Edition.pdf",
+    dom:{1:[1,16,218,227],2:[29,44,233,241],3:[69,83,255,262],4:[115,126,283,290],5:[169,179,309,316]}}
+};
+// Security+ armory: the same mechanics as Network+ under Security+ names, with its own upgrade levels.
+const SEC_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
+  {n:"Patch level",d:"+35% turret damage"},{n:"Threat feed",d:"+20% turret fire rate"},{n:"Sensor node",d:"Adds another turret to the wall"},
+  {n:"Hardened firewall",d:"+40 wall integrity"},{n:"Backup cache",d:"+20 starting ammo and +5 per correct answer"}][i]));
+const SEC_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
+  {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that jumps between hostiles."},
+  {n:"Honeypot mine",d:"Lures the densest pack, then blows it up."},{n:"Kill switch",d:"A beam that wipes every hostile in its lane."}][i]));
+
 /* ---------------- Exams ---------------- */
-// Security+ content arrives in phase 2; until then its menu card is shown as coming soon.
 const SEC_DOMAINS = {
   1:{name:"General Security Concepts", w:12, c:"var(--orange)"},
   2:{name:"Threats, Vulnerabilities, and Mitigations", w:22, c:"var(--green)"},
@@ -1916,14 +2163,16 @@ const GAMES={
 };
 const EXAMS={
   net:{id:"net",name:"Network+",full:"CompTIA Network+",code:"N10-009",ready:true,color:"#19F0FF",
+    foes:"Network+ nights bring shambling walkers and armored brutes.",
     tagline:"Networking concepts, implementation, operations, security and troubleshooting.",
     blurb:"Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand.",
     DOMAINS:NET_DOMAINS,Q:NET_Q,OBJ:NET_OBJ,GUIDE:NET_GUIDE,TIER:NET_TIER,MOCK_SPLIT:NET_MOCK_SPLIT,PASS:720,UPG:NET_UPG,WPN:NET_WPN,
     games:["ports","osi","subnet"]},
-  sec:{id:"sec",name:"Security+",full:"CompTIA Security+",code:"SY0-701",ready:false,color:"#FF2BD6",
+  sec:{id:"sec",name:"Security+",full:"CompTIA Security+",code:"SY0-701",ready:true,color:"#FF2BD6",
+    foes:"Security+ nights bring botnet zombies, fast worms and ransomware brutes that encrypt your ammo while they're at the wall.",
     tagline:"Threats, architecture, security operations and governance.",
-    blurb:"Answer practice questions across all five SY0-701 domains.",
-    DOMAINS:SEC_DOMAINS,Q:[],OBJ:{},GUIDE:null,TIER:{1:1,2:2,3:1,4:3,5:2},MOCK_SPLIT:{1:11,2:20,3:16,4:25,5:18},PASS:750,UPG:NET_UPG,WPN:NET_WPN,
+    blurb:"Answer practice questions across all five SY0-701 domains and drill the ports you need to know.",
+    DOMAINS:SEC_DOMAINS,Q:SEC_Q,OBJ:SEC_OBJ,GUIDE:SEC_GUIDE,TIER:{1:1,2:2,3:1,4:3,5:2},MOCK_SPLIT:{1:11,2:20,3:16,4:25,5:18},PASS:750,UPG:SEC_UPG,WPN:SEC_WPN,
     games:["ports"]}
 };
 // The current exam's content and progress. setExam() points these at one exam.

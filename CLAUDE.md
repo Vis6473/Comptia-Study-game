@@ -1,13 +1,13 @@
 # Cyber Zombie Attack
 
-A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. Network+ (N10-009) is complete; Security+ (SY0-701) is being added as a second exam. The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it; the repo name still says net-plus.
+A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. It covers Network+ (N10-009) and Security+ (SY0-701). The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it; the repo name still says net-plus.
 
 ## How it's built
 
 - Everything is in **`index.html`**: HTML, CSS and one script wrapped in an IIFE. There is no build step, no framework and no dependencies except Google Fonts (Chakra Petch, IBM Plex Sans, IBM Plex Mono).
 - Open the file in a browser to run it, or serve the folder: `python3 -m http.server 8000`.
 - Hash routing. Global views: `#menu` (the title screen, and the default with no hash), `#scores` (High Scores), `#settings`. Exam views: `#home`, `#quiz` (Quick Exams), `#mock`, `#review`, plus each exam's mini-games (`#ports`, `#osi`, `#subnet` for Network+). `GLOBAL_VIEWS` and `VIEWS` map hashes to view functions. An exam view with no exam chosen sends you to the menu, and a mini-game the current exam doesn't have falls back to home. A click on a link to the current hash re-runs `route()`.
-- **Exams:** `EXAMS` (the `Exams` section, just before Boot) registers each exam: name, code, pass mark, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, armory (`UPG`, `WPN`) and mini-game list (`games`, keys of `GAMES`). Network+ content is defined as `NET_*` constants. `setExam(id)` points the shared names (`EX`, `P`, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, `PASS`, `UPG`, `WPN`) at one exam, so most code just uses those names. `EXAMS.sec.ready` is false until the Security+ content exists, and the menu shows it as coming soon.
+- **Exams:** `EXAMS` (the `Exams` section, just before Boot) registers each exam: name, code, pass mark, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, armory (`UPG`, `WPN`) and mini-game list (`games`, keys of `GAMES`). Network+ content is defined as `NET_*` constants. `setExam(id)` points the shared names (`EX`, `P`, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, `PASS`, `UPG`, `WPN`) at one exam, so most code just uses those names. An exam with `ready:false` shows as coming soon on the menu. Security+ content is the `SEC_*` constants (`SEC_Q`, `SEC_OBJ`, `SEC_GUIDE`, `SEC_UPG`, `SEC_WPN`) in the `Security+ content` section, and `SEC_DOMAINS` and `GAMES` sit in the `Exams` section.
 - The menu, Settings and High Scores are global (`body.menu-mode` hides the header and tabs on the menu; `body.global-mode` hides the tabs). The menu is a deliberately dark title screen with an animated horde on a canvas, which stays still when the device asks for reduced motion.
 - Every view that adds timers or key listeners sets the global `cleanup`. `route()` calls it and also calls `D.unmount()`.
 
@@ -37,13 +37,14 @@ Each question is one line in `Q`:
 // e.g. [5, "Which tool ...?", "OTDR", ["Toner probe", "Loopback plug", "Multimeter"], "An optical ...", "5.5"]
 ```
 
-- Each exam has its own bank (`NET_Q`, and later `SEC_Q`), and `Q` points at the current one.
+- Each exam has its own bank (`NET_Q`, `SEC_Q`), and `Q` points at the current one. Indexes are per bank.
 - **Append new questions to the end of the bank.** Never insert in the middle or reorder.** Saved progress (`S.qs`, `S.review`, `S.reviewHits`, `S.missedEver`, mock exam state) refers to questions by array index. Inserting earlier in the list shifts every later question and scrambles saved progress. This already happened once, when 10 domain 2 and 3 questions were inserted mid-list in commit `eeac48e`. Since then, new questions only go at the end.
 - The objective tag must be a key of `OBJ` and must start with the question's domain number.
 - Write explanations that teach: give the right answer, then why the distractors are wrong or how they differ.
 - Questions are original practice items, never copied from real exams or third-party question banks.
 - `MOCK_SPLIT` must stay fillable from the bank: each domain needs at least that many questions.
 - Current bank: 219 questions. Domain 1: 55, domain 2: 36, domain 3: 39, domain 4: 35, domain 5: 54. Every objective has at least 4 questions. Questions 147–218 were written to fill the gaps a coverage check against the Network+ study guide found, especially 1.2 and 2.4, which had none.
+- Security+ bank: 150 questions. Domain 1: 20, domain 2: 30, domain 3: 24, domain 4: 46, domain 5: 30, with 5–6 per objective. Its mock split is 11/20/16/25/18 and the pass mark is 750. They were written from the subtopic lists in the owner's Security+ books, never copied from them.
 
 ## Abbreviation behavior (requested by the owner)
 
@@ -65,6 +66,7 @@ Each question is one line in `Q`:
 
 - Each Quick Exam is one night. `startQuiz` calls `D.mount()` and `D.newRound()`. Each question calls `D.wave(i,total)`, which starts the endless spawning. A correct answer calls `D.correct(reward,streak)` (adds ammo). A wrong answer calls `D.wrong()` (adds a brute). `quizResult` calls `D.final()`.
 - The horde spawns without end until the last question is answered. Then `final()` launches a bomber that clears the field, and `win()` advances `S.base.night`. If the wall falls first, the night is lost and the player retries it. Status values are `live`, `air`, `won` and `lost`.
+- Zombie variants: `spawn()` sets `e.v`. Network+ uses `walker` and `brute`. Security+ uses `bot` (a walker with an antenna), `worm` (60% hp, 1.7× speed, drawn by `drawWorm`) and `ransom` (a brute that wipes 3 ammo a second at the wall). `e.t` (`w` or `b`) still decides size, health bars and scrap. Security+ tracers are cyan.
 - Economy:
   - Ammo per correct answer depends on the domain tier: Standard (domains 1 and 3) +20; Hard (domains 2 and 4) +25 and 10 scrap; Elite (domain 5) +30 and 15 scrap. Three correct in a row adds 5 bonus scrap.
   - Scrap buys `UPG` base upgrades and weapon upgrades.
@@ -99,5 +101,6 @@ Each question is one line in `Q`:
 
 ## Planned next
 
+- **Security+ books:** the Sybex *CompTIA Security+ Study Guide, Ninth Edition* (17 chapters) and *Security+ Practice Tests, Third Edition* (one chapter per domain, answers in an appendix). Both PDFs are scanned images with no text layer, so reading them needs OCR (`apt-get install tesseract-ocr`, render pages with `pdftoppm -r 150 -gray`, run `tesseract` with `OMP_THREAD_LIMIT=1` and several processes in parallel, which takes about 0.6 s a page). `SEC_GUIDE` holds the study guide chapter map (from its objective map) and, in `practice`, each domain's question and answer pages in the practice tests book. Never copy the practice tests' questions into the app.
 - **Study guides:** the Network+ guide is the Sybex *CompTIA Network+ Study Guide, Sixth Edition* (N10-009), a scanned 1,000-page PDF with searchable text, so `pdftotext -layout` works on it. Its PDF page numbers run about 41–50 pages ahead of the printed page numbers, and the gap grows in later chapters. The coverage check is done (see the bank note above). The owner's PDFs are in `guides/`, stored with Git LFS (see `.gitattributes`): a CompTIA Network+ Study Guide (561 MB), a Security+ SY0-701 Study Guide, Ninth Edition (189 MB), and Security+ SY0-701 Practice Tests, Third Edition (48 MB). Fetch only the file you need with `git lfs pull --include "<path>"`, not all of them. A plain clone gives small pointer files, not PDFs. Use the guides to check the bank's coverage of the objectives, find weak spots, and link questions to chapters. They are copyrighted books: the repo must stay private, and the app's questions and explanations must be written fresh, never copied or closely paraphrased from the books or their practice tests.
-- **Security+ track:** add Security+ (SY0-701) as a second exam with an exam picker, its own domains, weights, objectives, question bank and mock split. The outpost, armory, XP and review should carry across both exams. Propose the design to the owner before building it.
+- **Security+ mini-games (phase 3):** Control Sort (classify a security control by category and type) and Attack Match (match an indicator or scenario to the attack), with high scores in `best.control` and `best.attack`. Add them to `GAMES` and to `EXAMS.sec.games`. After that, add more Security+ questions where coverage is thin.
