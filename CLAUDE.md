@@ -1,13 +1,13 @@
 # Cyber Zombie Attack
 
-A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. It covers Network+ (N10-009) and Security+ (SY0-701). The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it. The GitHub repo is `Vis6473/Comptia-Study-game` (renamed from `net-plus-study-game`; the local folder may still use the old name).
+A browser study game for CompTIA exams, with a tower-defense game ("the outpost") built into the quizzes. It covers Network+ (N10-009), Security+ (SY0-701), A+ Core 1 (220-1201) and A+ Core 2 (220-1202). A+ is two separate exams in the app, with ids `a1` and `a2`. The owner studies with it daily. It was called Net+ Patch Bay until the owner renamed it. The GitHub repo is `Vis6473/Comptia-Study-game` (renamed from `net-plus-study-game`; the local folder may still use the old name).
 
 ## How it's built
 
 - Everything is in **`index.html`**: HTML, CSS and one script wrapped in an IIFE. There is no build step, no framework and no dependencies except Google Fonts (Chakra Petch, IBM Plex Sans, IBM Plex Mono).
 - Open the file in a browser to run it, or serve the folder: `python3 -m http.server 8000`.
-- Hash routing. Global views: `#menu` (the title screen, and the default with no hash), `#scores` (High Scores), `#settings`. Exam views: `#home`, `#quiz` (Quick Exams), `#mock`, `#review`, plus each exam's mini-games (`#ports`, `#osi` and `#subnet` for Network+; `#ports`, `#control` and `#attack` for Security+). `GLOBAL_VIEWS` and `VIEWS` map hashes to view functions. An exam view with no exam chosen sends you to the menu, and a mini-game the current exam doesn't have falls back to home. A click on a link to the current hash re-runs `route()`.
-- **Exams:** `EXAMS` (the `Exams` section, just before Boot) registers each exam: name, code, pass mark, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, armory (`UPG`, `WPN`) and mini-game list (`games`, keys of `GAMES`). Network+ content is defined as `NET_*` constants. `setExam(id)` points the shared names (`EX`, `P`, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, `PASS`, `UPG`, `WPN`) at one exam, so most code just uses those names. An exam with `ready:false` shows as coming soon on the menu. Security+ content is the `SEC_*` constants (`SEC_Q`, `SEC_OBJ`, `SEC_GUIDE`, `SEC_UPG`, `SEC_WPN`) in the `Security+ content` section, and `SEC_DOMAINS` and `GAMES` sit in the `Exams` section.
+- Hash routing. Global views: `#menu` (the title screen, and the default with no hash), `#scores` (High Scores), `#settings`. Exam views: `#home`, `#quiz` (Quick Exams), `#mock`, `#review`, plus each exam's mini-games (`#ports`, `#osi` and `#subnet` for Network+; `#ports`, `#control` and `#attack` for Security+; `#ports` and `#hardware` for A+ Core 1; `#command` and `#wintool` for A+ Core 2). `GLOBAL_VIEWS` and `VIEWS` map hashes to view functions. An exam view with no exam chosen sends you to the menu, and a mini-game the current exam doesn't have falls back to home. A click on a link to the current hash re-runs `route()`.
+- **Exams:** `EXAMS` (the `Exams` section, just before Boot) registers each exam: name, code, pass mark, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, armory (`UPG`, `WPN`) and mini-game list (`games`, keys of `GAMES`). Network+ content is defined as `NET_*` constants. `setExam(id)` points the shared names (`EX`, `P`, `DOMAINS`, `Q`, `OBJ`, `GUIDE`, `TIER`, `MOCK_SPLIT`, `PASS`, `UPG`, `WPN`) at one exam, so most code just uses those names. An exam with `ready:false` shows as coming soon on the menu. Security+ content is the `SEC_*` constants (`SEC_Q`, `SEC_OBJ`, `SEC_GUIDE`, `SEC_UPG`, `SEC_WPN`) in the `Security+ content` section, and `SEC_DOMAINS` and `GAMES` sit in the `Exams` section. A+ content is the `A1_*` and `A2_*` constants (`A1_DOMAINS`, `A1_OBJ`, `A1_UPG`, `A1_WPN`, `A1_Q`, and the same for `A2_`) plus the match-game data `HARDWARE`, `COMMANDS` and `WINTOOLS`, in the `A+ content` section just before `Exams`. `EXAM_IDS` (in the State section) lists every exam id in menu order; menus, settings, high scores, the score card and saved state all loop over it, so a new exam goes in `EXAM_IDS` and `EXAMS`. A+ has no study guide yet, so its `GUIDE` is `null` and the study plan and explanation footer skip the book chapters. Domain counts differ per exam (A+ Core 2 has four), so never hardcode five domains.
 - The menu, Settings and High Scores are global (`body.menu-mode` hides the header and tabs on the menu; `body.global-mode` hides the tabs). The menu is a deliberately dark title screen with an animated horde on a canvas, which stays still when the device asks for reduced motion.
 - Every view that adds timers or key listeners sets the global `cleanup`. `route()` calls it and also calls `D.unmount()`.
 
@@ -25,7 +25,8 @@ A browser study game for CompTIA exams, with a tower-defense game ("the outpost"
 | Mock exam | `MOCK_SPLIT`, `buildMock`, `runMock`, `submitMock`, `mockResults` |
 | Menu, Settings, High Scores | `viewMenu`, `menuHorde`, `viewSettings`, `resetPart`, `viewScores` |
 | Router | `VIEWS`, `GLOBAL_VIEWS`, `route()`, `renderChrome()` (header subtitle and tabs) |
-| Mini games | Port Blitz, OSI Stack, Subnet Sprint (Network+); Control Sort and Attack Match (Security+), with data in `CTRL_CATS`, `CTRL_TYPES`, `CONTROLS` and `ATTACKS` |
+| Mini games | Port Blitz, OSI Stack, Subnet Sprint (Network+); Control Sort (Security+), with data in `CTRL_CATS`, `CTRL_TYPES` and `CONTROLS`; match games (`MATCH`, `viewMatch`, `runMatch`): Attack Match (`ATTACKS`, Security+), Hardware Match (Core 1), Command Match and Tool Match (Core 2). Port Blitz drills `portList()`: the exam's `ports` list if it has one, otherwise every port not marked A+ only |
+| A+ content | `A1_*`, `A2_*`, `HARDWARE`, `COMMANDS`, `WINTOOLS` |
 | Exams | `SEC_DOMAINS`, `GAMES`, `EXAMS`, and the `let` bindings that `setExam` sets |
 
 ## Question bank rules
@@ -37,7 +38,7 @@ Each question is one line in `Q`:
 // e.g. [5, "Which tool ...?", "OTDR", ["Toner probe", "Loopback plug", "Multimeter"], "An optical ...", "5.5"]
 ```
 
-- Each exam has its own bank (`NET_Q`, `SEC_Q`), and `Q` points at the current one. Indexes are per bank.
+- Each exam has its own bank (`NET_Q`, `SEC_Q`, `A1_Q`, `A2_Q`), and `Q` points at the current one. Indexes are per bank.
 - **Append new questions to the end of the bank.** Never insert in the middle or reorder.** Saved progress (`S.qs`, `S.review`, `S.reviewHits`, `S.missedEver`, mock exam state) refers to questions by array index. Inserting earlier in the list shifts every later question and scrambles saved progress. This already happened once, when 10 domain 2 and 3 questions were inserted mid-list in commit `eeac48e`. Since then, new questions only go at the end.
 - The objective tag must be a key of `OBJ` and must start with the question's domain number.
 - Write explanations that teach: give the right answer, then why the distractors are wrong or how they differ.
@@ -45,6 +46,9 @@ Each question is one line in `Q`:
 - `MOCK_SPLIT` must stay fillable from the bank: each domain needs at least that many questions.
 - Network+ bank: 365 questions. Domain 1: 102, domain 2: 61, domain 3: 65, domain 4: 58, domain 5: 79. Every objective has at least 10 questions. Questions 147–218 were written to fill the gaps a coverage check against the Network+ study guide found, especially 1.2 and 2.4, which had none. Questions 219–266 added domain 2 and 4 subtopics from the guide's chapter openings, 267–317 did the same for domains 3 and 5, and 318–364 for domain 1.
 - Security+ bank: 338 questions. Domain 1: 46, domain 2: 61, domain 3: 47, domain 4: 97, domain 5: 87, with at least 9 per objective. Questions 174–217 filled domain 3 and 5 subtopics that had no questions, 218–263 did the same for domains 1 and 2, 264–307 for domain 4, and 308–337 for domain 5. Its mock split is 11/20/16/25/18 and the pass mark is 750. They were written from the subtopic lists in the owner's Security+ books, never copied from them.
+- A+ Core 1 bank (`A1_Q`): 144 questions. Domain 1: 18, domain 2: 37, domain 3: 37, domain 4: 13, domain 5: 39, at least 4 per objective. Mock split 12/21/22/10/25 (weights 13/23/25/11/28%), pass mark 675.
+- A+ Core 2 bank (`A2_Q`): 130 questions. Domain 1: 37, domain 2: 41, domain 3: 22, domain 4: 30, at least 2 per objective (4.10 AI has the fewest). Mock split 25/25/21/19 (weights 28/28/23/21%), pass mark 700.
+- The A+ objective titles in `A1_OBJ` and `A2_OBJ` were written from memory of the 220-1201/1202 objectives, because the owner has no A+ books in `guides/` yet and the cloud session couldn't reach comptia.org. Check them against the official objectives PDF when one is available, and do a coverage check like the Network+ one.
 
 ## Abbreviation behavior (requested by the owner)
 
@@ -68,7 +72,7 @@ Each question is one line in `Q`:
 - **Focus mode:** `startQuiz` adds `body.focus-mode`, which hides the cable stripe, header, tabs and footer so only the quiz and the dock show. `route()` removes it on any navigation.
 - **Pause:** `setPause(v)` in `D` freezes the fight, shows the `#dPauseMenu` overlay (Resume, Restart exam, Armory, Quit to home), dims the quiz with `body.exam-paused` and sets `#app.inert` so it can't be clicked or tabbed into. P toggles and Esc resumes (`onPauseKey`), and the quiz's own key handler checks `D.isPaused()`. Restart calls the function `startQuiz` registers with `D.setRestart`, which reruns the same question pool with a fresh night. `unmount` and `newRound` always clear the pause.
 - The horde spawns without end until the last question is answered. Then `final()` launches a bomber that clears the field, and `win()` advances `S.base.night`. If the wall falls first, the night is lost and the player retries it. Status values are `live`, `air`, `won` and `lost`.
-- Zombie variants: `spawn()` sets `e.v`. Network+ uses `walker` and `brute`. Security+ uses `bot` (a walker with an antenna), `worm` (60% hp, 1.7× speed, drawn by `drawWorm`) and `ransom` (a brute that wipes 3 ammo a second at the wall). `e.t` (`w` or `b`) still decides size, health bars and scrap. Security+ tracers are cyan.
+- Zombie variants: `spawn()` picks from `VARIANTS[exam]` ([walker, 30% variant, brute]) and `mkFoe()` applies `FOE` multipliers; `PAL` and `EYE` color them and `TRC` sets tracer colors. A+ Core 1 uses `spark`, `surge` (70% hp, 1.5× speed) and `chassis` (a brute with 130% hp). A+ Core 2 uses `phish`, `rootkit` (125% hp, flickers) and `trojan` (a brute that releases two phishers when killed). Network+ uses `walker` and `brute`. Security+ uses `bot` (a walker with an antenna), `worm` (60% hp, 1.7× speed, drawn by `drawWorm`) and `ransom` (a brute that wipes 3 ammo a second at the wall). `e.t` (`w` or `b`) still decides size, health bars and scrap. Security+ tracers are cyan.
 - Economy:
   - Ammo per correct answer depends on the domain tier: Standard (domains 1 and 3) +20; Hard (domains 2 and 4) +25 and 10 scrap; Elite (domain 5) +30 and 15 scrap. Three correct in a row adds 5 bonus scrap.
   - Scrap buys `UPG` base upgrades and weapon upgrades.
@@ -89,9 +93,9 @@ Each question is one line in `Q`:
 
 `localStorage["netplus-patch-bay-v1"]`. Every read and write is wrapped in try/catch, and `load()` merges onto `freshState()`. When you add fields, add defaults to `freshState()` or `exFresh()` and merge nested objects in `load()` so older saves still work. Never rename `KEY`, or users lose their progress.
 
-- **Per exam** (`S.ex.net`, `S.ex.sec`, made by `exFresh()`; the current one is `P`): `qs`, `dom`, `review`, `reviewHits`, `missedEver`, `mock`, `mockLast`, `mockHistory`, `best` (`ports`, `osi`, `subnet`, `quick`, `control`, `attack`, `mock`), `missedPorts`, `answered`. Use `P.<field>` in exam code, never `S.<field>`.
-- **Shared:** `xp`, `streak`, `lastDay`, `exam` (last chosen exam), `settings`, and `base` (scrap, night, bestNight, xpSpent, stock, kills, bestKills). Upgrade levels are per exam in `S.base.up.net` and `S.base.up.sec`.
-- **Migration:** saves from before the exam split kept Network+ progress at the top level with flat `base.up`. `load()` moves them into `S.ex.net` and `S.base.up.net`, and fills `best.mock` from mock history.
+- **Per exam** (`S.ex.net`, `S.ex.sec`, `S.ex.a1`, `S.ex.a2`, made by `exFresh()`; the current one is `P`): `qs`, `dom`, `review`, `reviewHits`, `missedEver`, `mock`, `mockLast`, `mockHistory`, `best` (`ports`, `osi`, `subnet`, `quick`, `control`, `attack`, `hardware`, `command`, `wintool`, `mock`), `missedPorts`, `answered`. Use `P.<field>` in exam code, never `S.<field>`.
+- **Shared:** `xp`, `streak`, `lastDay`, `exam` (last chosen exam), `settings`, and `base` (scrap, night, bestNight, xpSpent, stock, kills, bestKills). Upgrade levels are per exam in `S.base.up.<exam id>`.
+- **Migration:** saves from before the exam split kept Network+ progress at the top level with flat `base.up`. `load()` moves them into `S.ex.net` and `S.base.up.net`, and fills `best.mock` from mock history. Saves from before A+ get fresh `a1` and `a2` progress and empty upgrade sets.
 - `settings.playerName` is the optional name on the High Scores score card (`drawScoreCard`, `setupScoreCard`). Shared online high scores were discussed and put on hold; scores stay in localStorage.
 - Don't name a local variable `P`; it hides the current exam's progress. Subnet Sprint's problem variable is `pr` for this reason.
 

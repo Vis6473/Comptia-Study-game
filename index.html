@@ -254,7 +254,8 @@ body.global-mode nav.tabs{display:none}
 .ostrip{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
 .ostrip span{padding:5px 10px;border:1px solid var(--tp-line);background:rgba(12,19,26,.8)}
 .ostrip b{color:var(--tp-ink)} .ostrip b.x{color:var(--tp-mag)}
-.ocards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ocards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:640px){.ocards{grid-template-columns:1fr}}
 .ocard{display:flex;flex-direction:column;gap:10px;text-align:left;padding:18px;background:rgba(12,19,26,.92);border:1px solid var(--tp-line);color:var(--tp-ink);clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);transition:border-color .15s,transform .15s}
 .ocard:hover:not(.off){border-color:var(--oc);transform:translateY(-2px)}
 .ocard .ocode{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;color:var(--oc)}
@@ -783,8 +784,11 @@ const PORTS = [ // [service, port, note, full name]
  ["Syslog","514","Central logging over UDP","System Logging Protocol"],["SMTPS (submission)","587","Client mail submission with TLS","Simple Mail Transfer Protocol Secure"],["LDAPS","636","LDAP over TLS","Lightweight Directory Access Protocol Secure"],
  ["IMAPS","993","IMAP over TLS","Internet Message Access Protocol Secure"],["POP3S","995","POP3 over TLS","Post Office Protocol version 3 Secure"],["Microsoft SQL Server","1433","Database","Structured Query Language database server"],
  ["RADIUS","1812, 1813","Authentication 1812, accounting 1813","Remote Authentication Dial-In User Service"],["RDP","3389","Remote Desktop","Remote Desktop Protocol"],["SIP","5060, 5061","VoIP signaling (5061 with TLS)","Session Initiation Protocol"],
- ["TACACS+","49","Device AAA over TCP","Terminal Access Controller Access-Control System Plus"]
+ ["TACACS+","49","Device AAA over TCP","Terminal Access Controller Access-Control System Plus"],
+ ["NetBIOS","137-139","Name service 137, datagram 138, session 139","Network Basic Input/Output System",1]
 ];
+// Port Blitz drills the ports the current exam lists (EX.ports). Rows marked 1 in the fifth field are A+ only.
+const portList=()=>EX&&EX.ports?PORTS.filter(p=>EX.ports.includes(p[0])):PORTS.filter(p=>!p[4]);
 
 const LAYERS = [
  [7,"Application","Data","var(--orange)"],[6,"Presentation","Data","#C8873A"],[5,"Session","Data","#9A8A3A"],
@@ -827,12 +831,14 @@ const OSI_ITEMS = [
 
 /* ---------------- State ---------------- */
 const KEY = "netplus-patch-bay-v1";
-// Progress is kept per exam (S.ex.net, S.ex.sec). XP, streak, settings and the outpost are shared,
-// except base upgrades and weapons, which each exam has its own set of (S.base.up.net / .sec).
+// Progress is kept per exam (S.ex.net, S.ex.sec, S.ex.a1, S.ex.a2). XP, streak, settings and the outpost are shared,
+// except base upgrades and weapons, which each exam has its own set of (S.base.up.<exam>).
+const EXAM_IDS=["net","sec","a1","a2"];
+const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
-function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,mock:null},missedPorts:{},answered:0};}
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ex:{net:exFresh(),sec:exFresh()},
-  base:{scrap:0,up:{net:{},sec:{}},night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
+function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,mock:null},missedPorts:{},answered:0};}
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ex:perExam(()=>exFresh()),
+  base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
   EX_FIELDS.forEach(f=>{if(src[f]!==undefined&&src[f]!==null)e[f]=src[f];});
@@ -846,10 +852,11 @@ function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem
   d.xp=r.xp||0;d.streak=r.streak||0;d.lastDay=r.lastDay||null;d.exam=r.exam||null;
   d.settings=Object.assign(d.settings,r.settings||{});
   const old=!r.ex; // saves from before Security+ kept Network+ progress at the top level
-  d.ex.net=mergeEx(old?r:r.ex.net);d.ex.sec=mergeEx(old?null:r.ex.sec);
+  EXAM_IDS.forEach(id=>{d.ex[id]=mergeEx(old?(id==="net"?r:null):r.ex[id]);});
   d.base=Object.assign(freshState().base,r.base||{});
   const up=(r.base&&r.base.up)||{};
-  d.base.up=(up.net||up.sec)?{net:Object.assign({},up.net),sec:Object.assign({},up.sec)}:{net:Object.assign({},up),sec:{}};
+  const perEx=EXAM_IDS.some(id=>up[id]); // older saves kept Network+ upgrade levels flat in base.up
+  d.base.up=perExam(id=>perEx?Object.assign({},up[id]):(id==="net"?Object.assign({},up):{}));
 }}catch(e){}return d;}
 let S = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -906,7 +913,21 @@ const GL={
  "IEEE":"Institute of Electrical and Electronics Engineers","DORA":"Discover, Offer, Request, Acknowledge","TX":"transmit","RX":"receive",
  "RPC":"Remote Procedure Call","NetBIOS":"Network Basic Input/Output System","IPFIX":"IP Flow Information Export","ISP":"internet service provider",
  "CNAME":"Canonical Name","MX":"Mail Exchanger","PTR":"Pointer","SOA":"Start of Authority","SRV":"Service","NS":"Name Server","TXT":"Text",
- "UPS":"uninterruptible power supply","SDLC":"software development lifecycle","BCP":"business continuity plan","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
+ "UPS":"uninterruptible power supply","SDLC":"software development lifecycle","BCP":"business continuity plan",
+ "AC":"alternating current","DC":"direct current","AI":"artificial intelligence","APFS":"Apple File System","ATX":"Advanced Technology eXtended",
+ "BIOS":"Basic Input/Output System","CAB":"change advisory board","CMOS":"complementary metal-oxide-semiconductor","CPU":"central processing unit",
+ "DDR":"double data rate","DIMM":"dual inline memory module","SODIMM":"small outline dual inline memory module","DRM":"digital rights management",
+ "DSL":"digital subscriber line","EFS":"Encrypting File System","ESD":"electrostatic discharge","EULA":"end user license agreement",
+ "GPT":"GUID Partition Table","MBR":"master boot record","GPU":"graphics processing unit","HDMI":"High-Definition Multimedia Interface",
+ "IMEI":"International Mobile Equipment Identity","IMSI":"International Mobile Subscriber Identity","KVM":"keyboard, video and mouse",
+ "LCD":"liquid crystal display","OLED":"organic light-emitting diode","CCFL":"cold cathode fluorescent lamp","LEO":"low Earth orbit",
+ "MAN":"metropolitan area network","PAN":"personal area network","WLAN":"wireless local area network","NFC":"near-field communication",
+ "NTFS":"New Technology File System","NVMe":"Non-Volatile Memory Express","OEM":"original equipment manufacturer","PCI":"Peripheral Component Interconnect",
+ "PCIe":"Peripheral Component Interconnect Express","PCL":"Printer Command Language","PII":"personally identifiable information","POST":"power-on self-test",
+ "PXE":"Preboot Execution Environment","RAM":"random access memory","VRAM":"video random access memory","SATA":"Serial Advanced Technology Attachment",
+ "SDS":"safety data sheet","SIM":"subscriber identity module","SOHO":"small office/home office","SSD":"solid-state drive","UAC":"User Account Control",
+ "UEFI":"Unified Extensible Firmware Interface","USB":"Universal Serial Bus","UTP":"unshielded twisted pair","VDI":"virtual desktop infrastructure",
+ "VGA":"Video Graphics Array","WPA":"Wi-Fi Protected Access","TKIP":"Temporal Key Integrity Protocol","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
  "ASLR":"address space layout randomization","VM":"virtual machine","HIPS":"host-based intrusion prevention system","NIDS":"network intrusion detection system",
  "UTM":"unified threat management","NGFW":"next-generation firewall","CASB":"cloud access security broker","EAP":"Extensible Authentication Protocol",
  "COPE":"corporate-owned, personally enabled","CYOD":"choose your own device","MDM":"mobile device management","CVSS":"Common Vulnerability Scoring System",
@@ -1077,14 +1098,20 @@ const D=(function(){
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
   }
+  // Variants per exam (e.t, w or b, still sets size, health bar and scrap):
+  // Network+: walkers and brutes. Security+: botnet zombies, fast fragile worms, and ransomware brutes that
+  // encrypt (wipe) ammo at the wall. A+ Core 1: sparks, fast power surges and armored chassis brutes.
+  // A+ Core 2: phishers, rootkits that flicker out of sight, and trojan brutes that release two phishers when killed.
+  const FOE={worm:{hp:0.6,sp:1.7,dps:1.4},surge:{hp:0.7,sp:1.5,dps:1.6},chassis:{hp:1.3},rootkit:{hp:1.25}};
+  const VARIANTS={net:["walker","walker","brute"],sec:["bot","worm","ransom"],a1:["spark","surge","chassis"],a2:["phish","rootkit","trojan"]};
+  function mkFoe(t,v,x,y){
+    const n=G.night,b=t==="b",span=W-wallX(),f=FOE[v]||{};
+    const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
+    return {t,v,x,y,hp,max:hp,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:b?9:(f.dps||2.2),ph:rnd(0,6),hit:0,lk:0};
+  }
   function spawn(t){
-    const n=G.night,b=t==="b",span=W-wallX();
-    const hp=b?14+5*(n-1):2+0.5*(n-1);
-    // Variants: Network+ has walkers and brutes. Security+ has botnet zombies, fast fragile worms,
-    // and ransomware brutes that encrypt (wipe) ammo while they're at the wall.
-    const sec=S.exam==="sec",v=b?(sec?"ransom":"brute"):(sec?(Math.random()<0.3?"worm":"bot"):"walker"),worm=v==="worm";
-    const h=worm?hp*0.6:hp;
-    G.enemies.push({t,v,x:W+rnd(10,40),y:rnd(fTop()+10,fBot()-2),hp:h,max:h,spd:span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(worm?1.7:1),dps:b?9:(worm?1.4:2.2),ph:rnd(0,6),hit:0,lk:0});
+    const V=VARIANTS[S.exam]||VARIANTS.net,v=t==="b"?V[2]:(Math.random()<0.3?V[1]:V[0]);
+    G.enemies.push(mkFoe(t,v,W+rnd(10,40),rnd(fTop()+10,fBot()-2)));
   }
   function text(x,y,s,c){if(G)G.fx.push({k:"t",x,y,s,c,life:1.5});}
   // The horde spawns without end from the first question until the last one is answered.
@@ -1249,14 +1276,17 @@ const D=(function(){
         G.railY=by-12*u*depth(by);G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=Math.max(2.5,7-1.3*L);
       }
     }
+    const born=[];
     G.enemies=G.enemies.filter(e=>{
       if(e.hp>0)return true;
+      if(e.v==="trojan"){for(let k=0;k<2;k++)born.push(mkFoe("w","phish",e.x+rnd(-8,8),Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-16,16)))));text(e.x,e.y-52*u,"PAYLOAD RELEASED","#9CFF57");}
       G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
       if(G.splats.length>70)G.splats.shift();
       G.splats.push({x:e.x,y:e.y,r:(e.t==="b"?10:5)*u*depth(e.y),life:8});
       if(e.t==="b")text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
       return false;
     });
+    if(born.length)G.enemies.push(...born);
     if(G.wall<=0){G.wall=0;lose();}
     else if(G.status==="air"&&G.bomber&&G.bomber.done&&!G.bombs.length&&!G.enemies.length)win();
   }
@@ -1309,21 +1339,34 @@ const D=(function(){
   }
   function drawZ(e){
     if(e.v==="worm")return drawWorm(e);
-    const u=U(),s=depth(e.y)*(e.t==="b"?1.9:1)*u,x=e.x,y=e.y,sw=Math.sin(e.ph),b=e.t==="b",bot=e.v==="bot",ran=e.v==="ransom",red=bot||ran;
+    const u=U(),s=depth(e.y)*(e.t==="b"?1.9:1)*u,x=e.x,y=e.y,sw=Math.sin(e.ph),b=e.t==="b",ran=e.v==="ransom",V=e.v;
+    const pal=PAL[V]||PAL.walker,eye=EYE[V]||(b?EYE.brute:EYE.walker);
+    if(V==="rootkit")ctx.globalAlpha=Math.min(1,0.3+0.35*(1+Math.sin(e.ph*1.3)));
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y,6*s,2*s,0,0,7);ctx.fill();
     ctx.lineCap="round";ctx.strokeStyle=b?"#3A2630":"#26332B";ctx.lineWidth=2.2*s;
     ctx.beginPath();ctx.moveTo(x,y-9*s);ctx.lineTo(x+sw*3*s,y);ctx.moveTo(x,y-9*s);ctx.lineTo(x-sw*3*s,y);ctx.stroke();
-    ctx.fillStyle=e.hit>0?"#E8FFF0":(ran?"#4A2A2E":bot?"#3D4A57":b?"#6B3B4A":"#4A5E4C");ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
+    ctx.fillStyle=e.hit>0?"#E8FFF0":pal[0];ctx.fillRect(x-3.5*s,y-19*s,7*s,11*s);
     if(ran){ctx.strokeStyle="#FFB020";ctx.lineWidth=0.9*s;ctx.beginPath();ctx.arc(x,y-15.5*s,1.4*s,Math.PI,0);ctx.stroke();ctx.fillStyle="#FFB020";ctx.fillRect(x-1.9*s,y-15.5*s,3.8*s,3*s);}
-    const skin=e.hit>0?"#FFFFFF":(ran?"#A8786E":bot?"#8FA3B3":b?"#9A6A72":"#7C9A74");
+    const skin=e.hit>0?"#FFFFFF":pal[1];
     ctx.strokeStyle=skin;ctx.lineWidth=1.8*s;
     ctx.beginPath();ctx.moveTo(x-1*s,y-16*s);ctx.lineTo(x-8*s,y-15*s+sw*1.5*s);ctx.moveTo(x+1*s,y-15*s);ctx.lineTo(x-7*s,y-13*s-sw*1.5*s);ctx.stroke();
     ctx.fillStyle=skin;ctx.beginPath();ctx.arc(x-1.5*s,y-22*s,3.2*s,0,7);ctx.fill();
-    if(bot){ctx.strokeStyle="#8FA3B3";ctx.lineWidth=0.7*s;ctx.beginPath();ctx.moveTo(x-0.5*s,y-25*s);ctx.lineTo(x+1.5*s,y-29*s);ctx.stroke();ctx.fillStyle="#FF3B3B";ctx.beginPath();ctx.arc(x+1.5*s,y-29*s,0.9*s,0,7);ctx.fill();}
-    ctx.fillStyle=red?"rgba(255,59,59,.4)":b?"rgba(255,43,214,.35)":"rgba(156,255,87,.35)";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2.2*s,0,7);ctx.fill();
-    ctx.fillStyle=red?"#FF8A8A":b?"#FF7BEA":"#C8FF8A";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
+    if(V==="bot"){ctx.strokeStyle="#8FA3B3";ctx.lineWidth=0.7*s;ctx.beginPath();ctx.moveTo(x-0.5*s,y-25*s);ctx.lineTo(x+1.5*s,y-29*s);ctx.stroke();ctx.fillStyle="#FF3B3B";ctx.beginPath();ctx.arc(x+1.5*s,y-29*s,0.9*s,0,7);ctx.fill();}
+    ctx.fillStyle=eye[0];ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,2.2*s,0,7);ctx.fill();
+    ctx.fillStyle=eye[1];ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.8*s,0,7);ctx.fill();
+    if(V==="spark"||V==="surge"){if(Math.sin(e.ph*5)>0){ctx.strokeStyle="#FFE27A";ctx.lineWidth=0.8*s;ctx.beginPath();ctx.moveTo(x+1*s,y-26*s);ctx.lineTo(x+3*s,y-28.5*s);ctx.lineTo(x+1.5*s,y-29*s);ctx.lineTo(x+3.5*s,y-32*s);ctx.stroke();}}
+    if(V==="chassis"){ctx.strokeStyle="#B8C2CC";ctx.lineWidth=0.7*s;ctx.strokeRect(x-3*s,y-18.5*s,6*s,10*s);ctx.fillStyle="#B8C2CC";[[-2,-17.5],[2,-17.5],[-2,-9.5],[2,-9.5]].forEach(([a,c])=>{ctx.beginPath();ctx.arc(x+a*s,y+c*s,0.5*s,0,7);ctx.fill();});}
+    if(V==="phish"){ctx.strokeStyle="#B9CCFF";ctx.lineWidth=0.6*s;ctx.beginPath();ctx.moveTo(x-0.5*s,y-25*s);ctx.lineTo(x+3*s,y-30*s);ctx.lineTo(x+3*s,y-26.5*s);ctx.stroke();ctx.beginPath();ctx.arc(x+2.2*s,y-26.5*s,0.8*s,0,Math.PI);ctx.stroke();}
+    if(V==="trojan"){ctx.strokeStyle="rgba(40,24,10,.7)";ctx.lineWidth=0.6*s;ctx.beginPath();for(let k=1;k<4;k++){ctx.moveTo(x-3.5*s,y-19*s+k*2.75*s);ctx.lineTo(x+3.5*s,y-19*s+k*2.75*s);}ctx.stroke();}
     if(b){const w=14*s;ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(x-w/2,y-30*s,w,2.5*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(x-w/2,y-30*s,w*Math.max(0,e.hp/e.max),2.5*u);}
+    ctx.globalAlpha=1;
   }
+  // Zombie colors per variant: [body, skin], and eyes: [glow, pupil].
+  const PAL={walker:["#4A5E4C","#7C9A74"],brute:["#6B3B4A","#9A6A72"],bot:["#3D4A57","#8FA3B3"],ransom:["#4A2A2E","#A8786E"],
+    spark:["#4D4A33","#C9B46A"],surge:["#55502F","#E0CC70"],chassis:["#5B6470","#8C8F7A"],phish:["#2F3D55","#7FA0C8"],rootkit:["#3A2A4A","#8E7AA8"],trojan:["#6B4B2A","#A88B62"]};
+  const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"];
+  const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU};
+  const TRC={sec:"120,240,255",a2:"156,255,87"}; // tracer colors; others amber
   function drawBomber(x,y,u){
     // ground shadow
     ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(x-10*u,(fTop()+fBot())/2+30*u,34*u,6*u,0,0,7);ctx.fill();
@@ -1373,7 +1416,7 @@ const D=(function(){
       ctx.fillStyle="#FFE2A0";ctx.beginPath();ctx.arc(x,y,2.5*u,0,7);ctx.fill();}
     ctx.globalCompositeOperation="lighter";
     for(const f of G.fx){
-      if(f.k==="tr"){ctx.strokeStyle=S.exam==="sec"?`rgba(120,240,255,${f.life/0.09})`:`rgba(255,190,60,${f.life/0.09})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(f.x1,f.y1);ctx.lineTo(f.x2,f.y2);ctx.stroke();}
+      if(f.k==="tr"){ctx.strokeStyle=`rgba(${TRC[S.exam]||"255,190,60"},${f.life/0.09})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(f.x1,f.y1);ctx.lineTo(f.x2,f.y2);ctx.stroke();}
       else if(f.k==="f"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,${(90+120*a)|0},30,${0.55*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(2+5*(1-a))*u,0,7);ctx.fill();}
       else if(f.k==="z"){const a=f.life/f.m;ctx.lineWidth=2.2;ctx.strokeStyle=`rgba(25,240,255,${a})`;ctx.beginPath();
         f.pts.forEach((p2,i)=>{if(!i){ctx.moveTo(p2[0],p2[1]);return;}const q=f.pts[i-1];for(let s=1;s<=5;s++){const tt=s/5;ctx.lineTo(q[0]+(p2[0]-q[0])*tt+(s<5?rnd(-6,6):0),q[1]+(p2[1]-q[1])*tt+(s<5?rnd(-6,6):0));}});ctx.stroke();}
@@ -1435,7 +1478,7 @@ function viewMenu(){
     <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
       <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
     <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
-    <div class="ocards">${card("net")}${card("sec")}</div>
+    <div class="ocards">${EXAM_IDS.map(card).join("")}</div>
     <div class="mrow" style="justify-content:center"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
   </div></section>`;
   $app.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{setExam(b.dataset.ex);save();location.hash="home";});
@@ -1473,9 +1516,8 @@ function menuHorde(cv){
 /* ---------------- Settings ---------------- */
 function viewSettings(){
   const rows=[
-    ["net","Network+ progress","Stats, review queue, miss history, mock exams and high scores for Network+.","Network+ progress"],
-    ["sec","Security+ progress","Stats, review queue, miss history, mock exams and high scores for Security+.","Security+ progress"],
-    ["outpost","Outpost","Nights, scrap, stockpiled ammo, base upgrades and weapons for both exams. XP you spent on weapons is refunded.","the outpost"],
+    ...EXAM_IDS.map(id=>{const n=EXAMS[id].name;return [id,n+" progress",`Stats, review queue, miss history, mock exams and high scores for ${n}.`,n+" progress"];}),
+    ["outpost","Outpost","Nights, scrap, stockpiled ammo, base upgrades and weapons for every exam. XP you spent on weapons is refunded.","the outpost"],
     ["all","Everything","All progress, XP, level, streak, outpost and settings. The game starts over from the main menu.","everything"]];
   let armed=null,done="";
   function draw(){
@@ -1517,7 +1559,7 @@ function viewScores(){
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div class="row" style="justify-content:space-between"><div><span class="label">High scores</span><h2 style="font-size:28px;margin-top:4px">High scores</h2></div><a class="btn" href="#menu">Main menu</a></div>
-      <span class="label">The outpost · shared by both exams</span>
+      <span class="label">The outpost · shared by every exam</span>
       <div class="board">
         <div><small>Highest night survived</small><b>${B.bestNight||"—"}</b><small>Now on night ${B.night}</small></div>
         <div><small>Most undead in one night</small><b>${B.bestKills||"—"}</b><small>Single quick exam</small></div>
@@ -1541,14 +1583,14 @@ function viewScores(){
         </div>
       </div>
     </div>
-    ${exBoard("net")}${exBoard("sec")}
+    ${EXAM_IDS.map(exBoard).join("")}
   </div>`;
   setupScoreCard();
 }
 
 /* Score card: a 1200x630 image of the player's best scores, drawn on a canvas. */
 function scoreCardData(){
-  const B=S.base,ex=["net","sec"].map(id=>{const X=EXAMS[id],p=S.ex[id];
+  const B=S.base,ex=EXAM_IDS.map(id=>{const X=EXAMS[id],p=S.ex[id];
     return {X,p,used:!!(p.answered||p.best.quick||p.best.mock||X.games.some(k=>GAMES[k].rec(p)))};});
   let shown=ex.filter(e=>e.used);if(!shown.length)shown=ex;
   return {B,shown,name:(S.settings.playerName||"").trim()};
@@ -1579,20 +1621,28 @@ function drawScoreCard(){
   g.fillStyle=CY;g.font=disp(700,120);g.fillText(String(B.bestNight||0),52,top+112);
   const stat=(x,y,lbl,v)=>{g.fillStyle=MU;g.font=mono(14);g.fillText(lbl,x,y);g.fillStyle=INK;g.font=disp(700,38);g.fillText(String(v),x,y+42);};
   stat(56,top+168,"MOST IN ONE NIGHT",B.bestKills||0);stat(256,top+168,"UNDEAD DESTROYED",B.kills||0);stat(476,top+168,"LEVEL",level());
-  // exam boxes
-  const bx=640,bw=504,gap=18,bh=shown.length>1?(H-28-56-110-gap)/2:(H-28-56-110);
-  shown.forEach((e,i)=>{const {X,p}=e,y=110+i*(bh+gap),m=p.best.mock;
-    g.fillStyle="rgba(13,19,28,.92)";g.fillRect(bx,y,bw,bh);g.strokeStyle=i?MG:CY;g.lineWidth=2;g.strokeRect(bx+1,y+1,bw-2,bh-2);
-    g.fillStyle=i?MG:CY;g.fillRect(bx,y,6,bh);
-    g.fillStyle=MU;g.font=mono(14);g.fillText(X.code,bx+26,y+34);g.fillStyle=INK;g.font=disp(700,28);g.fillText(X.name,bx+26,y+66);
-    g.fillStyle=MU;g.font=mono(13);g.fillText("BEST MOCK (EST.)",bx+26,y+100);g.fillText("BEST QUICK EXAM",bx+270,y+100);
-    g.font=disp(700,44);g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",bx+26,y+146);
+  // exam boxes: one column for one or two exams, a 2x2 grid for three or four
+  const n=shown.length,cols=n>2?2:1,rows=Math.ceil(n/cols),gap=18,x0=640,y0=110,TW=504,TH=H-28-56-110;
+  const bw=(TW-gap*(cols-1))/cols,bh=(TH-gap*(rows-1))/rows,sm=cols>1;
+  shown.forEach((e,i)=>{const {X,p}=e,bx=x0+(i%cols)*(bw+gap),y=y0+Math.floor(i/cols)*(bh+gap),m=p.best.mock,col=X.color,px=bx+(sm?20:26);
+    g.fillStyle="rgba(13,19,28,.92)";g.fillRect(bx,y,bw,bh);g.strokeStyle=col;g.lineWidth=2;g.strokeRect(bx+1,y+1,bw-2,bh-2);
+    g.fillStyle=col;g.fillRect(bx,y,6,bh);
+    g.fillStyle=MU;g.font=mono(sm?12:14);g.fillText(X.code,px,y+(sm?28:34));g.fillStyle=INK;g.font=disp(700,sm?22:28);g.fillText(fit(g,X.name,bw-(sm?36:52)),px,y+(sm?56:66));
+    if(sm){
+      g.fillStyle=MU;g.font=mono(11);g.fillText("BEST MOCK (EST.)",px,y+92);g.fillText("BEST QUICK",px+122,y+92);
+      g.font=disp(700,32);g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",px,y+130);
+      g.fillStyle=p.best.quick?INK:MU;g.fillText(p.best.quick?p.best.quick+"/10":"—",px+122,y+130);
+      if(m){g.font=mono(12);g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(m.pass?"PASS":"BELOW "+X.PASS,px,y+154);}
+      return;
+    }
+    g.fillStyle=MU;g.font=mono(13);g.fillText("BEST MOCK (EST.)",px,y+100);g.fillText("BEST QUICK EXAM",bx+270,y+100);
+    g.font=disp(700,44);g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",px,y+146);
     if(m){const tw=g.measureText(String(m.scaled)).width;g.font=mono(14);const lbl=m.pass?"PASS":"BELOW "+X.PASS,cw=g.measureText(lbl).width+16;
-      g.fillStyle=m.pass?"rgba(47,243,160,.18)":"rgba(255,176,32,.18)";g.fillRect(bx+36+tw,y+124,cw,24);g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(lbl,bx+44+tw,y+141);}
+      g.fillStyle=m.pass?"rgba(47,243,160,.18)":"rgba(255,176,32,.18)";g.fillRect(px+10+tw,y+124,cw,24);g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(lbl,px+18+tw,y+141);}
     g.font=disp(700,44);g.fillStyle=p.best.quick?INK:MU;g.fillText(p.best.quick?p.best.quick+"/10":"—",bx+270,y+146);
     if(bh>200){g.font=mono(14);g.fillStyle=MU;
       const line=X.games.map(k=>{const v=GAMES[k].rec(p);return GAMES[k].n.toUpperCase()+" "+(v||"—");}).join("  ·  ");
-      g.fillText(fit(g,line,bw-52),bx+26,y+bh-26);}
+      g.fillText(fit(g,line,bw-52),px,y+bh-26);}
   });
   return c;
 }
@@ -1636,7 +1686,7 @@ function setupScoreCard(){
 
 /* ---------------- Router ---------------- */
 let cleanup = null;
-const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack};
+const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool};
 const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
 function route(){
   if(cleanup){cleanup();cleanup=null;}
@@ -1705,7 +1755,7 @@ function viewHome(){
       <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
         <div class="op-stats"><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
       <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base. ${EX.foes} Each exam has its own upgrades and weapons.</p>
-      <div class="tiers">${[1,2,3,4,5].map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
+      <div class="tiers">${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
     </section>
   </div>`;
@@ -1797,7 +1847,7 @@ function practiceLink(d){
   const txt=`Practice Tests · Domain ${d}.0 <small>questions p. ${bp}, answers p. ${abp}</small>`;
   return T.ok?`<a class="src" href="${T.pdf}#page=${pp}" target="_blank" rel="noopener">${txt} ↗</a>`:`<span class="src static">${txt}</span>`;
 }
-const guideShort=o=>(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", ");
+const guideShort=o=>GUIDE?(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", "):"";
 const SRC={
   messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent("Professor Messer "+EX.code+" "+o+" "+OBJ[o][1]),
   messerSite:"https://www.professormesser.com/",
@@ -1858,8 +1908,8 @@ function viewReview(){
       return `<details class="obj"${ix<3?" open":""}>
         <summary><span class="oc">${r.o}</span><span class="ot">${esc(OBJ[r.o][0])}</span><span class="chips">${r.queue.length?`<span class="chip-s bad">${r.queue.length} to review</span>`:""}${a!==null?`<span class="chip-s">${a}% correct over ${r.c+r.w} answers</span>`:""}<span class="chip-s">Domain ${r.o[0]}.0 · ${esc(DOMAINS[r.o[0]].name)}</span></span></summary>
         <div class="obj-body">
-          <div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
-            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>
+          ${GUIDE?`<div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
+            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>`:""}
           <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.objectives(),"CompTIA exam objectives","official PDF")}</div>
           ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
           <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
@@ -1873,8 +1923,8 @@ function viewReview(){
       ${link(SRC.messerSite,"Professor Messer",`free ${EX.code} video course and notes`)}
       ${link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
       ${link(SRC.objectives(),`${EX.code} exam objectives`,"find the official PDF")}
-      ${GUIDE.ok?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
-      ${GUIDE.practice?(GUIDE.practice.ok?link(GUIDE.practice.pdf,"Your practice tests",GUIDE.practice.title):`<span class="src static">Your practice tests <small>${GUIDE.practice.title}, in the repo's guides folder</small></span>`):""}
+      ${!GUIDE?"":GUIDE.ok?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
+      ${GUIDE&&GUIDE.practice?(GUIDE.practice.ok?link(GUIDE.practice.pdf,"Your practice tests",GUIDE.practice.title):`<span class="src static">Your practice tests <small>${GUIDE.practice.title}, in the repo's guides folder</small></span>`):""}
     </div>
     <p class="muted small" style="margin:12px 0 0">The objectives PDF is CompTIA's own list of everything the exam covers. Use it as a checklist alongside the study plan.</p>
   </div>
@@ -1921,7 +1971,7 @@ function showQ(st){
     const note=recordAnswer(id,ok);
     if(ok){st.correct++;st.streak++;S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
     else{st.streak=0;D.wrong();award(2);}
-    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}<div class="small muted" style="margin-top:6px">Objective ${Q[id][5]}: ${esc(OBJ[Q[id][5]][0])} · Study guide ${guideShort(Q[id][5])}</div>${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
+    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}<div class="small muted" style="margin-top:6px">Objective ${Q[id][5]}: ${esc(OBJ[Q[id][5]][0])}${GUIDE?" · Study guide "+guideShort(Q[id][5]):""}</div>${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
       <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
     document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
     document.getElementById("next").focus({preventScroll:true});
@@ -2155,7 +2205,7 @@ function viewPorts(){
     </div>
     <div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Port reference</h3>
       <div class="tbl-wrap"><table><thead><tr><th>Port</th><th>Service</th><th>Note</th></tr></thead><tbody>
-      ${PORTS.slice().sort((a,b)=>parseInt(a[1])-parseInt(b[1])).map(p=>`<tr><td class="p">${p[1]}</td><td>${esc(p[0])}<div class="muted small">${esc(p[3])}</div></td><td class="muted">${esc(expand(p[2]))}</td></tr>`).join("")}
+      ${portList().slice().sort((a,b)=>parseInt(a[1])-parseInt(b[1])).map(p=>`<tr><td class="p">${p[1]}</td><td>${esc(p[0])}<div class="muted small">${esc(p[3])}</div></td><td class="muted">${esc(expand(p[2]))}</td></tr>`).join("")}
       </tbody></table></div></div>
   </div>`;
   document.getElementById("start").onclick=runBlitz;
@@ -2171,8 +2221,8 @@ function runBlitz(){
   const tm=document.getElementById("tm"),bz=document.getElementById("bz");
   function next(){
     locked=false;
-    const p=pick(PORTS);const dir=Math.random()<.5;
-    let others=shuffle(PORTS.filter(x=>x!==p&&x[1]!==p[1])).slice(0,3);
+    const PL=portList(),p=pick(PL);const dir=Math.random()<.5;
+    let others=shuffle(PL.filter(x=>x!==p&&x[1]!==p[1])).slice(0,3);
     if(dir){cur={ans:p[1],q:`${p[0]} (${p[3]}) uses port…`,opts:shuffle([p[1],...others.map(o=>o[1])]),name:p[0]};}
     else{cur={ans:p[0],q:`Port ${p[1]} is…`,opts:shuffle([p[0],...others.map(o=>o[0])]),name:p[0]};}
     document.getElementById("bq").textContent=cur.q;
@@ -2825,30 +2875,43 @@ function viewControl(){
   render();
 }
 
-/* ---------------- Attack Match ---------------- */
-function viewAttack(){
+/* ---------------- Match games ---------------- */
+// 60-second rounds: each prompt describes something and the player picks its name from four choices.
+// Attack Match (Security+), Hardware Match (A+ Core 1), Command Match and Tool Match (A+ Core 2).
+const MATCH={
+  attack:{n:"Attack Match",h:"Name the attack. 60 seconds.",d:"Each prompt describes an indicator or scenario. Pick the attack behind it.",rows:()=>ATTACKS,col:["Indicator you missed","Attack"]},
+  hardware:{n:"Hardware Match",h:"Name the part. 60 seconds.",d:"Each prompt describes a connector, cable, component or tool. Pick what it is.",rows:()=>HARDWARE,col:["Description you missed","Answer"]},
+  command:{n:"Command Match",h:"Name the command. 60 seconds.",d:"Each prompt is a job to do at the Windows or Linux command line. Pick the command that does it.",rows:()=>COMMANDS,col:["Task you missed","Command"],mono:true},
+  wintool:{n:"Tool Match",h:"Name the Windows tool. 60 seconds.",d:"Each prompt is a job to do in Windows. Pick the tool or settings page for it.",rows:()=>WINTOOLS,col:["Task you missed","Tool"]}
+};
+function viewMatch(k){
+  const M=MATCH[k];
   $app.innerHTML=`<div class="panel stack">
-    <div><span class="label">Attack Match</span><h2 style="font-size:28px;margin-top:4px">Name the attack. 60 seconds.</h2></div>
-    <p class="muted" style="margin:0">Each prompt describes an indicator or scenario. Pick the attack behind it. A wrong answer costs 3 seconds. Keys 1–4 work too.</p>
-    <div class="row"><button class="btn primary" id="start">Start</button><span class="muted small mono">Best: ${P.best.attack||0}</span></div>
+    <div><span class="label">${M.n}</span><h2 style="font-size:28px;margin-top:4px">${M.h}</h2></div>
+    <p class="muted" style="margin:0">${M.d} A wrong answer costs 3 seconds. Keys 1–4 work too.</p>
+    <div class="row"><button class="btn primary" id="start">Start</button><span class="muted small mono">Best: ${P.best[k]||0}</span></div>
   </div>`;
-  document.getElementById("start").onclick=runAttack;
+  document.getElementById("start").onclick=()=>runMatch(k);
 }
-function runAttack(){
-  const DUR=60000;let end=Date.now()+DUR,score=0,cur=null,locked=false;const misses=[];
+function viewAttack(){viewMatch("attack");}
+function viewHardware(){viewMatch("hardware");}
+function viewCommand(){viewMatch("command");}
+function viewWintool(){viewMatch("wintool");}
+function runMatch(k){
+  const M=MATCH[k],ROWS=M.rows(),DUR=60000;let end=Date.now()+DUR,score=0,cur=null,locked=false;const misses=[];
   $app.innerHTML=`<div class="panel" id="bz">
-    <div class="qhead"><span class="label">Attack Match</span><span class="mono" id="sc" style="font-size:18px;font-weight:600">0</span></div>
+    <div class="qhead"><span class="label">${M.n}</span><span class="mono" id="sc" style="font-size:18px;font-weight:600">0</span></div>
     <div class="timer" id="tm"><i style="width:100%"></i></div>
     <div class="blitz-q" id="bq" style="font-size:clamp(20px,3vw,26px)"></div>
     <div class="grid2" id="bo"></div>
   </div>`;
   const tm=document.getElementById("tm"),bz=document.getElementById("bz");
   function next(){
-    locked=false;const a=pick(ATTACKS);
-    const others=shuffle([...new Set(ATTACKS.map(x=>x[1]).filter(n=>n!==a[1]))]).slice(0,3);
+    locked=false;const a=pick(ROWS);
+    const others=shuffle([...new Set(ROWS.map(x=>x[1]).filter(n=>n!==a[1]))]).slice(0,3);
     cur={a,opts:shuffle([a[1],...others])};
     document.getElementById("bq").textContent=expand(a[0]);
-    document.getElementById("bo").innerHTML=cur.opts.map(o=>`<button class="opt" data-v="${esc(o)}" style="font-family:var(--f-body);font-size:16px">${esc(o)}</button>`).join("");
+    document.getElementById("bo").innerHTML=cur.opts.map(o=>`<button class="opt" data-v="${esc(o)}" style="font-family:${M.mono?"var(--f-mono)":"var(--f-body)"};font-size:16px">${esc(o)}</button>`).join("");
     document.querySelectorAll("#bo .opt").forEach(b=>b.onclick=()=>answer(b));
   }
   function answer(b){
@@ -2865,18 +2928,451 @@ function runAttack(){
   cleanup=()=>{clearInterval(iv);document.removeEventListener("keydown",onKey);};
   function finish(){
     cleanup();cleanup=null;
-    const best=score>(P.best.attack||0);if(best)P.best.attack=score;award(score*3);
+    const best=score>(P.best[k]||0);if(best)P.best[k]=score;award(score*3);
     const uniq=[...new Map(misses.map(m=>[m[0],m])).values()];
     $app.innerHTML=`<div class="panel result stack">
       <span class="label">Time</span><div class="big">${score}</div>
-      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best.attack}</p>
-      ${uniq.length?`<div class="tbl-wrap" style="max-width:620px;margin:0 auto;text-align:left"><table><thead><tr><th>Indicator you missed</th><th>Attack</th></tr></thead><tbody>${uniq.map(m=>`<tr><td>${esc(expand(m[0]))}</td><td><b>${esc(m[1])}</b></td></tr>`).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
+      <p class="muted" style="margin:0">${best?"New personal best.":"Best: "+P.best[k]}</p>
+      ${uniq.length?`<div class="tbl-wrap" style="max-width:620px;margin:0 auto;text-align:left"><table><thead><tr><th>${M.col[0]}</th><th>${M.col[1]}</th></tr></thead><tbody>${uniq.map(m=>`<tr><td>${esc(expand(m[0]))}</td><td><b>${esc(m[1])}</b></td></tr>`).join("")}</tbody></table></div>`:"<p>No misses.</p>"}
       <div class="row" style="justify-content:center"><button class="btn primary" id="again">Run it again</button><a class="btn" href="#home">Home</a></div>
     </div>`;
-    document.getElementById("again").onclick=runAttack;
+    document.getElementById("again").onclick=()=>runMatch(k);
   }
   next();
 }
+
+/* ---------------- A+ content ---------------- */
+// A+ is two exams: Core 1 (220-1201) and Core 2 (220-1202). Weights are CompTIA's published domain percentages.
+const A1_DOMAINS = {
+  1:{name:"Mobile Devices", w:13, c:"var(--orange)"},
+  2:{name:"Networking", w:23, c:"var(--green)"},
+  3:{name:"Hardware", w:25, c:"var(--blue)"},
+  4:{name:"Virtualization and Cloud Computing", w:11, c:"var(--brown)"},
+  5:{name:"Hardware and Network Troubleshooting", w:28, c:"var(--muted)"}
+};
+const A2_DOMAINS = {
+  1:{name:"Operating Systems", w:28, c:"var(--orange)"},
+  2:{name:"Security", w:28, c:"var(--green)"},
+  3:{name:"Software Troubleshooting", w:23, c:"var(--blue)"},
+  4:{name:"Operational Procedures", w:21, c:"var(--brown)"}
+};
+// 220-1201 exam objectives, with a short topic used to search for study videos.
+const A1_OBJ={
+ "1.1":["Given a scenario, monitor mobile device hardware and use appropriate replacement techniques","mobile device hardware"],
+ "1.2":["Given a scenario, set up and configure accessories and ports of mobile devices","mobile accessories and ports"],
+ "1.3":["Given a scenario, configure basic mobile device network connectivity and application support","mobile connectivity"],
+ "2.1":["Compare and contrast Transmission Control Protocol (TCP) and User Datagram Protocol (UDP) ports, protocols, and their purposes","ports and protocols"],
+ "2.2":["Compare and contrast common networking hardware","networking hardware"],
+ "2.3":["Summarize protocols for wireless networking","wireless protocols"],
+ "2.4":["Summarize services provided by networked hosts","network services"],
+ "2.5":["Given a scenario, install and configure basic wired/wireless small office/home office (SOHO) networks","SOHO networks"],
+ "2.6":["Compare and contrast common network configuration concepts","network configuration"],
+ "2.7":["Compare and contrast Internet connection types, network types, and their features","internet connection types"],
+ "2.8":["Given a scenario, use networking tools","networking tools"],
+ "3.1":["Explain basic cable types and their connectors, features, and purposes","cables and connectors"],
+ "3.2":["Given a scenario, install the appropriate RAM","RAM"],
+ "3.3":["Given a scenario, select and install storage devices","storage devices"],
+ "3.4":["Given a scenario, install and configure motherboards, central processing units (CPUs), and add-on cards","motherboards and CPUs"],
+ "3.5":["Given a scenario, install or replace the appropriate power supply","power supplies"],
+ "3.6":["Given a scenario, deploy and configure multifunction devices/printers and settings","printers"],
+ "3.7":["Given a scenario, install and replace printer consumables","printer consumables"],
+ "4.1":["Explain virtualization concepts","virtualization"],
+ "4.2":["Summarize cloud computing concepts","cloud computing"],
+ "5.1":["Given a scenario, apply the best practice methodology to resolve problems","troubleshooting methodology"],
+ "5.2":["Given a scenario, troubleshoot motherboards, RAM, CPU, and power","troubleshooting motherboards and power"],
+ "5.3":["Given a scenario, troubleshoot drives and RAID arrays","troubleshooting drives and RAID"],
+ "5.4":["Given a scenario, troubleshoot video, projector, and display issues","troubleshooting displays"],
+ "5.5":["Given a scenario, troubleshoot common issues with mobile devices","troubleshooting mobile devices"],
+ "5.6":["Given a scenario, troubleshoot and resolve printer issues","troubleshooting printers"],
+ "5.7":["Given a scenario, troubleshoot problems with wired and wireless networks","troubleshooting networks"]
+};
+// 220-1202 exam objectives, with a short topic used to search for study videos.
+const A2_OBJ={
+ "1.1":["Explain common operating system (OS) types and their purposes","operating system types"],
+ "1.2":["Given a scenario, perform OS installations and upgrades in a diverse environment","OS installation"],
+ "1.3":["Compare and contrast basic features of Microsoft Windows editions","Windows editions"],
+ "1.4":["Given a scenario, use Microsoft Windows operating system (OS) features and tools","Windows tools"],
+ "1.5":["Given a scenario, use the appropriate Microsoft command-line tools","Windows command line"],
+ "1.6":["Given a scenario, configure Microsoft Windows settings","Windows settings"],
+ "1.7":["Given a scenario, configure Microsoft Windows networking features on a client/desktop","Windows networking"],
+ "1.8":["Explain common features and tools of the macOS/desktop OS","macOS"],
+ "1.9":["Identify common features and tools of the Linux client/desktop OS","Linux"],
+ "1.10":["Given a scenario, install applications according to requirements","installing applications"],
+ "1.11":["Given a scenario, install and configure cloud-based productivity tools","cloud productivity tools"],
+ "2.1":["Summarize various security measures and their purposes","security measures"],
+ "2.2":["Given a scenario, configure and apply basic Microsoft Windows OS security settings","Windows security settings"],
+ "2.3":["Compare and contrast wireless security protocols and authentication methods","wireless security"],
+ "2.4":["Summarize types of malware and tools/methods for detection, removal, and prevention","malware"],
+ "2.5":["Explain common social engineering attacks, threats, and vulnerabilities","social engineering"],
+ "2.6":["Given a scenario, implement procedures for basic small office/home office (SOHO) malware removal","malware removal"],
+ "2.7":["Given a scenario, apply workstation security options and hardening techniques","workstation hardening"],
+ "2.8":["Given a scenario, apply common methods for securing mobile devices","securing mobile devices"],
+ "2.9":["Compare and contrast common data destruction and disposal methods","data destruction"],
+ "2.10":["Given a scenario, apply security settings on SOHO wireless and wired networks","SOHO network security"],
+ "2.11":["Given a scenario, configure relevant security settings in a browser","browser security"],
+ "3.1":["Given a scenario, troubleshoot common Windows OS issues","troubleshooting Windows"],
+ "3.2":["Given a scenario, troubleshoot common mobile OS and application issues","troubleshooting mobile OS"],
+ "3.3":["Given a scenario, troubleshoot common mobile OS and application security issues","mobile security issues"],
+ "3.4":["Given a scenario, troubleshoot common personal computer (PC) security issues","PC security issues"],
+ "4.1":["Given a scenario, implement best practices associated with documentation and support systems information management","documentation"],
+ "4.2":["Given a scenario, apply change management procedures","change management"],
+ "4.3":["Given a scenario, implement workstation backup and recovery methods","backup and recovery"],
+ "4.4":["Given a scenario, use common safety procedures","safety procedures"],
+ "4.5":["Summarize environmental impacts and local environmental controls","environmental controls"],
+ "4.6":["Explain the importance of prohibited content/activity and privacy, licensing, and policy concepts","privacy and licensing"],
+ "4.7":["Given a scenario, use proper communication techniques and professionalism","professionalism"],
+ "4.8":["Explain the basics of scripting","scripting"],
+ "4.9":["Given a scenario, use remote access technologies","remote access"],
+ "4.10":["Explain basic concepts related to artificial intelligence (AI)","artificial intelligence"]
+};
+// A+ armories: the same mechanics under each exam's own names, with their own upgrade levels.
+const A1_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
+  {n:"Overclocked turrets",d:"+35% turret damage"},{n:"Liquid cooling",d:"+20% turret fire rate"},{n:"Expansion slot",d:"Adds another turret to the wall"},
+  {n:"Surge protector",d:"+40 wall integrity"},{n:"RAM upgrade",d:"+20 starting ammo and +5 per correct answer"}][i]));
+const A1_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
+  {n:"Overheat vent",d:"Blasts hot exhaust at hostiles that reach the wall. Uses no ammo."},{n:"ESD arc",d:"A static discharge that jumps between hostiles."},
+  {n:"Toner bomb",d:"Drops on the densest pack for splash damage."},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
+const A2_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
+  {n:"Admin rights",d:"+35% turret damage"},{n:"Task Scheduler",d:"+20% turret fire rate"},{n:"Remote session",d:"Adds another turret to the wall"},
+  {n:"BitLocker wall",d:"+40 wall integrity"},{n:"Restore point",d:"+20 starting ammo and +5 per correct answer"}][i]));
+const A2_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
+  {n:"Quarantine pit",d:"Burns hostiles that reach the wall. Uses no ammo."},{n:"Group Policy chain",d:"A policy push that jumps between hostiles."},
+  {n:"Disk wipe charge",d:"Shells the densest pack for splash damage."},{n:"Safe Mode beam",d:"A beam that pierces every hostile in its lane."}][i]));
+
+// Hardware Match (Core 1): [description, answer]
+const HARDWARE=[
+ ["15-pin analog video connector in three rows, often blue","VGA"],["Digital video connector that also carries audio, common on TVs","HDMI"],
+ ["Digital video connector with a latch, common on PC monitors","DisplayPort"],["Reversible connector that carries USB data, power and video","USB-C"],
+ ["Apple's older reversible 8-pin phone connector","Lightning"],["8P8C connector on twisted pair Ethernet cable","RJ45"],
+ ["Narrow connector on a telephone line","RJ11"],["Screw-on connector on a cable modem's coaxial cable","F type"],
+ ["Square push-pull fiber connector","SC"],["Small fiber connector with a latch, often in duplex pairs","LC"],
+ ["Round fiber connector with a twist-lock bayonet","ST"],["7-pin data connector for internal hard drives and SSDs","SATA"],
+ ["Slot where a small SSD card lies flat on the motherboard, held by one screw","M.2"],["Fast SSD protocol that runs over PCIe lanes","NVMe"],
+ ["Old 4-pin peripheral power connector","Molex"],["Main power connector on a modern motherboard","24-pin ATX"],
+ ["Memory module made for laptops","SODIMM"],["Memory that detects and corrects single-bit errors, common in servers","ECC RAM"],
+ ["Chip that stores encryption keys and measures the boot process","TPM"],["Firmware that replaced BIOS, with Secure Boot and GPT support","UEFI"],
+ ["Coin cell that keeps the firmware clock running","CMOS battery"],["Laser printer part that bonds toner to paper with heat and pressure","Fuser"],
+ ["Laser printer part that holds the charged image before toner is applied","Imaging drum"],["Printer that darkens special paper with heat, common for receipts","Thermal printer"],
+ ["Printer that strikes a ribbon, used for multipart forms","Impact printer"],["Rubber pad that stops several sheets feeding at once","Separation pad"],
+ ["Battery-backed device that keeps a PC running through a short outage","UPS"],["Tool that attaches RJ45 connectors to cable","Crimper"],
+ ["Tool that seats wires into a patch panel or keystone jack","Punchdown tool"],["Tool that traces a cable by sending a tone down it","Toner probe"],
+ ["Plug that sends a port's own signal back to test it","Loopback plug"],["Tool that shows signal strength and channel use of nearby networks","Wi-Fi analyzer"],
+ ["Short-range wireless used for tap-to-pay","NFC"],["High-speed connection that carries PCIe and DisplayPort over a USB-C shaped port","Thunderbolt"]
+];
+// Command Match (Core 2): [task, command]
+const COMMANDS=[
+ ["Show the full IP configuration of every adapter (Windows)","ipconfig /all"],["Clear the DNS resolver cache (Windows)","ipconfig /flushdns"],
+ ["Test whether a host answers","ping"],["List each router hop to a host (Windows)","tracert"],
+ ["Trace the route and measure packet loss at each hop (Windows)","pathping"],["Query a DNS server for a name's records","nslookup"],
+ ["Show active connections and listening ports","netstat"],["Check a volume's file system and fix errors (Windows)","chkdsk"],
+ ["Scan and repair protected Windows system files","sfc /scannow"],["Repair the Windows component store image","dism"],
+ ["Apply Group Policy changes right away","gpupdate /force"],["Show which Group Policies apply to a user","gpresult"],
+ ["Partition disks from the command line (Windows)","diskpart"],["Copy folder trees with retry and mirror options (Windows)","robocopy"],
+ ["List the files in a folder (Windows)","dir"],["Remove a folder (Windows)","rd"],
+ ["Shut down or restart the computer from a prompt (Windows)","shutdown"],["Map a network drive letter to a share (Windows)","net use"],
+ ["Add or change local user accounts from a prompt (Windows)","net user"],["Show the Windows version and build in a window","winver"],
+ ["List the files in a directory (Linux)","ls"],["Show the directory you're in (Linux)","pwd"],
+ ["Change a file's permissions (Linux)","chmod"],["Change a file's owner (Linux)","chown"],
+ ["Run one command with root privileges (Linux)","sudo"],["Search for text inside files (Linux)","grep"],
+ ["Install packages on Debian or Ubuntu","apt"],["Install packages on Fedora or Red Hat","dnf"],
+ ["Show a live view of processes and resource use (Linux)","top"],["Show free space on mounted file systems (Linux)","df"],
+ ["Show network interfaces and addresses (modern Linux)","ip"],["Find files by name under a directory (Linux)","find"],
+ ["Change a user's password (Linux)","passwd"],["Read the manual page for a command (Linux)","man"]
+];
+// Tool Match (Core 2): [task, Windows tool]
+const WINTOOLS=[
+ ["Read the logs to see why an app crashed","Event Viewer"],["Update or roll back a device driver","Device Manager"],
+ ["Shrink, extend or format a partition","Disk Management"],["End a frozen program and turn off slow startup apps","Task Manager"],
+ ["Run a script every night at 2 AM","Task Scheduler"],["Set a service to start automatically","Services (services.msc)"],
+ ["Record CPU and memory counters over a whole day","Performance Monitor"],["See right now which process is using the disk and network","Resource Monitor"],
+ ["Choose a diagnostic startup or set the next boot to Safe Mode","System Configuration (msconfig)"],["Edit a key in the Windows registry","Registry Editor (regedit)"],
+ ["Set password rules on a standalone Pro PC","Local Group Policy Editor (gpedit.msc)"],["Create a local user and add it to a group","Local Users and Groups (lusrmgr.msc)"],
+ ["View or import certificates for the current user","Certificate Manager (certmgr.msc)"],["Build a custom console from several snap-ins","Microsoft Management Console (mmc)"],
+ ["Remove temporary files to free space","Disk Cleanup (cleanmgr)"],["Optimize or defragment drives","Optimize Drives (dfrgui)"],
+ ["Check the installed RAM, BIOS version and drivers in one report","System Information (msinfo32)"],["Check the graphics driver and DirectX version","DirectX Diagnostic Tool (dxdiag)"],
+ ["Uninstall a desktop program","Programs and Features"],["Allow an app through the firewall","Windows Defender Firewall"],
+ ["Set a proxy server for the system","Internet Options"],["Change what closing the laptop lid does","Power Options"],
+ ["Show file name extensions and hidden files","File Explorer Options"],["Encrypt the entire system drive","BitLocker"],
+ ["Remove a saved network password","Credential Manager"],["Roll system files and settings back to an earlier point","System Restore"]
+];
+const A1_Q = [ // [domain, question, correct, [wrong x3], explanation, objective] — original items written against the 220-1201 objectives
+ [1,"Before replacing internal parts in a laptop, what should you disconnect first?","The battery and the AC adapter",["The display cable","The keyboard ribbon","The Wi-Fi antenna leads"],"Remove every power source first so nothing shorts while you work. The other cables come off later, as each part needs it.","1.1"],
+ [1,"Which memory form factor do most laptops with replaceable RAM use?","SODIMM",["DIMM","RIMM","SIMM"],"SODIMMs (small outline DIMMs) are short modules built for laptops and small PCs. Full-size DIMMs go in desktops, and RIMMs and SIMMs are long obsolete.","1.1"],
+ [1,"Which laptop storage upgrade usually gives the biggest speed boost over a spinning hard drive?","An M.2 NVMe SSD",["A 7,200 rpm hard drive","A hard drive with a larger cache","A USB flash drive"],"NVMe SSDs talk to the CPU over PCIe lanes, which makes them many times faster than any spinning drive. A faster hard drive or a bigger cache helps only a little.","1.1"],
+ [1,"On a tablet, which layer senses your finger and turns it into input?","The digitizer",["The backlight","The inverter","The polarizer"],"The digitizer is the touch-sensing layer over the display. The backlight lights the panel, inverters powered old CCFL backlights, and the polarizer is part of the LCD itself.","1.1"],
+ [1,"After a technician replaces a laptop screen, Wi-Fi signal is much weaker. What was most likely disturbed?","The wireless antenna leads that run through the display lid",["The CMOS battery","The SODIMM","The keyboard connector"],"Laptop Wi-Fi antennas usually run around the screen, so their leads must be reconnected to the wireless card after any display work.","1.1"],
+ [1,"A user wants to sign in to a laptop with a fingerprint. Which component adds this?","A biometric fingerprint reader",["An NFC chip","A digitizer","A webcam privacy shutter"],"Fingerprint readers scan the finger to authenticate. NFC is for tap-to-pay and pairing, and a digitizer senses touch, not fingerprints.","1.1"],
+ [1,"Which accessory gives a thin laptop a full-size monitor, keyboard, mouse and wired network through one cable?","A USB-C or Thunderbolt docking station",["A Bluetooth headset","An NFC tag","A USB-A flash drive"],"A dock connects many peripherals and often charges the laptop over a single USB-C or Thunderbolt cable, so the user just plugs in one cable at the desk.","1.2"],
+ [1,"What's usually the first step when pairing a Bluetooth headset with a phone?","Put the headset into pairing mode so the phone can find it",["Enter the Wi-Fi password on the headset","Install a printer driver","Connect the headset with a USB-C cable"],"Pairing goes: turn on Bluetooth, make the device discoverable, select it on the phone, enter a PIN if asked, then test it.","1.2"],
+ [1,"Which wireless feature lets a phone act as a contactless payment card?","NFC",["Bluetooth","Infrared","Lightning"],"Near-field communication works only within a few centimeters, which suits tap-to-pay and quick pairing. Bluetooth reaches several meters, and Lightning is a cable connector.","1.2"],
+ [1,"An artist's stylus works on a pen-enabled tablet but not on a cheap one. Why?","An active stylus needs a digitizer that supports it",["The tablet needs a Bluetooth keyboard","Styluses only work over USB-C","The screen brightness is too low"],"Active pens talk to a matching digitizer for pressure and palm rejection. A basic touchscreen only senses fingers or a simple passive stylus.","1.2"],
+ [1,"Which connector did iPhones use before Apple switched to USB-C?","Lightning",["Micro-USB","Mini-USB","DisplayPort"],"Apple used its 8-pin Lightning connector from 2012 until it moved iPhones to USB-C. Micro-USB was common on older Android phones.","1.2"],
+ [1,"A traveler wants to connect a USB-C-only laptop to a hotel TV, a USB-A mouse and wired Ethernet. What's the simplest accessory?","A USB-C multiport adapter",["A KVM switch","A PoE injector","A loopback plug"],"A small USB-C hub or adapter adds HDMI, USB-A and Ethernet ports. A KVM switch shares one keyboard and monitor between computers, and a PoE injector powers network devices.","1.2"],
+ [1,"What does turning on airplane mode do?","Turns off the device's wireless radios",["Mutes notifications only","Disconnects cellular data but leaves calls on","Encrypts the device's storage"],"Airplane mode switches off cellular, Wi-Fi and Bluetooth. Most phones then let you turn Wi-Fi or Bluetooth back on by themselves.","1.3"],
+ [1,"A company wants to push email settings, apps and security policies to every employee's phone. What should it use?","MDM",["A VPN","NFC","The IMEI"],"Mobile device management enrolls phones so IT can configure them, require a passcode, and wipe them if lost. A VPN only protects traffic.","1.3"],
+ [1,"Which number identifies the phone hardware itself on a cellular network?","IMEI",["IMSI","MAC address","SSID"],"The IMEI identifies the device, so carriers can block a stolen phone. The IMSI identifies the subscriber and is stored on the SIM.","1.3"],
+ [1,"Which feature lets a phone share its cellular data with a laptop over Wi-Fi?","A mobile hotspot",["Airplane mode","NFC","Location services"],"A hotspot turns the phone into a small Wi-Fi router for other devices. Tethering does the same thing over USB or Bluetooth.","1.3"],
+ [1,"Which technology lets a phone activate a carrier plan without a physical SIM card?","eSIM",["A microSD card","The IMEI","NFC"],"An eSIM is a chip built into the phone that downloads a carrier profile. Several profiles can be stored and switched in settings.","1.3"],
+ [1,"How do a user's contacts, calendar and email stay the same on their phone and laptop?","Both sync with the same cloud account, such as Microsoft 365, Google or iCloud",["Bluetooth pairing keeps them in sync","NFC copies them when the devices touch","A mobile hotspot shares them"],"Synchronization runs through an account on a server. Every device signed in to that account gets the same mail, contacts and calendar.","1.3"],
+ [2,"Which port must be open to use Remote Desktop to a Windows PC?","3389",["22","443","445"],"RDP uses TCP port 3389. Port 22 is SSH, 443 is HTTPS and 445 is SMB.","2.1"],
+ [2,"Which transport protocol is connectionless, with no handshake or delivery guarantee?","UDP",["TCP","SMB","SSH"],"UDP sends datagrams without setting up a connection, which suits DNS lookups, DHCP and streaming. TCP uses a three-way handshake and resends lost data.","2.1"],
+ [2,"Which port does modern Windows file sharing use?","445",["143","389","3389"],"SMB runs directly over TCP 445. Port 143 is IMAP, 389 is LDAP and 3389 is RDP.","2.1"],
+ [2,"A user needs encrypted command-line access to a Linux server. Which port must be open?","22",["23","25","3389"],"SSH uses port 22 and encrypts the whole session. Telnet on port 23 does the same job without encryption, so it should be avoided.","2.1"],
+ [2,"Which protocol does an email client use to send mail to its server?","SMTP",["IMAP","POP3","LDAP"],"SMTP sends and relays mail. IMAP and POP3 retrieve mail from a mailbox, and LDAP queries directories.","2.1"],
+ [2,"Which device forwards a frame only to the port where the destination MAC address is?","A switch",["A hub","A modem","A repeater"],"A switch learns which MAC address is on each port. A hub repeats everything out every port, which wastes bandwidth and causes collisions.","2.2"],
+ [2,"What lets one Ethernet cable both carry data and power a ceiling-mounted access point?","PoE",["NAT","DHCP","A VLAN"],"Power over Ethernet sends power over the same twisted pair cable from a PoE switch or injector, so the access point needs no outlet nearby.","2.2"],
+ [2,"How does a managed switch differ from an unmanaged switch?","It can be configured, for example with VLANs and port settings",["It never needs a MAC address table","It is always faster","It only works with fiber"],"Unmanaged switches are plug and play. Managed switches add configuration such as VLANs, port security and monitoring.","2.2"],
+ [2,"Where do the cables from an office's wall jacks end up in the wiring closet?","On a patch panel",["On a hub","On the cable modem","On the firewall"],"Wall jack runs are punched down on the back of a patch panel. Short patch cables then connect each port to the switch.","2.2"],
+ [2,"Which Wi-Fi standard is also called Wi-Fi 6?","802.11ax",["802.11ac","802.11n","802.11g"],"802.11ax is Wi-Fi 6, and Wi-Fi 6E adds the 6 GHz band. 802.11ac is Wi-Fi 5 and 802.11n is Wi-Fi 4.","2.3"],
+ [2,"Which Wi-Fi band reaches farthest through walls but has the fewest channels and the most interference?","2.4 GHz",["5 GHz","6 GHz","60 GHz"],"Lower frequencies travel farther and pass through walls better. 2.4 GHz has only three non-overlapping channels and shares the air with microwaves and Bluetooth.","2.3"],
+ [2,"Which 2.4 GHz channels don't overlap with each other in North America?","1, 6 and 11",["1, 5 and 9","2, 7 and 12","3, 8 and 13"],"Each 2.4 GHz channel is about 22 MHz wide but only 5 MHz apart, so only 1, 6 and 11 avoid overlapping.","2.3"],
+ [2,"Which wireless technology reads small tags at short range for inventory tracking and access badges?","RFID",["Bluetooth","Zigbee","LTE"],"Radio-frequency identification reads tags, often without batteries, as they pass a reader. NFC is a short-range subset used for payments.","2.3"],
+ [2,"Which Wi-Fi generation added the 6 GHz band?","Wi-Fi 6E",["Wi-Fi 5","Wi-Fi 4","802.11g"],"Wi-Fi 6E is 802.11ax extended into 6 GHz, which has many wide channels and little legacy traffic.","2.3"],
+ [2,"Which server automatically gives client computers an IP address, mask, gateway and DNS server?","A DHCP server",["A DNS server","A proxy server","A syslog server"],"DHCP leases addressing settings to clients. DNS resolves names, a proxy makes web requests for clients, and syslog collects logs.","2.4"],
+ [2,"Which server turns names like www.example.com into IP addresses?","A DNS server",["A DHCP server","A file server","A mail server"],"DNS answers name lookups. Without it, users would have to type IP addresses.","2.4"],
+ [2,"Which server collects log messages from many network devices in one place?","A syslog server",["A proxy server","A DHCP server","A web server"],"Syslog sends log events over the network to a central collector so admins can search them in one place.","2.4"],
+ [2,"Which server makes web requests for clients and can cache and filter what users visit?","A proxy server",["A load balancer","A DNS server","A mail server"],"A proxy sits between users and the web. A load balancer spreads incoming requests across several servers.","2.4"],
+ [2,"Which single appliance combines a firewall, antivirus, content filtering and intrusion prevention?","UTM",["IDS","NAS","SAN"],"A unified threat management device bundles several security features. An IDS only detects attacks, and NAS and SAN are storage.","2.4"],
+ [2,"After installing a new SOHO router, what should you change first?","The default admin password",["The DHCP lease time","The Wi-Fi channel width","The LED brightness"],"Default router credentials are public, so anyone on the network could change your settings. Change them before anything else.","2.5"],
+ [2,"A game console needs inbound connections on a specific port from the internet. Which router feature allows this?","Port forwarding",["A DHCP reservation","MAC filtering","Content filtering"],"Port forwarding sends traffic arriving on a public port to one inside device. NAT would otherwise drop the unsolicited inbound traffic.","2.5"],
+ [2,"How can you make a network printer always get the same address while still using DHCP?","Create a DHCP reservation for its MAC address",["Turn on APIPA","Add a static route","Turn on port forwarding"],"A reservation ties one IP address to the printer's MAC address, so clients can always find it at the same address.","2.5"],
+ [2,"Which wireless security should a new SOHO router use if every device supports it?","WPA3",["WEP","WPA","An open network with MAC filtering"],"WPA3 is the newest and strongest. WEP and the original WPA are broken, and MAC filtering is easy to bypass by copying an allowed address.","2.5"],
+ [2,"Which of these IPv4 ranges is private and not routed on the internet?","192.168.0.0/16",["8.8.8.0/24","172.32.0.0/16","100.0.0.0/8"],"The private ranges are 10.0.0.0/8, 172.16.0.0/12 (172.16 through 172.31) and 192.168.0.0/16. 172.32 is just outside the private block.","2.6"],
+ [2,"What does a DNS MX record point to?","The mail server for a domain",["The domain's IPv6 address","Another name for the host","The time server"],"MX records tell other servers where to deliver a domain's email. AAAA holds IPv6 addresses and CNAME holds an alias.","2.6"],
+ [2,"Which DNS record type holds an IPv6 address?","AAAA",["A","CNAME","MX"],"A records hold IPv4 addresses and AAAA records hold IPv6 addresses. CNAME is an alias and MX names a mail server.","2.6"],
+ [2,"Which email authentication record lists the servers allowed to send mail for a domain?","SPF",["DKIM","DMARC","PTR"],"SPF lists permitted senders. DKIM adds a signature to each message, and DMARC tells receivers what to do when checks fail.","2.6"],
+ [2,"What does a VLAN let you do on a single switch?","Split it into separate logical networks",["Encrypt traffic between ports","Give every port a public IP address","Power devices over the cable"],"VLANs separate broadcast domains, such as keeping guest or VoIP traffic apart from staff PCs, without buying more switches.","2.6"],
+ [2,"Which internet service uses satellites in low orbit to cut latency compared with older satellite service?","Low Earth orbit satellite service",["Geostationary satellite service","DSL","Dial-up"],"LEO satellites orbit only a few hundred kilometers up, so the round trip is far shorter than to geostationary satellites about 36,000 km away.","2.7"],
+ [2,"Which internet connection runs over existing telephone lines?","DSL",["Cable","Fiber","Cellular"],"Digital subscriber line uses copper phone lines, and its speed drops with distance from the provider's office. Cable uses coax.","2.7"],
+ [2,"What type of network covers a city or a large group of nearby buildings?","A MAN",["A LAN","A PAN","A SAN"],"A metropolitan area network spans a city. A LAN covers one site, a PAN connects personal devices, and a SAN connects servers to storage.","2.7"],
+ [2,"A phone connected to wireless earbuds forms what type of network?","A PAN",["A LAN","A SAN","A WAN"],"A personal area network links devices within a few meters of one person, usually over Bluetooth.","2.7"],
+ [2,"Which network type gives servers fast block-level access to shared storage?","A SAN",["A PAN","A MAN","A WLAN"],"A storage area network presents disk storage to servers as if it were local. NAS shares files over the regular network instead.","2.7"],
+ [2,"Which tool checks that each wire in a patch cable is connected and in the right order?","A cable tester",["A toner probe","A Wi-Fi analyzer","A punchdown tool"],"A cable tester checks continuity and pinout, finding opens, shorts and crossed pairs. A toner probe only helps you find a cable.","2.8"],
+ [2,"Which tool helps you find which cable in a bundle goes to a particular wall jack?","A toner probe",["A crimper","A loopback plug","A punchdown tool"],"You put a tone on the cable at the jack, then listen with the probe in the closet to find the matching cable.","2.8"],
+ [2,"Which device copies the traffic on a cable so a protocol analyzer can capture it?","A network tap",["A loopback plug","A crimper","A cable stripper"],"A tap sits inline and sends a copy of the traffic to a monitoring port. A switch's port mirroring feature does a similar job.","2.8"],
+ [2,"Which tool seats wires into the back of a patch panel?","A punchdown tool",["A crimper","A toner probe","A multimeter"],"A punchdown tool pushes each wire into an insulation displacement connector and trims it. A crimper attaches plugs to cable ends.","2.8"],
+ [3,"What's the maximum length of a twisted pair Ethernet run for Gigabit Ethernet?","100 meters",["55 meters","185 meters","500 meters"],"Copper Ethernet is limited to 100 meters per run. 55 meters is the limit for 10 Gbps on Cat 6, and 185 and 500 meters were old coaxial Ethernet limits.","3.1"],
+ [3,"Which cable should be run through the air-handling space above a drop ceiling?","Plenum-rated cable",["PVC-jacketed cable","Direct burial cable","Unshielded patch cable"],"Plenum jackets give off less toxic smoke in a fire, which fire codes require in spaces that carry building air. Ordinary PVC jackets don't meet that rule.","3.1"],
+ [3,"Which fiber type carries a signal farther?","Single-mode",["Multimode","Both carry it the same distance","Neither; copper goes farther"],"Single-mode fiber uses a tiny core and a laser to reach many kilometers. Multimode has a wider core and suits shorter runs inside buildings.","3.1"],
+ [3,"Which two standards define the wire order for terminating Ethernet cables?","T568A and T568B",["RS-232 and RS-485","ST and SC","DB-9 and DB-25"],"T568A and T568B differ only in swapping the orange and green pairs. Use the same standard at both ends for a straight-through cable.","3.1"],
+ [3,"A cable run passes right beside large factory motors, and EMI is corrupting the signal. Which cable should you use?","Shielded twisted pair",["Unshielded twisted pair","Plenum-rated unshielded twisted pair","Cat 5e patch cable"],"Shielded twisted pair wraps the pairs in foil or braid that blocks electromagnetic interference. Unshielded cable relies on the twists alone, and a plenum rating is about fire safety, not interference.","3.1"],
+ [3,"A motherboard supports dual-channel memory and you're installing two identical modules. Where do they go?","In the paired slots the manual names for dual channel, often the same color",["In any two adjacent slots","Both in slot 1 and slot 2 only on the left side","It doesn't matter for performance"],"Matched modules in the right paired slots let the controller read both channels at once. Check the manual, because slot pairing differs between boards.","3.2"],
+ [3,"Can a DDR4 module be installed in a DDR5 slot?","No. The notch is in a different place and the modules aren't compatible",["Yes, but it runs at DDR4 speed","Yes, with a BIOS update","Only in laptops"],"Each DDR generation has its key notch in a different spot so it physically won't fit a slot for another generation.","3.2"],
+ [3,"Which kind of memory do servers usually use to correct single-bit errors?","ECC RAM",["Non-parity RAM","SODIMM","VRAM"],"Error-correcting code memory detects and fixes single-bit errors, preventing crashes and silent data corruption. Most desktops use non-ECC memory.","3.2"],
+ [3,"When adding memory to a PC, what must match besides fitting the slot?","The memory type and speed the motherboard supports",["The color of the heat spreader","The brand of the CPU cooler","The size of the hard drive"],"Check the board's supported generation, speed and maximum capacity. Mixed speeds usually run at the slowest module's speed.","3.2"],
+ [3,"A user wants to run more virtual machines at once on one PC. Which upgrade helps most?","Adding RAM",["A faster optical drive","A second monitor","A larger power supply alone"],"Each running VM reserves its own memory, so RAM is usually the first limit you hit when running many VMs.","3.2"],
+ [3,"Which RAID level stripes data across drives with no redundancy?","RAID 0",["RAID 1","RAID 5","RAID 10"],"RAID 0 is fast, but losing any drive loses the whole array. RAID 1 mirrors, RAID 5 adds parity and RAID 10 mirrors and stripes.","3.3"],
+ [3,"Which RAID level copies the same data to two drives?","RAID 1",["RAID 0","RAID 5","RAID 6"],"RAID 1 mirroring survives one drive failure but gives you only half the total capacity.","3.3"],
+ [3,"What is the minimum number of drives for RAID 5?","3",["2","4","5"],"RAID 5 spreads data and parity across at least three drives and survives one failure. RAID 6 uses double parity and needs at least four.","3.3"],
+ [3,"Which RAID level mirrors pairs of drives and then stripes across the pairs, needing at least four drives?","RAID 10",["RAID 0","RAID 5","RAID 1"],"RAID 10 (1+0) combines the speed of striping with the protection of mirroring, at the cost of half the raw capacity.","3.3"],
+ [3,"Which interface gives an SSD the most performance?","NVMe over PCIe",["SATA III","USB 2.0","eSATA"],"SATA III tops out around 600 MB/s. NVMe drives use PCIe lanes and reach several gigabytes per second.","3.3"],
+ [3,"Which hard drive spindle speed gives the fastest access times?","15,000 rpm",["5,400 rpm","7,200 rpm","10,000 rpm"],"The faster the platters spin, the sooner the data passes under the head. 5,400 rpm drives are common in laptops, and 15,000 rpm drives were used in servers.","3.3"],
+ [3,"Which motherboard form factor is the largest of these?","ATX",["microATX","Mini-ITX","Nano-ITX"],"Standard ATX boards have the most expansion slots. microATX is smaller, and Mini-ITX boards are 17 cm square for small builds.","3.4"],
+ [3,"Where do you turn on Intel VT-x or AMD-V so a PC can run virtual machines well?","In the UEFI or BIOS settings",["In Device Manager","In the hypervisor's network settings","In the router"],"Hardware virtualization support is a CPU feature that firmware can disable. Enable it in the UEFI or BIOS before installing a hypervisor.","3.4"],
+ [3,"What goes between a CPU and its heat sink?","Thermal paste",["A rubber gasket","Electrical tape","Nothing, so they touch directly"],"Thermal paste fills tiny gaps between the surfaces so heat moves into the cooler. Reapply it whenever you remove the cooler.","3.4"],
+ [3,"Which slot does a modern graphics card use?","PCIe x16",["PCI","AGP","PCIe x1"],"Graphics cards use the longest PCIe slot for the most lanes. AGP and PCI are old standards, and x1 slots suit small cards like network adapters.","3.4"],
+ [3,"Which firmware feature stops a PC from loading an unsigned bootloader?","Secure Boot",["Fast Boot","Wake-on-LAN","Hyper-threading"],"Secure Boot checks bootloader signatures against trusted keys in UEFI, which blocks bootkits.","3.4"],
+ [3,"Which CPU architecture do most phones and Apple silicon Macs use?","ARM",["x86-64","x86","IA-64"],"ARM processors are designed for efficiency and dominate mobile devices. Most Windows desktops use x86-64.","3.4"],
+ [3,"A power supply is rated 80 PLUS Gold. What does that tell you?","How efficiently it converts AC power to DC",["Its maximum wattage","That it has modular cables","That it is redundant"],"80 PLUS ratings certify efficiency, so less power is wasted as heat. Wattage is a separate rating.","3.5"],
+ [3,"What's the benefit of a modular power supply?","You attach only the cables you need",["It never needs a fan","It switches voltage automatically","It doubles the wattage"],"Fewer cables mean better airflow and a tidier case. Modular says nothing about the wattage.","3.5"],
+ [3,"Which power supply rail feeds most modern CPUs and graphics cards?","12 V",["3.3 V","5 V","-12 V"],"High-power parts draw from the 12 V rail and convert it down on the board. The 3.3 V and 5 V rails power smaller parts.","3.5"],
+ [3,"Why do servers often have redundant power supplies?","So the server keeps running if one supply fails",["To double the server's speed","To let it use two kinds of RAM","To avoid needing a UPS"],"With redundant, often hot-swappable supplies, the server keeps running through one supply's failure. Each is usually fed from a different circuit.","3.5"],
+ [3,"Before installing a power-hungry graphics card, what should you check about the power supply?","That it has enough wattage and the right PCIe power connectors",["That it is the same brand as the card","That its fan faces upward","That it supports dual-channel memory"],"A card that draws more than the supply can provide causes crashes and shutdowns under load. Check the card's recommended wattage and its 8-pin or 16-pin connectors.","3.5"],
+ [3,"Which multifunction printer setting prints on both sides of the page?","Duplex",["Collate","Orientation","Tray selection"],"Duplex printing uses both sides. Collate keeps multi-page copies in order, and orientation sets portrait or landscape.","3.6"],
+ [3,"Which print setting outputs each copy of a document as a complete set, in page order?","Collate",["Duplex","Draft quality","Spooling"],"With collate on, three copies come out as 1-2-3, 1-2-3, 1-2-3 instead of 1-1-1, 2-2-2, 3-3-3.","3.6"],
+ [3,"A multifunction printer can't send scans by email. What must be set up on it?","An SMTP server",["A DHCP reservation","A TFTP server","An SNMP trap"],"Scan to email sends through a mail server, so the printer needs the SMTP server address and usually a sign-in.","3.6"],
+ [3,"Which printing feature holds a job until the user signs in at the printer with a badge or PIN?","Secure print release",["Duplexing","Print spooling","Collating"],"Secure print release keeps confidential pages from sitting in the output tray where anyone could take them.","3.6"],
+ [3,"Which page description language describes pages independently of the printer and suits graphics work?","PostScript",["PCL","ASCII","Unicode"],"PostScript produces the same output on any printer that supports it. PCL, HP's printer language, is quicker for office documents but depends more on the printer.","3.6"],
+ [3,"In the laser printing process, which step comes right after exposing?","Developing",["Charging","Fusing","Cleaning"],"The order is processing, charging, exposing, developing, transferring, fusing and cleaning. Developing applies toner to the image the laser drew on the drum.","3.7"],
+ [3,"After installing new inkjet cartridges, colors print slightly offset. What should you run?","Print head alignment (calibration)",["A fuser reset","A drum cleaning cycle","A ribbon advance"],"Alignment lines up the nozzles so colors land in the right place. Fusers and drums are laser parts, and ribbons belong to impact printers.","3.7"],
+ [3,"What consumable does a direct thermal receipt printer use?","Heat-sensitive thermal paper",["Toner","An ink ribbon","Ink cartridges"],"Direct thermal printers darken special paper with heat, so the paper is the only consumable.","3.7"],
+ [3,"An impact printer's output keeps getting fainter. What should you replace?","The ribbon",["The fuser","The toner","The thermal head"],"Impact printers strike an inked ribbon against the paper, and the ribbon runs out of ink over time.","3.7"],
+ [3,"What does a laser printer maintenance kit usually contain?","A fuser and feed rollers",["Ink cartridges","A thermal print head","A new ribbon"],"Maintenance kits replace parts that wear out with page count, mainly the fuser and the pickup and transfer rollers.","3.7"],
+ [4,"Which type of hypervisor runs directly on the hardware, with no host operating system underneath?","Type 1",["Type 2","A container engine","An emulator"],"Type 1 (bare-metal) hypervisors such as ESXi and Hyper-V Server run on the hardware itself. Type 2 hypervisors run as an app on a host OS.","4.1"],
+ [4,"VirtualBox running on a Windows 11 laptop is which type of hypervisor?","Type 2",["Type 1","A container engine","Bare metal"],"VirtualBox is an application on a host OS, which makes it a hosted Type 2 hypervisor.","4.1"],
+ [4,"What's the main difference between containers and virtual machines?","Containers share the host's OS kernel, while each VM runs its own full OS",["Containers need more RAM than VMs","VMs can't run on servers","Containers always need a Type 1 hypervisor"],"Because they share the kernel, containers are small and start in seconds. VMs isolate more fully but use more resources.","4.1"],
+ [4,"Why open a suspicious attachment inside a sandbox VM?","Anything it does stays isolated from the real computer",["It makes the file run faster","It removes the need for antivirus","It encrypts the file"],"A sandbox VM can be reset afterward, so malware that runs inside it can't reach the host's files.","4.1"],
+ [4,"A shop runs an old program that only works on Windows 7 inside a VM on a new PC. What is this use of virtualization?","Legacy software support",["Load balancing","Cloud bursting","Rapid elasticity"],"A VM can run an old operating system safely alongside the modern host, so the business keeps the program without keeping old hardware.","4.1"],
+ [4,"A VM must appear on the office LAN with its own address from the office DHCP server. Which virtual network mode should it use?","Bridged",["NAT","Host-only","Internal"],"Bridged mode connects the VM straight to the physical network. NAT hides it behind the host's address, and host-only or internal networks can't reach the LAN.","4.1"],
+ [4,"Which cloud model gives you virtual servers where you manage the operating system yourself?","IaaS",["SaaS","PaaS","DaaS"],"With Infrastructure as a Service you manage the OS and apps, and the provider runs the hardware. PaaS also manages the OS, and SaaS delivers a finished app.","4.2"],
+ [4,"Web-based email that users simply sign in to is which cloud model?","SaaS",["IaaS","PaaS","On-premises"],"Software as a Service delivers a complete application. The provider manages everything behind it.","4.2"],
+ [4,"A developer uploads code to a managed runtime and never touches the servers or operating system. Which model is this?","PaaS",["IaaS","SaaS","A private cloud"],"Platform as a Service provides the runtime, OS and scaling. The customer just supplies the code.","4.2"],
+ [4,"Which cloud feature adds and removes resources automatically as demand rises and falls?","Rapid elasticity",["Metered utilization","Single tenancy","File synchronization"],"Elasticity scales out for a busy period and back in afterward, so you don't pay for idle capacity.","4.2"],
+ [4,"Paying only for the cloud resources you actually use is known as what?","Metered utilization",["Rapid elasticity","High availability","Multitenancy"],"Metered (pay-as-you-go) billing charges for actual use, such as compute hours or gigabytes stored.","4.2"],
+ [4,"A company keeps sensitive systems in its own data center and uses a public cloud for its website. Which deployment model is this?","Hybrid cloud",["Community cloud","Private cloud","Public cloud only"],"A hybrid cloud combines private and public clouds. A community cloud is shared by organizations with common needs.","4.2"],
+ [4,"A company runs Windows desktops on servers in its data center and streams them to thin clients and home laptops. What is this called?","VDI",["PXE","KVM","SaaS"],"Virtual desktop infrastructure hosts desktop operating systems centrally, so users reach the same desktop from almost any device. PXE boots PCs over the network, and a KVM switch shares one keyboard and monitor between computers.","4.2"],
+ [5,"What is the first step in CompTIA's troubleshooting methodology?","Identify the problem",["Establish a theory of probable cause","Test the theory","Document findings"],"The order is: identify the problem, establish a theory, test it, plan and implement the fix, verify functionality, and document.","5.1"],
+ [5,"After you establish a theory of probable cause, what's next?","Test the theory to determine the cause",["Document findings","Implement the solution","Verify full system functionality"],"Testing confirms the cause before you change anything. If the test doesn't confirm it, form a new theory or escalate.","5.1"],
+ [5,"What's the final step of the troubleshooting methodology?","Document findings, actions and outcomes",["Verify full system functionality","Question the user","Escalate the issue"],"Documentation helps the next technician and builds a knowledge base. It comes after verifying the system works.","5.1"],
+ [5,"While identifying a problem, what should you do before making any changes?","Back up the user's data",["Replace the most likely part","Reinstall the operating system","Close the ticket"],"Identifying the problem includes questioning the user, checking recent changes, reviewing logs, and backing up data before you change anything.","5.1"],
+ [5,"Your test doesn't confirm your theory. What should you do?","Establish a new theory or escalate",["Implement the fix anyway","Document and close the ticket","Restore from backup immediately"],"If the theory fails, go back and form a new one, or escalate to someone with more knowledge or access.","5.1"],
+ [5,"After implementing a fix, what should you do before documenting?","Verify full system functionality and add preventive measures if needed",["Establish a new theory","Question the user about recent changes","Reimage the computer"],"Confirm the whole system works, not just the original symptom, and take steps to stop the problem coming back.","5.1"],
+ [5,"After a RAM upgrade, a PC beeps repeatedly and shows nothing on screen. What should you check first?","That the new memory is compatible and fully seated",["The monitor's brightness","The hard drive's partitions","The network cable"],"Beep codes during POST usually point to memory or video. A module that is not seated or not compatible is the most likely cause right after a RAM change.","5.2"],
+ [5,"A PC shuts down by itself during games, and the case is hot. What's the most likely cause?","Overheating from blocked airflow, a failed fan or old thermal paste",["A failing optical drive","A wrong DNS server","A full print queue"],"CPUs and GPUs shut down to protect themselves when they get too hot. Clean the dust, check the fans and reapply thermal paste.","5.2"],
+ [5,"A PC loses its date and time every time it's unplugged. What should you replace?","The CMOS battery",["The power supply","The RAM","The hard drive"],"The coin cell battery keeps the firmware clock and settings while the PC has no power. When it dies, the clock resets.","5.2"],
+ [5,"A PC won't power on and there's a burning smell from the back. What should you do?","Unplug it and replace the power supply",["Keep pressing the power button","Reseat the RAM while it's plugged in","Update the BIOS"],"A burning smell means a failed component, usually the power supply. Remove power at once and replace the supply. Never open the supply itself.","5.2"],
+ [5,"You notice bulging, leaking capacitors on a motherboard. What does this mean?","The motherboard is failing and should be replaced",["The CPU needs new thermal paste","The RAM is in the wrong slots","The BIOS needs a reset"],"Swollen capacitors cause random crashes and boot failures. The board needs replacing.","5.2"],
+ [5,"A PC crashes with random blue screens since new memory was installed. Which tool helps confirm the cause?","A memory diagnostic test",["Disk Cleanup","A cable tester","A toner probe"],"Memory testers such as Windows Memory Diagnostic write and read patterns across the RAM to find bad modules.","5.2"],
+ [5,"A hard drive makes a repeated clicking sound. What should you do first?","Back up the data right away and plan to replace the drive",["Defragment the drive","Increase the page file","Update the graphics driver"],"Clicking usually means the read/write heads are failing. Save the data while the drive still works, then replace it.","5.3"],
+ [5,"Right after a firmware update, a PC reports no boot device found. What should you check first?","That the drive is detected and the boot order is correct in UEFI",["The monitor cable","The printer driver","The Wi-Fi password"],"Firmware updates can reset boot order or storage modes. Confirm the drive is detected and first in the boot order.","5.3"],
+ [5,"One drive fails in a RAID 5 array, and the server is still running. What should you do?","Replace the failed drive and let the array rebuild",["Delete the array and restore from backup","Convert the array to RAID 0","Ignore it, since RAID 5 survives failures"],"A degraded RAID 5 has no redundancy left, so a second failure loses the data. Replace the drive quickly, and back up first if you can.","5.3"],
+ [5,"A drive monitoring tool shows S.M.A.R.T. warnings for a drive. What does that mean?","The drive predicts it may fail soon",["The drive is fully encrypted","The drive is running faster than rated","The partition table is GPT"],"S.M.A.R.T. tracks wear and error counts. Warnings are a signal to back up and replace the drive before it fails.","5.3"],
+ [5,"A new SATA drive doesn't appear in File Explorer, but it does in Disk Management. What should you do?","Initialize, partition and format the drive",["Replace the SATA cable","Update the network driver","Reinstall Windows"],"A new drive has no partition until you create one. Initialize it, create a volume and format it to give it a drive letter.","5.3"],
+ [5,"A laptop screen is very dark, but you can faintly see the desktop with a flashlight. What has failed?","The backlight",["The graphics driver","The digitizer","The hard drive"],"The panel is still drawing the image, but nothing lights it. Replace the backlight or the whole display assembly.","5.4"],
+ [5,"A projector turns itself off after a few minutes, and its vents are hot. What should you check?","The air filter and fans, which may be clogged",["The HDMI cable","The input source setting","The keystone setting"],"Projector lamps run hot. A clogged filter or failing fan makes them overheat and shut down to protect the lamp.","5.4"],
+ [5,"Text looks blurry on a new LCD monitor. What's the most likely fix?","Set the display to its native resolution",["Lower the refresh rate","Replace the video cable with VGA","Turn on night light"],"LCDs look sharp only at their native resolution. Any other resolution is scaled and looks soft.","5.4"],
+ [5,"A laptop works, but the conference room screen shows No signal. What should you try first?","Switch the display output with the laptop's display key, and check the screen's input source",["Replace the laptop's motherboard","Reinstall the operating system","Update the BIOS"],"The laptop may only be showing on its own screen, or the TV may be on the wrong input. Check both before suspecting hardware.","5.4"],
+ [5,"A faint image of a taskbar stays on an OLED screen even when other content is shown. What is this?","Burn-in",["Dead pixels","Backlight bleed","Screen tearing"],"Static images can wear OLED pixels unevenly and leave a permanent ghost image. Dead pixels are single dots that stay black.","5.4"],
+ [5,"A phone's back cover is bulging, and the screen is lifting away. What should you do?","Stop using and charging it, and have the swollen battery replaced safely",["Press the cover back down","Keep charging it slowly","Put it in a freezer"],"A swollen lithium-ion battery can catch fire. Power the phone down, don't puncture or compress it, and dispose of the battery properly.","5.5"],
+ [5,"Part of a phone's touchscreen stopped responding after it was dropped, but the image looks fine. What's damaged?","The digitizer",["The battery","The SIM card","The speaker"],"The display layer still shows the image, but the touch-sensing digitizer layer is damaged.","5.5"],
+ [5,"A laptop keyboard types numbers when the user presses some letter keys. What's the likely cause?","Num Lock is on, using the embedded number keys",["A failed keyboard","A virus","A wrong keyboard language"],"Many compact keyboards share letter keys with a number pad. Turn off Num Lock or the Fn lock.","5.5"],
+ [5,"A phone charges only if the cable is held at an angle. What's the simplest thing to check first?","Lint or debris in the charging port",["The phone's IMEI","The Wi-Fi settings","The screen brightness"],"Pocket lint packs into charging ports and keeps the plug from seating. Carefully cleaning the port often fixes it.","5.5"],
+ [5,"A phone gets hot and its battery drains quickly after the user installs a new app. What should you check first?","Battery usage in settings, to see which app is using power",["The IMEI","The SIM card tray","The charging cable color"],"Battery settings show which apps use the most power. A misbehaving app can keep the CPU busy in the background.","5.5"],
+ [5,"Laser printer output smears when you rub it. What's the most likely cause?","The fuser is not heating properly",["The toner is low","The paper tray is open","The print driver is wrong"],"The fuser melts toner into the paper. If it's too cool, the toner sits loose on the page and smears.","5.6"],
+ [5,"Faint copies of earlier images appear on laser printouts. What should you check?","The imaging drum and its cleaning stage",["The network cable","The paper size setting","The ink cartridges"],"Ghosting happens when toner or charge isn't fully cleared from the drum before the next page. Replace the drum or the toner cartridge that contains it.","5.6"],
+ [5,"A printer often grabs several sheets at once and jams. What's the most likely cause?","A worn pickup roller or separation pad",["A failing fuser","Low toner","A wrong IP address"],"Worn rubber rollers and pads lose their grip, so several sheets feed at once. Humid or stuck-together paper also causes this.","5.6"],
+ [5,"A printer prints pages of random symbols. What's the most likely cause?","A wrong or corrupted printer driver",["A dirty fuser","An empty paper tray","Low toner"],"Garbled output means the printer doesn't understand the data it's sent. Reinstall the correct driver for that model.","5.6"],
+ [5,"Print jobs sit in the queue and nothing prints, even though the printer is online. What should you do first?","Restart the print spooler service and clear the queue",["Replace the fuser","Reinstall Windows","Change the paper"],"A stuck job can block the whole queue. Restarting the Print Spooler service clears it.","5.6"],
+ [5,"Every page from a laser printer has the same vertical streak. What should you check?","A dirty or scratched imaging drum",["The print queue","The paper orientation","The USB cable"],"A defect on the drum repeats in the same place on every page. Replace the drum or the cartridge that contains it.","5.6"],
+ [5,"A Windows PC has the address 169.254.12.7 and can't reach anything. What's most likely wrong?","It couldn't reach a DHCP server",["The DNS server is down","The default gateway is wrong","The PC has a static IP conflict"],"A 169.254.x.x address is APIPA, which Windows assigns itself when DHCP doesn't answer. Check the cable or Wi-Fi link and the DHCP server.","5.7"],
+ [5,"A user can ping 8.8.8.8 but can't open any website by name. What's the most likely problem?","DNS resolution",["A bad network cable","No default gateway","A failed NIC"],"Reaching an outside IP address proves the cable, gateway and NIC all work. Name lookups failing points to DNS settings or the DNS server.","5.7"],
+ [5,"Wi-Fi drops every time someone uses the microwave in the break room. What's the best fix?","Move clients to the 5 GHz band",["Lower the DHCP lease time","Turn on MAC filtering","Disable WPA3"],"Microwave ovens leak energy around 2.4 GHz. The 5 GHz band avoids that interference.","5.7"],
+ [5,"A PC on a gigabit switch connects at only 100 Mbps. What should you check first?","The patch cable, for a damaged pair or the wrong category",["The DNS settings","The browser cache","The printer driver"],"Gigabit needs all four pairs working. A damaged or low-grade cable often drops the link to 100 Mbps.","5.7"],
+ [5,"Windows warns that another device on the network has the same IP address. What's the likely cause?","A duplicate statically assigned address",["A failed DNS server","Weak Wi-Fi signal","An expired certificate"],"Two devices can't share one address. A static address inside the DHCP pool often causes this, so use reservations or exclude static ranges from the pool.","5.7"],
+ [5,"A desktop shows no network connection, and the link light on its port is off. What should you check first?","The cable and the switch port",["The DNS server","The browser settings","The DHCP scope"],"No link light means no physical connection. Check the cable at both ends, try another cable, and make sure the switch port is enabled.","5.7"]
+];
+const A2_Q = [ // [domain, question, correct, [wrong x3], explanation, objective] — original items written against the 220-1202 objectives
+ [1,"Which operating system is open source and comes in many distributions, such as Ubuntu and Fedora?","Linux",["Windows","macOS","iPadOS"],"Linux is open source, and each distribution bundles the kernel with its own tools. Windows and macOS are proprietary.","1.1"],
+ [1,"Which operating system runs on Chromebooks and keeps most apps and data in the cloud?","ChromeOS",["Android","Windows 11 Home","macOS"],"ChromeOS is built around the Chrome browser and Google accounts, with little stored locally. It can also run Android apps.","1.1"],
+ [1,"A company keeps running an operating system after its vendor stops releasing updates for it. What's the main risk?","It gets no more security patches",["It stops booting","Its files become read-only","It can no longer use Wi-Fi"],"Once an OS reaches end of life, new vulnerabilities are never fixed. Plan upgrades before the end-of-support date.","1.1"],
+ [1,"Which file system is the default for Windows system drives and supports permissions and encryption?","NTFS",["FAT32","exFAT","ext4"],"NTFS supports permissions, EFS encryption, compression and very large files. FAT32 has a 4 GB file limit, exFAT suits flash drives, and ext4 is for Linux.","1.1"],
+ [1,"Which file system is the best choice for a USB drive shared between Windows and macOS with files larger than 4 GB?","exFAT",["FAT32","NTFS","ext4"],"exFAT works on both systems and supports large files. FAT32 limits each file to 4 GB, and macOS can only read NTFS by default.","1.2"],
+ [1,"Which partition style does UEFI firmware need to boot Windows 11, and allows disks larger than 2 TB?","GPT",["MBR","FAT32","APFS"],"GPT supports more partitions and very large disks, and it is required for UEFI boot. MBR is limited to 2 TB and four primary partitions.","1.2"],
+ [1,"Which installation method keeps a user's files, settings and apps while moving to a newer Windows version?","An in-place upgrade",["A clean install","An image deployment","A factory reset"],"An in-place upgrade installs over the existing system. A clean install wipes the drive and starts fresh.","1.2"],
+ [1,"IT wants to install Windows on 50 new PCs over the network without using USB drives. Which boot method should they use?","PXE network boot",["Booting from optical media","An in-place upgrade","Recovery partition boot"],"PXE lets a PC boot from a deployment server over the network, so every PC can get the same image remotely.","1.2"],
+ [1,"Which Windows 11 edition can't join an Active Directory domain?","Home",["Pro","Enterprise","Pro for Workstations"],"Home lacks domain join, Group Policy editing, BitLocker management and Remote Desktop hosting. Businesses use Pro or higher.","1.3"],
+ [1,"Which Windows edition can host incoming Remote Desktop connections?","Pro",["Home","Home in S mode","None of them"],"Every edition includes the Remote Desktop client, but only Pro and higher can accept incoming RDP sessions.","1.3"],
+ [1,"Which Windows feature, managed fully in Pro and higher, encrypts entire drives?","BitLocker",["EFS","Windows Hello","Defender SmartScreen"],"BitLocker encrypts whole volumes, often with the TPM. EFS encrypts individual files and folders on NTFS.","1.3"],
+ [1,"Which tool shows the events recorded just before an application crashed?","Event Viewer",["Device Manager","Disk Management","Task Scheduler"],"Event Viewer holds the Application, System and Security logs. Look for error events at the time of the crash.","1.4"],
+ [1,"Which tool lets you roll back a graphics driver that started causing problems?","Device Manager",["Event Viewer","Performance Monitor","Disk Cleanup"],"In Device Manager, open the device's Driver tab and choose Roll Back Driver to return to the previous version.","1.4"],
+ [1,"A PC is slow to start. Where can you see and disable apps that launch at sign-in?","The Startup apps tab in Task Manager",["Disk Management","Device Manager","The Registry Editor's HKEY_USERS hive"],"Task Manager's startup list shows each app's impact so you can turn off ones that aren't needed.","1.4"],
+ [1,"Which tool records performance counters over a long period and saves them as reports?","Performance Monitor",["Resource Monitor","Task Manager","System Information"],"Performance Monitor uses data collector sets to log counters over time. Resource Monitor and Task Manager show live activity.","1.4"],
+ [1,"Which command scans protected Windows system files and replaces corrupted ones?","sfc /scannow",["chkdsk /f","gpupdate /force","ipconfig /renew"],"System File Checker restores damaged system files. chkdsk repairs the file system, not individual system files.","1.5"],
+ [1,"Which command applies new Group Policy settings without waiting for the next refresh?","gpupdate /force",["gpresult /r","sfc /scannow","net use"],"gpupdate /force reapplies every policy right away. gpresult only reports which policies apply.","1.5"],
+ [1,"Which command clears a PC's DNS cache after a website moved to a new IP address?","ipconfig /flushdns",["ipconfig /release","nslookup","netstat -a"],"Flushing the DNS cache removes stale entries so the next lookup gets the new address.","1.5"],
+ [1,"Which command copies a folder tree and can retry failed files and mirror the source?","robocopy",["copy","dir","format"],"Robocopy (Robust File Copy) handles large copies with retries, logs and mirroring. Plain copy handles only simple file copies.","1.5"],
+ [1,"Where in Windows 11 do you change the default app that opens PDF files?","Settings > Apps > Default apps",["Device Manager","Disk Management","Event Viewer"],"Default apps sets which program opens each file type or link type.","1.6"],
+ [1,"A user wants file name extensions to be visible. Where do you change this?","File Explorer Options or the View menu in File Explorer",["Power Options","Device Manager","Network and Sharing Center"],"Showing extensions helps users spot fake files such as invoice.pdf.exe.","1.6"],
+ [1,"Which setting controls what happens when a laptop's lid is closed?","Power Options",["Sound settings","Display settings","Time and language"],"Power Options sets the lid, power button and sleep behavior, and the power plan.","1.6"],
+ [1,"A laptop should treat a café's Wi-Fi as untrusted. Which network profile should it use?","Public",["Private","Domain","Metered"],"The Public profile turns off network discovery and file sharing and applies stricter firewall rules. Private is for trusted home networks.","1.7"],
+ [1,"Which command maps drive letter S: to a shared folder on a server?","net use S: \\\\server\\share",["net user S: \\\\server\\share","map S: server/share","ipconfig /map S:"],"net use connects a drive letter to an SMB share. net user manages accounts.","1.7"],
+ [1,"Where can a user set a manual proxy server for Windows apps?","Settings > Network & internet > Proxy",["Device Manager","Disk Management","Task Scheduler"],"The Proxy page sets automatic or manual proxy settings that browsers and many apps use.","1.7"],
+ [1,"Which macOS feature backs up the whole Mac to an external drive automatically?","Time Machine",["FileVault","Spotlight","Keychain"],"Time Machine keeps hourly, daily and weekly backups. FileVault encrypts the disk, Spotlight searches, and Keychain stores passwords.","1.8"],
+ [1,"Which macOS feature stores saved passwords and certificates?","Keychain",["Finder","Dock","Mission Control"],"Keychain Access manages passwords, keys and certificates, and iCloud Keychain syncs them across Apple devices.","1.8"],
+ [1,"Which macOS feature encrypts the startup disk?","FileVault",["Gatekeeper","Time Machine","Boot Camp"],"FileVault encrypts the whole disk. Gatekeeper controls which apps may run.","1.8"],
+ [1,"Which Linux command shows the directory you are currently in?","pwd",["ls","cd","whoami"],"pwd (print working directory) shows your location. ls lists files, cd changes directory, and whoami shows the current user.","1.9"],
+ [1,"Which Linux command changes a file's permissions?","chmod",["chown","sudo","grep"],"chmod sets read, write and execute permissions. chown changes the owner, and sudo runs a command as root.","1.9"],
+ [1,"Which command installs software on Ubuntu?","apt",["dnf","brew","msiexec"],"Debian-based systems such as Ubuntu use apt. Fedora and Red Hat use dnf, brew is for macOS, and msiexec installs Windows packages.","1.9"],
+ [1,"Before installing a program, what should you check first?","That the PC meets the app's system requirements, such as OS version, RAM and storage",["That the program has a dark theme","That the PC has a printer","That the monitor is 4K"],"Check the CPU type, 32- or 64-bit, RAM, storage and OS version before installing, to avoid failed installs and poor performance.","1.10"],
+ [1,"Can a 64-bit application run on a 32-bit version of Windows?","No. 64-bit apps need a 64-bit operating system",["Yes, always","Yes, in compatibility mode","Only if it's run as administrator"],"A 64-bit OS can run most 32-bit apps, but a 32-bit OS can't run 64-bit apps.","1.10"],
+ [1,"A business app must be installed on 200 PCs. What's the best way?","Deploy it centrally with management tools or Group Policy",["Email the installer to everyone","Install it from a USB drive at each desk","Ask users to download it from the web"],"Central deployment keeps installs consistent, licensed and tracked, and users don't need admin rights.","1.10"],
+ [1,"A user's files in OneDrive aren't showing up on their new laptop. What should you check first?","That they're signed in to OneDrive with the right account and sync is turned on",["The laptop's BIOS version","The printer driver","The DHCP lease time"],"Cloud storage syncs only when the client is signed in to the correct account and the folders are chosen for sync.","1.11"],
+ [1,"Which cloud productivity feature lets several people edit the same document at the same time?","Real-time co-authoring",["Offline mode","File compression","BitLocker"],"Cloud suites such as Microsoft 365 and Google Workspace let several editors work in one shared file at the same time.","1.11"],
+ [1,"How do you give a new employee Microsoft 365 apps and email in a cloud tenant?","Create the user account and assign a license",["Install Office from an old CD","Map a network drive","Create a DHCP reservation"],"In cloud suites, an account and a license unlock the apps, the mailbox and storage for that user.","1.11"],
+ [2,"Which physical security measure stops a second person walking in right behind someone who badged in?","An access control vestibule",["A cable lock","A privacy screen","A login banner"],"A vestibule (mantrap) has two doors that won't both open at once, so only one person passes at a time.","2.1"],
+ [2,"Which sign-in method combines something you know with something you have?","MFA, such as a password plus a code from an authenticator app",["Two different passwords","A long password","A username and a PIN"],"Multifactor authentication needs two different factor types. Two passwords are both something you know, so they count as only one factor.","2.1"],
+ [2,"Which principle gives each user only the access needed to do their job?","Least privilege",["Defense in depth","Single sign-on","Separation of duties"],"Least privilege limits the damage a compromised account or a mistake can cause.","2.1"],
+ [2,"What does a laptop cable lock protect against?","Someone walking off with the laptop",["Malware","Shoulder surfing","Phishing"],"A cable lock ties the laptop to a desk through its security slot to deter theft. It does nothing against digital threats.","2.1"],
+ [2,"Where in Windows can you allow one app through the firewall?","Windows Defender Firewall settings",["Device Manager","Disk Management","System Information"],"Use Allow an app through firewall, or advanced settings, to add rules for programs or ports.","2.2"],
+ [2,"Which Windows feature asks for confirmation before a program makes system-level changes?","UAC",["EFS","SmartScreen","BitLocker"],"User Account Control prompts for consent or admin credentials when an app needs elevated rights.","2.2"],
+ [2,"Which Windows account type should everyday users have?","Standard user",["Administrator","Guest","Power user"],"Standard accounts can't make system-wide changes, which limits what malware running as that user can do. Admins should use a separate account for admin work.","2.2"],
+ [2,"Which Windows feature signs in with a face scan or fingerprint?","Windows Hello",["BitLocker","UAC","Credential Manager"],"Windows Hello uses biometrics or a PIN tied to the device's TPM instead of typing a password.","2.2"],
+ [2,"Which wireless security protocol replaces the pre-shared key handshake with SAE?","WPA3",["WPA2","WEP","WPS"],"WPA3 uses Simultaneous Authentication of Equals, which resists offline password-guessing attacks. WPA2 personal uses a PSK handshake.","2.3"],
+ [2,"Which method checks wireless users against a central server instead of a shared passphrase?","WPA3-Enterprise with RADIUS",["WPA3-Personal","WEP","An open network"],"Enterprise mode uses 802.1X to authenticate each user with their own credentials on a RADIUS server, so one leaked password doesn't expose everyone.","2.3"],
+ [2,"Which authentication protocol uses tickets and is used in Windows Active Directory domains?","Kerberos",["RADIUS","TACACS+","TKIP"],"Kerberos issues time-limited tickets so users don't send passwords across the network for every resource.","2.3"],
+ [2,"Which malware encrypts a user's files and demands payment for the key?","Ransomware",["Spyware","Adware","A keylogger"],"Ransomware holds data hostage. Offline backups are the best defense.","2.4"],
+ [2,"Which malware disguises itself as useful software but carries a hidden payload?","A Trojan",["A worm","A rootkit","A virus that needs a host file"],"A Trojan relies on the user installing it. A worm spreads by itself, and a rootkit hides deep in the system.","2.4"],
+ [2,"Which malware records keystrokes to steal passwords?","A keylogger",["Ransomware","Adware","A boot sector virus"],"Keyloggers capture typing and send it to the attacker. MFA limits the damage from stolen passwords.","2.4"],
+ [2,"Which type of malware hides from the operating system and is often best removed by reimaging?","A rootkit",["Adware","A cryptominer","Spyware"],"Rootkits hide at the kernel or firmware level. Because they can't be trusted to be fully removed, reimaging is often the safest fix.","2.4"],
+ [2,"Which malware secretly uses a computer's CPU or GPU to earn cryptocurrency?","A cryptominer",["Ransomware","A keylogger","Spyware"],"Cryptominers cause constant high CPU use, heat and slow performance.","2.4"],
+ [2,"A caller claims to be from IT and asks a user for their password to fix an account. What is this?","Vishing",["Smishing","Whaling","Tailgating"],"Vishing is voice phishing. Smishing uses text messages, and whaling targets executives.","2.5"],
+ [2,"Someone reads a password off a coworker's screen from behind them. What is this called?","Shoulder surfing",["Dumpster diving","Tailgating","Impersonation"],"Privacy screens and awareness help prevent shoulder surfing.","2.5"],
+ [2,"Attackers search a company's trash for printed passwords and documents. What is this?","Dumpster diving",["Phishing","Shoulder surfing","Evil twin"],"Shredding sensitive paper defeats dumpster diving.","2.5"],
+ [2,"An attack uses a software flaw that the vendor doesn't know about yet. What is it called?","A zero-day attack",["A brute force attack","An on-path attack","A DoS attack"],"With a zero-day, no patch exists yet, so defenders rely on other layers such as least privilege and endpoint protection.","2.5"],
+ [2,"A fake access point uses the same name as the café's real Wi-Fi to capture traffic. What is this?","An evil twin",["Whaling","Spoofed caller ID","Tailgating"],"An evil twin imitates a legitimate network. Users should use a VPN on public Wi-Fi and check the network before connecting.","2.5"],
+ [2,"In the malware removal process, what comes right after investigating and verifying the symptoms?","Quarantine the infected system",["Disable System Restore","Remediate the system","Educate the end user"],"The order is: investigate and verify, quarantine, disable System Restore, remediate, schedule scans and updates, enable System Restore and create a restore point, then educate the user.","2.6"],
+ [2,"Why should you turn off System Restore while removing malware?","Restore points may hold copies of the malware",["It speeds up the antivirus scan","Windows requires it for updates","It frees memory for the scan"],"Restore points could reinfect the PC later. After cleanup, turn System Restore back on and create a clean restore point.","2.6"],
+ [2,"What's the final step of the malware removal process?","Educate the end user",["Quarantine the system","Update the antivirus definitions","Reimage the system"],"Teaching the user how the infection happened helps stop it happening again.","2.6"],
+ [2,"Why do you quarantine an infected PC before cleaning it?","To keep the malware from spreading to other systems",["To speed up Windows","To back up the infection","To make the user's files read-only"],"Disconnect it from the network so the malware can't spread or receive commands while you work.","2.6"],
+ [2,"Which setting locks a PC automatically when the user walks away?","A screen saver or lock screen timeout that requires a password",["A higher screen resolution","A longer DHCP lease","Turning off the firewall"],"An automatic lock stops passers-by using an unattended, signed-in session. Users should also press Windows+L when they leave.","2.7"],
+ [2,"Why disable AutoRun and AutoPlay for removable media?","So malware on a USB drive can't launch automatically",["To save battery","To speed up file copies","To allow more USB devices"],"Disabling automatic launching stops infected media from running code the moment it is plugged in.","2.7"],
+ [2,"What's a good practice for the built-in Administrator account?","Disable it or rename it, and set a strong password",["Use it for daily work","Share it among technicians","Remove its password"],"Attackers target well-known default accounts. Give each technician a named account instead.","2.7"],
+ [2,"Which setting removes a phone's data after too many failed passcode attempts?","A wipe after a set number of failed unlock attempts",["Airplane mode","Location services","Bluetooth discovery"],"This protects data on a lost or stolen phone from someone guessing the passcode.","2.8"],
+ [2,"A company phone is lost. Which action protects the data on it?","Remote wipe through MDM",["Turn on Wi-Fi calling","Change the ringtone","Back up the SIM"],"MDM can lock, locate or wipe a lost device remotely.","2.8"],
+ [2,"Why should users install phone apps only from official app stores?","Store apps are vetted, which lowers the risk of malware",["They are always free","They never need updates","They don't use data"],"Sideloading apps from unknown sources skips review and is a common way malware gets onto phones.","2.8"],
+ [2,"Which method destroys a hard drive's data while leaving the drive reusable?","An overwrite or secure erase",["Degaussing","Shredding","Incineration"],"Overwriting or secure erase sanitizes the drive so it can be reused. Degaussing and physical destruction ruin the drive.","2.9"],
+ [2,"What does degaussing do to a hard drive?","It erases the data with a strong magnetic field and usually ruins the drive",["It encrypts the drive","It defragments the drive","It only deletes the partition table"],"Degaussing scrambles the magnetic platters. It doesn't work on SSDs, which store data electronically.","2.9"],
+ [2,"A third party destroys a company's old drives. What should the company get from it?","A certificate of destruction",["A license key","A warranty extension","A restore point"],"The certificate documents which drives were destroyed and how, as proof for audits and compliance.","2.9"],
+ [2,"Why doesn't a quick format securely erase a drive?","It only clears the file system, so the data can still be recovered",["It encrypts the data","It destroys the platters","It only works on SSDs"],"A quick format removes the file index, not the data. Use an overwrite, secure erase or destruction instead.","2.9"],
+ [2,"Which SOHO router feature should be turned off because its PIN can be brute forced?","WPS",["WPA3","DHCP","NAT"],"Wi-Fi Protected Setup's PIN mode has a known weakness that lets attackers recover the network key.","2.10"],
+ [2,"Visitors need internet access without reaching the office's printers and file shares. What should you set up?","A separate guest network",["Port forwarding","A DHCP reservation","A shorter SSID"],"A guest network isolates visitors from internal devices.","2.10"],
+ [2,"Why update a SOHO router's firmware?","To fix security vulnerabilities and bugs",["To make the SSID longer","To reset the Wi-Fi password","To add more physical ports"],"Router firmware has vulnerabilities like any software. Check for updates regularly or turn on automatic updates.","2.10"],
+ [2,"Which browser feature opens a window that doesn't keep history or cookies after it's closed?","Private browsing mode",["Pop-up blocker","Password manager","Extensions"],"Private (incognito) mode doesn't save local history or cookies, but the network and websites can still see your activity.","2.11"],
+ [2,"How should you add browser extensions on company PCs?","Only from trusted sources, approved by IT",["From any site offering them","Through email attachments","Always as many as possible"],"Malicious extensions can read every page you visit. Install only what's needed, from official stores.","2.11"],
+ [2,"A browser warns that a site's certificate is invalid. What should a user do?","Not enter any information, and report it if it's a company site",["Ignore the warning and continue","Clear the cache and continue","Turn off the browser's security"],"An invalid certificate can mean an on-path attack or a fake site. Never enter passwords on it.","2.11"],
+ [3,"Windows shows a blue screen with a stop code right after a new driver was installed. What should you try first?","Boot into Safe Mode and roll back or remove the driver",["Replace the motherboard","Reinstall all applications","Format the drive"],"Safe Mode loads only basic drivers, so you can undo the change that caused the crash.","3.1"],
+ [3,"Windows is very slow, and Task Manager shows the disk at 100% all the time. What should you investigate?","Which process is using the disk, and the drive's health",["The monitor's refresh rate","The printer queue","The Wi-Fi channel"],"Constant disk use comes from heavy processes, updates or malware, or a failing hard drive. Resource Monitor shows which process is responsible.","3.1"],
+ [3,"After an update, a PC won't boot normally. What can return the system files to a working state without touching personal files?","System Restore",["A clean install","Disk Cleanup","Reset this PC with Remove everything"],"System Restore rolls system files, drivers and the registry back to a restore point while leaving documents alone.","3.1"],
+ [3,"A profile loads slowly, and the user gets a temporary profile at sign-in. What's the likely cause?","A corrupted user profile",["A failed monitor","A bad Ethernet cable","An expired SSL certificate"],"Windows loads a temporary profile when the real one can't load. Back up the data, then rebuild the profile.","3.1"],
+ [3,"An application keeps crashing after a Windows update. What's a reasonable first step?","Repair or reinstall the application, and check for an update to it",["Replace the hard drive","Remove the antivirus permanently","Disable Windows Update forever"],"Apps sometimes break after OS changes. Repair, update or reinstall the app, and check Event Viewer for details.","3.1"],
+ [3,"Windows boots to a black screen with a cursor after sign-in. Which tool can you use to restart the Explorer shell?","Task Manager",["Disk Management","Device Manager","System Information"],"Press Ctrl+Shift+Esc to open Task Manager, then restart Windows Explorer or run explorer.exe as a new task.","3.1"],
+ [3,"A phone app keeps closing right after it opens. What should you try first?","Force stop the app, clear its cache, and update it",["Factory reset the phone","Replace the battery","Turn off cellular data"],"Start with the least disruptive fixes. A factory reset is the last resort.","3.2"],
+ [3,"A phone's screen doesn't rotate when turned sideways. What should you check first?","Whether rotation lock is turned on",["The SIM card","The battery health","The Wi-Fi password"],"Rotation lock in the quick settings panel keeps the screen in one orientation.","3.2"],
+ [3,"A phone runs slowly and storage is almost full. What will help?","Free up storage by deleting unused apps and media or moving them to the cloud",["Lower the screen brightness","Turn on airplane mode","Change the ringtone"],"A nearly full drive slows the OS and stops updates from installing.","3.2"],
+ [3,"A phone won't install an OS update and says the download failed. What should you check?","Free storage space, battery level and network connection",["The screen protector","The phone case","The ringtone volume"],"Updates need storage space, enough charge (or a charger plugged in) and a stable connection.","3.2"],
+ [3,"A phone's apps can't send notifications since a recent change. Where should you look?","The phone's notification and battery-saving settings for those apps",["The SIM card tray","The camera settings","The display resolution"],"Battery savers and notification permissions can block apps from running or alerting in the background.","3.2"],
+ [3,"Bluetooth won't connect to a car that worked yesterday. What should you try first?","Remove the pairing on both devices and pair again",["Factory reset the phone","Replace the car's stereo","Turn off Wi-Fi permanently"],"Removing the old pairing clears bad keys between the devices. Toggling Bluetooth off and on also helps.","3.3"],
+ [3,"A phone's data usage has spiked and it runs hot even when idle. What could this point to?","Malware running in the background",["A cracked screen protector","A weak Wi-Fi password","A full voicemail box"],"Unexpected data use, heat and battery drain are common signs of malicious apps. Check the usage per app and remove suspicious ones.","3.3"],
+ [3,"A phone shows pop-ups even on the home screen. What's the most likely cause?","An adware app",["A damaged digitizer","A full SIM card","A faulty charger"],"System-wide ads usually come from a recently installed app. Uninstall it, starting with apps installed around when the pop-ups started.","3.3"],
+ [3,"A user's phone has apps they never installed and settings that changed by themselves. What should you suspect?","The phone is compromised, and may have been sideloaded or rooted",["A weak battery","Too many photos","An outdated case"],"Unknown apps and changes point to compromise. Back up only data, then factory reset and update the phone.","3.3"],
+ [3,"A phone's location and microphone are being used by an app that shouldn't need them. What should you do?","Revoke those permissions and remove the app if it isn't needed",["Turn off the phone's screen lock","Grant it more permissions","Ignore it"],"Unnecessary permissions are a privacy risk and a sign of a malicious app. Review permissions regularly.","3.3"],
+ [3,"A browser keeps redirecting searches to an unknown search engine. What's most likely?","A browser hijacker, often a malicious extension",["A failed network card","A full hard drive","An expired license key"],"Remove unknown extensions and reset the browser settings, then scan for malware.","3.4"],
+ [3,"Antivirus definitions won't update, and security websites won't load, but other sites do. What does this suggest?","Malware is blocking security tools, possibly by changing the hosts file or DNS settings",["The monitor driver is outdated","The printer is offline","The CPU is overheating"],"Malware often blocks security updates. Check the hosts file and DNS settings, then clean the PC from a trusted boot environment.","3.4"],
+ [3,"A user's files have new extensions and won't open, and a note asks for payment. What should you do first?","Disconnect the PC from the network",["Pay the ransom","Restart the PC repeatedly","Email the note to coworkers"],"Isolating the PC stops ransomware spreading to shares and other PCs. Then follow the incident response plan and restore from backup.","3.4"],
+ [3,"A user's sent folder has emails they never wrote, sent to all their contacts. What's the likely cause?","The email account was compromised",["The mailbox is full","The spam filter is too strict","The PC's clock is wrong"],"Reset the password, turn on MFA, check for forwarding rules the attacker added, and scan the PC.","3.4"],
+ [3,"Windows Security shows real-time protection turned off, and it keeps turning off again. What does this suggest?","Possible malware tampering with security settings",["A normal Windows update","A failing monitor","A low battery"],"Malware often disables security tools. Investigate and scan with offline or boot-time tools.","3.4"],
+ [3,"A PC shows fake security warnings telling the user to call a phone number. What is this?","A tech support scam or rogue antivirus",["A real Microsoft alert","A driver update","A printer error"],"Legitimate security tools never ask you to call a number from a pop-up. Close the browser and scan the system.","3.4"],
+ [4,"Where should a technician record the steps taken to fix a user's problem?","In the ticket in the ticketing system",["In a personal notebook","In an email to themselves","Nowhere, since it's fixed"],"Tickets record the problem, the steps taken and the result, which builds history and a knowledge base.","4.1"],
+ [4,"Which document tracks every device, its owner and its location?","An asset inventory",["An acceptable use policy","An incident report","A network diagram"],"Inventory records support tracking, audits, warranties and lifecycle planning.","4.1"],
+ [4,"What's a knowledge base article used for?","Documenting known issues and their fixes so others can resolve them quickly",["Storing passwords","Recording employee salaries","Replacing the ticket system"],"Knowledge base articles turn one technician's fix into a repeatable procedure.","4.1"],
+ [4,"Before making a change to a production system, what does change management require?","An approved change request with a rollback plan",["Only the technician's judgment","An email to the user afterward","Nothing if the change is small"],"Change requests record the purpose, scope, risk, test results, timing and backout plan, and are approved before work starts.","4.2"],
+ [4,"What is a rollback plan?","Steps to undo a change if it fails",["A list of people to notify","A schedule of backups","The test results"],"If a change causes problems, the rollback plan returns the system to its previous state quickly.","4.2"],
+ [4,"Who usually reviews and approves significant changes?","A change advisory board",["The newest technician","Each affected end user","The vendor's sales team"],"The CAB weighs the risk and business impact before approving a change and its timing.","4.2"],
+ [4,"Which backup type copies only files changed since the last backup of any kind?","Incremental",["Full","Differential","Synthetic full"],"Incremental backups are fast, but a restore needs the full backup plus every incremental since. Differential backups copy everything since the last full backup.","4.3"],
+ [4,"What does the 3-2-1 backup rule mean?","Three copies of the data, on two types of media, with one off-site",["Three backups a day, two a week, one a month","Three servers, two sites, one cloud","Back up three times before restoring once"],"3-2-1 protects against hardware failure, site disasters and ransomware.","4.3"],
+ [4,"Why test backups regularly?","To make sure the data can actually be restored",["To speed up the backup jobs","To reduce storage costs","Because backups expire"],"A backup you can't restore is worthless. Regular test restores prove the process works.","4.3"],
+ [4,"What should you wear when replacing RAM to avoid damaging it?","An antistatic wrist strap connected to ground",["Rubber gloves","Safety glasses only","Nothing, if the PC is off"],"ESD can damage parts without visible signs. Ground yourself with a wrist strap and work on an antistatic mat.","4.4"],
+ [4,"What's the safe way to lift a heavy server?","Lift with your legs, keep your back straight, and get help when needed",["Bend at the waist and lift quickly","Lift with your arms only","Twist while lifting"],"Proper lifting technique prevents back injuries. Use a team lift or a cart for heavy equipment.","4.4"],
+ [4,"Which fire extinguisher class is for electrical fires?","Class C",["Class A","Class B","Class D"],"Class C (in the US) covers energized electrical equipment. A is ordinary combustibles, B is flammable liquids, and D is metals.","4.4"],
+ [4,"Where do you find how to safely handle and dispose of a toner cartridge?","Its SDS",["The printer driver","The warranty card","The router manual"],"Safety data sheets describe hazards, handling, spills and disposal for chemical products.","4.5"],
+ [4,"How should old lithium-ion batteries be disposed of?","Recycled according to local regulations",["Thrown in the regular trash","Burned","Buried"],"Batteries contain hazardous materials and can start fires. Use approved recycling programs.","4.5"],
+ [4,"Which device protects equipment from power sags and short outages?","A UPS",["A surge protector only","A power strip","A KVM switch"],"An uninterruptible power supply uses its battery to ride through sags and outages. A surge protector only clips spikes.","4.5"],
+ [4,"A technician finds illegal content on a PC during a repair. What should they do?","Stop, preserve the evidence, and report it through the proper channels",["Delete it","Copy it to show coworkers","Ignore it and finish the repair"],"Follow company policy and keep a chain of custody. Changing anything can ruin the evidence.","4.6"],
+ [4,"Which document records everyone who handled evidence, and when?","A chain of custody",["An end user license agreement","A change request","An acceptable use policy"],"A chain of custody proves the evidence wasn't tampered with, so it can be used in legal action.","4.6"],
+ [4,"Which software license lets users view, change and share the source code?","Open source",["Proprietary commercial","Personal use only","OEM"],"Open-source licenses grant access to the source code. Commercial licenses usually forbid copying and changing the software.","4.6"],
+ [4,"Which data must be protected because it identifies a person, such as a Social Security number?","PII",["PCI","DRM","EULA"],"Personally identifiable information can identify an individual and is protected by privacy laws.","4.6"],
+ [4,"A customer is upset about a repeated problem. What should a technician do first?","Listen without interrupting and acknowledge the frustration",["Argue about who caused it","Talk about their own day","Promise a fix before diagnosing"],"Active listening and empathy calm the situation and help you understand the problem.","4.7"],
+ [4,"A technician must take a personal call while at a customer's desk. What's appropriate?","Avoid personal calls while working with the customer",["Answer and talk on speaker","Text while the customer explains","Step away without saying anything"],"Professionalism means giving the customer your full attention and avoiding distractions.","4.7"],
+ [4,"How should a technician explain a fix to a non-technical user?","In plain language, without jargon",["Using as many acronyms as possible","By sending a link to the RFC","Not at all"],"Clear, simple explanations build trust and help users avoid the problem next time.","4.7"],
+ [4,"Which scripting file extension runs PowerShell scripts?",".ps1",[".bat",".sh",".py"],".ps1 is PowerShell. .bat is a Windows batch file, .sh is a Linux shell script and .py is Python.","4.8"],
+ [4,"What's a common use of scripts for technicians?","Automating repetitive tasks such as mapping drives or installing updates",["Replacing hardware","Designing websites by hand","Writing user manuals"],"Scripts save time and keep tasks consistent, such as restarting services or collecting inventory.","4.8"],
+ [4,"What's a risk of running scripts from the internet without reviewing them?","They might change system settings or install malware",["They always run slowly","They delete the recycle bin","They can't run on Windows"],"Review scripts before running them, and test them first, because a script can do anything your account can.","4.8"],
+ [4,"Which remote access tool gives a full graphical desktop of a Windows PC?","RDP",["SSH","Telnet","SFTP"],"Remote Desktop Protocol shows the remote desktop. SSH gives an encrypted command line.","4.9"],
+ [4,"A help desk technician needs to see a user's screen while the user watches, without a VPN. Which tool fits?","A screen-sharing remote support tool",["Telnet","FTP","A DHCP reservation"],"Remote support tools let the user approve the session and watch while the technician works.","4.9"],
+ [4,"What's the main security concern with leaving remote access tools open to the internet?","Attackers can brute force or exploit them to take control",["They use too much disk space","They slow down printing","They change the screen resolution"],"Limit remote access with a VPN, MFA and patching, and restrict who can connect.","4.9"],
+ [4,"An AI chatbot gives a confident answer that turns out to be made up. What is this called?","A hallucination",["Data bias","Overfitting","Encryption"],"AI models can produce plausible but false information, so check important answers against reliable sources.","4.10"],
+ [4,"Why should employees avoid pasting confidential company data into a public AI chatbot?","The data may be stored or used outside the company's control",["It makes the chatbot slower","The chatbot will refuse to answer","It deletes the original file"],"Use only approved AI tools with suitable data protections, and follow the company's AI policy.","4.10"]
+];
 
 /* ---------------- Exams ---------------- */
 const SEC_DOMAINS = {
@@ -2891,7 +3387,10 @@ const GAMES={
   osi:{n:"OSI Stack",lbl:"Scavenging · 12 items",d:"Place devices, protocols and PDUs on the correct layer. Every correct answer scavenges scrap and XP.",c:"var(--blue)",rec:p=>p.best.osi,fmt:v=>`Best: ${v}/12`},
   control:{n:"Control Sort",lbl:"Scavenging · 10 controls",d:"Classify each security control by category and by type. Every correct pick scavenges scrap and XP.",c:"var(--orange)",rec:p=>p.best.control,fmt:v=>`Best: ${v}/20`},
   attack:{n:"Attack Match",lbl:"60 seconds",d:"Name the attack from its indicator. A wrong answer costs 3 seconds.",c:"var(--blue)",rec:p=>p.best.attack,fmt:v=>`Best: ${v}`},
-  subnet:{n:"Subnet Sprint",lbl:"Endless",d:"Work out network, broadcast, host ranges and masks by hand.",c:"var(--brown)",rec:p=>p.best.subnet,fmt:v=>`Best streak: ${v}`}
+  subnet:{n:"Subnet Sprint",lbl:"Endless",d:"Work out network, broadcast, host ranges and masks by hand.",c:"var(--brown)",rec:p=>p.best.subnet,fmt:v=>`Best streak: ${v}`},
+  hardware:{n:"Hardware Match",lbl:"60 seconds",d:"Name the connector, cable, part or tool from its description. A wrong answer costs 3 seconds.",c:"var(--blue)",rec:p=>p.best.hardware,fmt:v=>`Best: ${v}`},
+  command:{n:"Command Match",lbl:"60 seconds",d:"Pick the Windows or Linux command for each job. A wrong answer costs 3 seconds.",c:"var(--green)",rec:p=>p.best.command,fmt:v=>`Best: ${v}`},
+  wintool:{n:"Tool Match",lbl:"60 seconds",d:"Pick the Windows tool or settings page for each job. A wrong answer costs 3 seconds.",c:"var(--orange)",rec:p=>p.best.wintool,fmt:v=>`Best: ${v}`}
 };
 const EXAMS={
   net:{id:"net",name:"Network+",full:"CompTIA Network+",code:"N10-009",ready:true,color:"#19F0FF",
@@ -2905,7 +3404,20 @@ const EXAMS={
     tagline:"Threats, architecture, security operations and governance.",
     blurb:"Answer practice questions across all five SY0-701 domains, sort security controls by category and type, and name attacks from their indicators against the clock.",
     DOMAINS:SEC_DOMAINS,Q:SEC_Q,OBJ:SEC_OBJ,GUIDE:SEC_GUIDE,TIER:{1:1,2:2,3:1,4:3,5:2},MOCK_SPLIT:{1:11,2:20,3:16,4:25,5:18},PASS:750,UPG:SEC_UPG,WPN:SEC_WPN,
-    games:["ports","control","attack"]}
+    games:["ports","control","attack"]},
+  a1:{id:"a1",name:"A+ Core 1",full:"CompTIA A+ Core 1",code:"220-1201",ready:true,color:"#FFB020",
+    foes:"A+ Core 1 nights bring static-charged sparks, fast power surges and armored chassis brutes that soak up extra rounds.",
+    tagline:"Mobile devices, networking, hardware, virtualization and cloud, and troubleshooting.",
+    blurb:"Answer practice questions across all five 220-1201 domains, drill the A+ ports against the clock, and name connectors, parts and tools from their descriptions.",
+    DOMAINS:A1_DOMAINS,Q:A1_Q,OBJ:A1_OBJ,GUIDE:null,TIER:{1:1,2:2,3:2,4:1,5:3},MOCK_SPLIT:{1:12,2:21,3:22,4:10,5:25},PASS:675,UPG:A1_UPG,WPN:A1_WPN,
+    games:["ports","hardware"],
+    ports:["FTP","SSH / SFTP / SCP","Telnet","SMTP","DNS","DHCP","HTTP","POP3","NetBIOS","IMAP","SNMP","LDAP","HTTPS","SMB","RDP"]},
+  a2:{id:"a2",name:"A+ Core 2",full:"CompTIA A+ Core 2",code:"220-1202",ready:true,color:"#9CFF57",
+    foes:"A+ Core 2 nights bring phishing zombies, rootkits that flicker out of sight, and trojan brutes that release two more zombies when they fall.",
+    tagline:"Operating systems, security, software troubleshooting and operational procedures.",
+    blurb:"Answer practice questions across all four 220-1202 domains, and match commands and Windows tools to the job against the clock.",
+    DOMAINS:A2_DOMAINS,Q:A2_Q,OBJ:A2_OBJ,GUIDE:null,TIER:{1:2,2:2,3:3,4:1},MOCK_SPLIT:{1:25,2:25,3:21,4:19},PASS:700,UPG:A2_UPG,WPN:A2_WPN,
+    games:["command","wintool"]}
 };
 // The current exam's content and progress. setExam() points these at one exam.
 let EX=null,P=null,DOMAINS=NET_DOMAINS,Q=NET_Q,OBJ=NET_OBJ,GUIDE=NET_GUIDE,TIER=NET_TIER,MOCK_SPLIT=NET_MOCK_SPLIT,PASS=720,UPG=NET_UPG,WPN=NET_WPN;
