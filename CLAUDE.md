@@ -44,7 +44,7 @@ Each question is one line in `Q`:
 - Questions are original practice items, never copied from real exams or third-party question banks.
 - `MOCK_SPLIT` must stay fillable from the bank: each domain needs at least that many questions.
 - Network+ bank: 365 questions. Domain 1: 102, domain 2: 61, domain 3: 65, domain 4: 58, domain 5: 79. Every objective has at least 10 questions. Questions 147–218 were written to fill the gaps a coverage check against the Network+ study guide found, especially 1.2 and 2.4, which had none. Questions 219–266 added domain 2 and 4 subtopics from the guide's chapter openings, 267–317 did the same for domains 3 and 5, and 318–364 for domain 1.
-- Security+ bank: 308 questions. Domain 1: 46, domain 2: 61, domain 3: 47, domain 4: 97, domain 5: 57, with at least 9 per objective. Questions 174–217 filled domain 3 and 5 subtopics that had no questions, 218–263 did the same for domains 1 and 2, and 264–307 for domain 4. Its mock split is 11/20/16/25/18 and the pass mark is 750. They were written from the subtopic lists in the owner's Security+ books, never copied from them.
+- Security+ bank: 338 questions. Domain 1: 46, domain 2: 61, domain 3: 47, domain 4: 97, domain 5: 87, with at least 9 per objective. Questions 174–217 filled domain 3 and 5 subtopics that had no questions, 218–263 did the same for domains 1 and 2, 264–307 for domain 4, and 308–337 for domain 5. Its mock split is 11/20/16/25/18 and the pass mark is 750. They were written from the subtopic lists in the owner's Security+ books, never copied from them.
 
 ## Abbreviation behavior (requested by the owner)
 
