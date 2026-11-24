@@ -267,6 +267,14 @@ body.global-mode nav.tabs{display:none}
 .chip[disabled]{cursor:default}
 .loot{display:inline-block;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--ok-bg);color:var(--ok);animation:lootpop .35s ease-out}
 @keyframes lootpop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+body.exam-paused #app{filter:brightness(.35) saturate(.5);user-select:none;transition:filter .25s}
+.dock.is-paused canvas{filter:brightness(.5) saturate(.6)}
+.dpause{position:absolute;z-index:3;left:50%;top:55%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 32px));max-height:calc(100% - 16px);overflow:auto;padding:16px 18px;background:rgba(8,13,18,.94);border:1px solid var(--tp-amb);text-align:center;display:flex;flex-direction:column;gap:10px;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);box-shadow:inset 0 0 30px rgba(255,176,32,.12)}
+.dpause .pt{font-family:var(--f-display);font-size:clamp(24px,4vw,32px);letter-spacing:.24em;color:var(--tp-amb);text-shadow:0 0 12px rgba(255,176,32,.5)}
+.dpause .ps{font-size:13px;color:var(--tp-dim)}
+.dpause .pst{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--tp-dim)}
+.dpause .pst b{color:var(--tp-ink)}
+.dpause .bb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
@@ -846,7 +854,7 @@ function bindShop(root,after){root.querySelectorAll(".up").forEach(b=>b.onclick=
 
 /* ---------------- Outpost defense (bottom dock) ---------------- */
 const D=(function(){
-  let dock=null,cv,ctx,hudEl,W=0,H=0,dpr=1,raf=0,last=0,ro=null,bg=null,G=null,paused=false,shopOpen=false,nextFn=null,hudT=0,saveT=0,top0=40;
+  let dock=null,cv,ctx,hudEl,W=0,H=0,dpr=1,raf=0,last=0,ro=null,bg=null,G=null,paused=false,shopOpen=false,nextFn=null,restartFn=null,hudT=0,saveT=0,top0=40;
   const $=id=>dock?dock.querySelector("#"+id):null;
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const U=()=>Math.max(0.8,H/300);
@@ -868,11 +876,13 @@ const D=(function(){
       </div>
       <div class="dstatus" id="dStatus"></div>
       <div class="dbanner" id="dBanner" hidden></div>
+      <div class="dpause" id="dPauseMenu" role="dialog" aria-label="Paused" hidden></div>
       <div class="dshop" id="dShopP" hidden><div class="dshop-h"><span>ARMORY</span><button class="tpbtn" id="dShopX">Close</button></div><div id="dShopGrid"></div><p class="dnote">The fight pauses while the armory is open. Purchases take effect immediately, and ammo goes straight to the guns.</p></div>
     </div>`;
     document.body.appendChild(dock);document.body.classList.add("has-dock");
     cv=dock.querySelector("canvas");ctx=cv.getContext("2d");hudEl=dock.querySelector(".dhud");
-    $("dPause").onclick=()=>{paused=!paused;$("dPause").textContent=paused?"Resume":"Pause";};
+    $("dPause").onclick=()=>setPause(!paused);
+    document.addEventListener("keydown",onPauseKey);
     $("dShop").onclick=()=>toggleShop(true);
     $("dShopX").onclick=()=>toggleShop(false);
     if(window.ResizeObserver){ro=new ResizeObserver(resize);ro.observe(dock.querySelector(".dock-in"));}else window.addEventListener("resize",resize);
@@ -881,8 +891,9 @@ const D=(function(){
   function unmount(){
     if(!dock)return;
     cancelAnimationFrame(raf);if(ro){ro.disconnect();ro=null;}else window.removeEventListener("resize",resize);
+    setPause(false);document.removeEventListener("keydown",onPauseKey);
     dock.remove();dock=null;G=null;document.body.classList.remove("has-dock");
-    paused=false;shopOpen=false;nextFn=null;save();
+    shopOpen=false;nextFn=null;restartFn=null;save();
   }
   function resize(){
     if(!dock)return;const box=dock.querySelector(".dock-in");
@@ -900,7 +911,7 @@ const D=(function(){
     const c=cfg();
     G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,quizDone:false,bonus:0,railY:0};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
-    layout();hideBanner();toggleShop(false);paused=false;if($("dPause"))$("dPause").textContent="Pause";hud();
+    layout();hideBanner();toggleShop(false);setPause(false);hud();
   }
   function spawn(t){
     const n=G.night,b=t==="b",span=W-wallX();
@@ -959,6 +970,31 @@ const D=(function(){
       if(G){const o=G.c;G.c=cfg();if(G.status!=="lost")G.wall=Math.min(G.c.wallMax,G.wall+(G.c.wallMax-o.wallMax));layout();}
       renderShop();hud();
     });
+  }
+  // Pausing freezes the horde, shows a pause menu over the dock, and darkens and locks the quick exam above.
+  function setPause(v){
+    if(v&&!live())v=false;
+    paused=v;
+    const app=document.getElementById("app");if(app)app.inert=v;
+    document.body.classList.toggle("exam-paused",v);
+    if(!dock)return;
+    dock.classList.toggle("is-paused",v);
+    $("dPause").textContent=v?"Resume":"Pause";
+    const m=$("dPauseMenu");m.hidden=!v;
+    if(!v)return;
+    m.innerHTML=`<div class="pt">PAUSED</div>
+      <div class="ps">The horde is frozen and your quick exam is on hold.</div>
+      <div class="pst"><span>QUESTION <b>${G.wave||1}/${G.waves||"—"}</b></span><span>HOSTILES <b>${G.enemies.length}</b></span><span>WALL <b>${Math.ceil(G.wall)}</b></span><span>AMMO <b>${G.ammo}</b></span></div>
+      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button></div>
+      <div class="ps">Press P or Esc to resume. Restart begins this quick exam again from question 1 with a fresh night. Quitting ends the night. Answers so far are saved either way.</div>`;
+    m.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p;
+      if(k==="resume")setPause(false);else if(k==="shop")toggleShop(true);else if(k==="restart"){setPause(false);restartFn&&restartFn();}else{setPause(false);location.hash="home";}});
+    m.querySelector('[data-p="resume"]').focus({preventScroll:true});
+  }
+  function onPauseKey(e){
+    if(!dock||e.target.tagName==="INPUT"||shopOpen)return;
+    if(e.key==="p"||e.key==="P"){e.preventDefault();setPause(!paused);}
+    else if(e.key==="Escape"&&paused){e.preventDefault();setPause(false);}
   }
   function hud(){
     if(!G||!dock)return;
@@ -1201,7 +1237,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,setNext:f=>{nextFn=f;}};
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -1576,8 +1612,9 @@ function startQuiz(pool,label,again){
   D.mount();D.newRound();
   st.again=again||startExam;
   D.setNext(()=>st.again());
+  D.setRestart(()=>startQuiz(pool,label,again));
   const onKey=e=>{
-    if(e.target.tagName==="INPUT")return;
+    if(e.target.tagName==="INPUT"||D.isPaused())return;
     if(!st.done&&/^[1-4]$/.test(e.key)){const b=$app.querySelectorAll(".opt")[+e.key-1];if(b&&!b.disabled)b.click();}
     else if(e.key==="Enter"){const n=document.getElementById("next");if(n){e.preventDefault();n.click();}}
   };

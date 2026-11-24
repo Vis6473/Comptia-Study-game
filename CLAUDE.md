@@ -65,6 +65,7 @@ Each question is one line in `Q`:
 ## Outpost defense (`D` module)
 
 - Each Quick Exam is one night. `startQuiz` calls `D.mount()` and `D.newRound()`. Each question calls `D.wave(i,total)`, which starts the endless spawning. A correct answer calls `D.correct(reward,streak)` (adds ammo). A wrong answer calls `D.wrong()` (adds a brute). `quizResult` calls `D.final()`.
+- **Pause:** `setPause(v)` in `D` freezes the fight, shows the `#dPauseMenu` overlay (Resume, Restart exam, Armory, Quit to home), dims the quiz with `body.exam-paused` and sets `#app.inert` so it can't be clicked or tabbed into. P toggles and Esc resumes (`onPauseKey`), and the quiz's own key handler checks `D.isPaused()`. Restart calls the function `startQuiz` registers with `D.setRestart`, which reruns the same question pool with a fresh night. `unmount` and `newRound` always clear the pause.
 - The horde spawns without end until the last question is answered. Then `final()` launches a bomber that clears the field, and `win()` advances `S.base.night`. If the wall falls first, the night is lost and the player retries it. Status values are `live`, `air`, `won` and `lost`.
 - Zombie variants: `spawn()` sets `e.v`. Network+ uses `walker` and `brute`. Security+ uses `bot` (a walker with an antenna), `worm` (60% hp, 1.7× speed, drawn by `drawWorm`) and `ransom` (a brute that wipes 3 ammo a second at the wall). `e.t` (`w` or `b`) still decides size, health bars and scrap. Security+ tracers are cyan.
 - Economy:
