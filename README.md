@@ -1,6 +1,6 @@
 # Cyber Zombie Attack
 
-A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY0-701)** and **CompTIA A+**, which is split into its two exams: **A+ Core 1 (220-1201)** and **A+ Core 2 (220-1202)**. You answer exam questions to keep a zombie horde off your outpost. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
+A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY0-701)**, **CompTIA A+**, which is split into its two exams, **A+ Core 1 (220-1201)** and **A+ Core 2 (220-1202)**, and **ISC2 CISSP**. You answer exam questions to keep a zombie horde off your outpost. It is a single HTML file with no build step and no dependencies apart from Google Fonts.
 
 ## Main menu, settings and high scores
 
@@ -28,9 +28,13 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Attack Match:** 60 seconds to name the attack behind each indicator or scenario, such as password spraying, an evil twin or a logic bomb. A wrong answer costs 3 seconds, and the attacks you missed are listed at the end.
 - **Review:** the same review queue and study plan as Network+. Each weak objective links to its chapters in the Security+ Study Guide and to that domain's chapter in the Security+ Practice Tests book, with the question and answer pages.
 
-## CISSP (coming soon)
+## CISSP modes (ISC2)
 
-The main menu has a slot for ISC2's CISSP, marked Arriving soon. Its eight domains are set up, but it has no questions or modes yet.
+- **Quick Exams + Outpost Defense:** 10-question rounds from 185 original questions covering all 62 objectives in the eight CISSP domains (2024 outline).
+- **Mock Exam:** 100 questions in 120 minutes, split 16/10/13/13/13/12/13/10 by the domain weights. The real CISSP is adaptive, with 100 to 150 questions in up to 3 hours, so this is a fixed-length approximation. Scores are estimated on ISC2's 0–1000 scale, with a pass mark of 700.
+- **Concept Match:** 60 seconds to name CISSP concepts from their descriptions: security models such as Bell-LaPadula and Biba, risk terms, access control models, federation, recovery sites, crypto attacks and more.
+- **Attack Match:** the same attack drill as Security+, with its own high score.
+- **Review:** the review queue and study plan, with a CISSP video search for each weak objective and a link to find ISC2's exam outline.
 
 ## A+ Core 1 modes (220-1201)
 
@@ -70,12 +74,12 @@ The main menu has a slot for ISC2's CISSP, marked Arriving soon. Its eight domai
   | 5.0 Security Program Management and Oversight | Hard | +25 ammo, +10 scrap |
   | 4.0 Security Operations | Elite | +30 ammo, +15 scrap |
 
-- **A+ rewards:** Core 1 pays Standard for 1.0 Mobile Devices and 4.0 Virtualization and Cloud Computing, Hard for 2.0 Networking and 3.0 Hardware, and Elite for 5.0 Hardware and Network Troubleshooting. Core 2 pays Standard for 4.0 Operational Procedures, Hard for 1.0 Operating Systems and 2.0 Security, and Elite for 3.0 Software Troubleshooting.
-- **Zombies:** Network+ nights bring walkers and brutes. Security+ nights bring botnet zombies, fast fragile worms and ransomware brutes, which encrypt (wipe) 3 rounds of ammo every second they stay at the wall. A+ Core 1 nights bring static-charged sparks, fast power surges and armored chassis brutes with 30% more health. A+ Core 2 nights bring phishers, rootkits that flicker half out of sight with extra health, and trojan brutes that release two phishers when they're destroyed.
+- **A+ rewards:** Core 1 pays Standard for 1.0 Mobile Devices and 4.0 Virtualization and Cloud Computing, Hard for 2.0 Networking and 3.0 Hardware, and Elite for 5.0 Hardware and Network Troubleshooting. Core 2 pays Standard for 4.0 Operational Procedures, Hard for 1.0 Operating Systems and 2.0 Security, and Elite for 3.0 Software Troubleshooting. CISSP pays Standard for domains 2, 5 and 6, Hard for 1, 4, 7 and 8, and Elite for 3.0 Security Architecture and Engineering.
+- **Zombies:** Network+ nights bring walkers and brutes. Security+ nights bring botnet zombies, fast fragile worms and ransomware brutes, which encrypt (wipe) 3 rounds of ammo every second they stay at the wall. A+ Core 1 nights bring static-charged sparks, fast power surges and armored chassis brutes with 30% more health. A+ Core 2 nights bring phishers, rootkits that flicker half out of sight with extra health, and trojan brutes that release two phishers when they're destroyed. CISSP nights bring insiders in suits, fast spies, and APT brutes that heal 3% of their health every second unless you finish them off.
 - **Wrong answers** draw an extra brute into the fight (a ransomware brute in Security+). Three correct answers in a row earn bonus scrap.
 - **Scrap** is shared by every exam. It buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights and the mini-games.
 - **Ammo supplies:** buy ammo crates and pallets with scrap, or an airdrop of 200 rounds with XP. During a night the ammo goes straight to the guns. Otherwise it's stockpiled for your next night.
-- **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Security+ has the Sandbox trap, EDR pulse, Honeypot mine and Kill switch at the same prices, and its base upgrades are Patch level, Threat feed, Sensor node, Hardened firewall and Backup cache. A+ Core 1 has the Overheat vent, ESD arc, Toner bomb and Laser printer beam, with Overclocked turrets, Liquid cooling, Expansion slot, Surge protector and RAM upgrade. A+ Core 2 has the Quarantine pit, Group Policy chain, Disk wipe charge and Safe Mode beam, with Admin rights, Task Scheduler, Remote session, BitLocker wall and Restore point. Your level still counts all the XP you've ever earned.
+- **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Security+ has the Sandbox trap, EDR pulse, Honeypot mine and Kill switch at the same prices, and its base upgrades are Patch level, Threat feed, Sensor node, Hardened firewall and Backup cache. A+ Core 1 has the Overheat vent, ESD arc, Toner bomb and Laser printer beam, with Overclocked turrets, Liquid cooling, Expansion slot, Surge protector and RAM upgrade. A+ Core 2 has the Quarantine pit, Group Policy chain, Disk wipe charge and Safe Mode beam, with Admin rights, Task Scheduler, Remote session, BitLocker wall and Restore point. CISSP has the Incident response team, Kill chain breaker, Cryptographic mine and Zero Trust lance, with Defense in depth, Continuous monitoring, Security architecture, Hardened perimeter and Risk reserve. Your level still counts all the XP you've ever earned.
 - **Focus mode:** while a quick exam (or review round) runs, only the exam and the outpost are on screen. The header, tabs and footer come back when you leave through the result screen or the pause menu.
 - **Pause:** the Pause button (or P) freezes the horde and puts the quick exam on hold: the exam dims and ignores clicks and keys, and a pause menu over the horde shows the question, hostiles, wall and ammo. From there you can resume (or press Esc), restart the quick exam from question 1 with a fresh night, open the armory, or quit to home. Answers already given stay recorded.
 - **Nights:** keep the wall standing until the bomber clears the field to advance to the next night, where the horde gets bigger and tougher.

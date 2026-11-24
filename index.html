@@ -836,7 +836,7 @@ const KEY = "netplus-patch-bay-v1";
 const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
-function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,mock:null},missedPorts:{},answered:0};}
+function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0};}
 function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
@@ -927,7 +927,7 @@ const GL={
  "PXE":"Preboot Execution Environment","RAM":"random access memory","VRAM":"video random access memory","SATA":"Serial Advanced Technology Attachment",
  "SDS":"safety data sheet","SIM":"subscriber identity module","SOHO":"small office/home office","SSD":"solid-state drive","UAC":"User Account Control",
  "UEFI":"Unified Extensible Firmware Interface","USB":"Universal Serial Bus","UTP":"unshielded twisted pair","VDI":"virtual desktop infrastructure",
- "VGA":"Video Graphics Array","WPA":"Wi-Fi Protected Access","TKIP":"Temporal Key Integrity Protocol","ONT":"optical network terminal","DVI":"Digital Visual Interface","GPS":"Global Positioning System","ISC2":"International Information System Security Certification Consortium","CISSP":"Certified Information Systems Security Professional","UPnP":"Universal Plug and Play","CFO":"chief financial officer","PID":"process ID","CCMP":"Counter Mode Cipher Block Chaining Message Authentication Code Protocol","RC4":"Rivest Cipher 4","DES":"Data Encryption Standard","PHI":"protected health information","RMM":"remote monitoring and management","VNC":"Virtual Network Computing","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
+ "VGA":"Video Graphics Array","WPA":"Wi-Fi Protected Access","TKIP":"Temporal Key Integrity Protocol","BC":"business continuity","BIA":"business impact analysis","CER":"crossover error rate","EER":"equal error rate","COBIT":"Control Objectives for Information and Related Technologies","CPTED":"Crime Prevention Through Environmental Design","CWE":"Common Weakness Enumeration","DAST":"dynamic application security testing","SAST":"static application security testing","SCA":"software composition analysis","DR":"disaster recovery","EAL":"evaluation assurance level","FERPA":"Family Educational Rights and Privacy Act","ISA":"interconnection security agreement","ITIL":"Information Technology Infrastructure Library","KDC":"key distribution center","KPI":"key performance indicator","MTD":"maximum tolerable downtime","RTP":"Real-time Transport Protocol","SRTP":"Secure Real-time Transport Protocol","SBOM":"software bill of materials","TGT":"ticket-granting ticket","TOCTOU":"time-of-check to time-of-use","OWASP":"Open Worldwide Application Security Project","XML":"Extensible Markup Language","ONT":"optical network terminal","DVI":"Digital Visual Interface","GPS":"Global Positioning System","ISC2":"International Information System Security Certification Consortium","CISSP":"Certified Information Systems Security Professional","UPnP":"Universal Plug and Play","CFO":"chief financial officer","PID":"process ID","CCMP":"Counter Mode Cipher Block Chaining Message Authentication Code Protocol","RC4":"Rivest Cipher 4","DES":"Data Encryption Standard","PHI":"protected health information","RMM":"remote monitoring and management","VNC":"Virtual Network Computing","RSA":"Rivest-Shamir-Adleman","ECC":"elliptic curve cryptography","SHA":"Secure Hash Algorithm","KRI":"key risk indicator","RFID":"radio-frequency identification","APT":"advanced persistent threat","MSP":"managed service provider","XSS":"cross-site scripting",
  "ASLR":"address space layout randomization","VM":"virtual machine","HIPS":"host-based intrusion prevention system","NIDS":"network intrusion detection system",
  "UTM":"unified threat management","NGFW":"next-generation firewall","CASB":"cloud access security broker","EAP":"Extensible Authentication Protocol",
  "COPE":"corporate-owned, personally enabled","CYOD":"choose your own device","MDM":"mobile device management","CVSS":"Common Vulnerability Scoring System",
@@ -1102,8 +1102,9 @@ const D=(function(){
   // Network+: walkers and brutes. Security+: botnet zombies, fast fragile worms, and ransomware brutes that
   // encrypt (wipe) ammo at the wall. A+ Core 1: sparks, fast power surges and armored chassis brutes.
   // A+ Core 2: phishers, rootkits that flicker out of sight, and trojan brutes that release two phishers when killed.
-  const FOE={worm:{hp:0.6,sp:1.7,dps:1.4},surge:{hp:0.7,sp:1.5,dps:1.6},chassis:{hp:1.3},rootkit:{hp:1.25}};
-  const VARIANTS={net:["walker","walker","brute"],sec:["bot","worm","ransom"],a1:["spark","surge","chassis"],a2:["phish","rootkit","trojan"]};
+  // CISSP: insiders in suits, fast spies, and APT brutes that slowly heal themselves (3% of max health a second).
+  const FOE={worm:{hp:0.6,sp:1.7,dps:1.4},surge:{hp:0.7,sp:1.5,dps:1.6},chassis:{hp:1.3},rootkit:{hp:1.25},spy:{hp:0.8,sp:1.4,dps:2}};
+  const VARIANTS={net:["walker","walker","brute"],sec:["bot","worm","ransom"],a1:["spark","surge","chassis"],a2:["phish","rootkit","trojan"],cissp:["insider","spy","apt"]};
   function mkFoe(t,v,x,y){
     const n=G.night,b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
@@ -1223,7 +1224,7 @@ const D=(function(){
         G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
     }
     const u=U(),wx=wallX(),line=wx+8*u;
-    for(const e of G.enemies){e.hit-=dt;if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;
+    for(const e of G.enemies){e.hit-=dt;if(e.v==="apt"&&e.hp>0&&e.hp<e.max)e.hp=Math.min(e.max,e.hp+e.max*0.03*dt);if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
     const vis=G.enemies.filter(e=>e.x<W-6).sort((a,b)=>a.x-b.x);
     G.turrets.forEach((t,i)=>{
@@ -1357,16 +1358,19 @@ const D=(function(){
     if(V==="spark"||V==="surge"){if(Math.sin(e.ph*5)>0){ctx.strokeStyle="#FFE27A";ctx.lineWidth=0.8*s;ctx.beginPath();ctx.moveTo(x+1*s,y-26*s);ctx.lineTo(x+3*s,y-28.5*s);ctx.lineTo(x+1.5*s,y-29*s);ctx.lineTo(x+3.5*s,y-32*s);ctx.stroke();}}
     if(V==="chassis"){ctx.strokeStyle="#B8C2CC";ctx.lineWidth=0.7*s;ctx.strokeRect(x-3*s,y-18.5*s,6*s,10*s);ctx.fillStyle="#B8C2CC";[[-2,-17.5],[2,-17.5],[-2,-9.5],[2,-9.5]].forEach(([a,c])=>{ctx.beginPath();ctx.arc(x+a*s,y+c*s,0.5*s,0,7);ctx.fill();});}
     if(V==="phish"){ctx.strokeStyle="#B9CCFF";ctx.lineWidth=0.6*s;ctx.beginPath();ctx.moveTo(x-0.5*s,y-25*s);ctx.lineTo(x+3*s,y-30*s);ctx.lineTo(x+3*s,y-26.5*s);ctx.stroke();ctx.beginPath();ctx.arc(x+2.2*s,y-26.5*s,0.8*s,0,Math.PI);ctx.stroke();}
+    if(V==="insider"){ctx.strokeStyle="#C0392B";ctx.lineWidth=0.9*s;ctx.beginPath();ctx.moveTo(x,y-18.5*s);ctx.lineTo(x,y-12*s);ctx.stroke();}
+    if(V==="spy"){ctx.fillStyle="#0A0A0E";ctx.fillRect(x-4.8*s,y-23.6*s,4.4*s,1.6*s);}
+    if(V==="apt"&&e.hp<e.max&&Math.sin(e.ph*3)>0){ctx.strokeStyle="rgba(179,136,255,.7)";ctx.lineWidth=0.6*s;ctx.beginPath();ctx.arc(x,y-14*s,9*s,0,7);ctx.stroke();}
     if(V==="trojan"){ctx.strokeStyle="rgba(40,24,10,.7)";ctx.lineWidth=0.6*s;ctx.beginPath();for(let k=1;k<4;k++){ctx.moveTo(x-3.5*s,y-19*s+k*2.75*s);ctx.lineTo(x+3.5*s,y-19*s+k*2.75*s);}ctx.stroke();}
     if(b){const w=14*s;ctx.fillStyle="rgba(0,0,0,.6)";ctx.fillRect(x-w/2,y-30*s,w,2.5*u);ctx.fillStyle="#FF2BD6";ctx.fillRect(x-w/2,y-30*s,w*Math.max(0,e.hp/e.max),2.5*u);}
     ctx.globalAlpha=1;
   }
   // Zombie colors per variant: [body, skin], and eyes: [glow, pupil].
   const PAL={walker:["#4A5E4C","#7C9A74"],brute:["#6B3B4A","#9A6A72"],bot:["#3D4A57","#8FA3B3"],ransom:["#4A2A2E","#A8786E"],
-    spark:["#4D4A33","#C9B46A"],surge:["#55502F","#E0CC70"],chassis:["#5B6470","#8C8F7A"],phish:["#2F3D55","#7FA0C8"],rootkit:["#3A2A4A","#8E7AA8"],trojan:["#6B4B2A","#A88B62"]};
-  const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"];
-  const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU};
-  const TRC={sec:"120,240,255",a2:"156,255,87"}; // tracer colors; others amber
+    spark:["#4D4A33","#C9B46A"],surge:["#55502F","#E0CC70"],chassis:["#5B6470","#8C8F7A"],phish:["#2F3D55","#7FA0C8"],rootkit:["#3A2A4A","#8E7AA8"],trojan:["#6B4B2A","#A88B62"],insider:["#2E3440","#B8A08A"],spy:["#1B1B22","#9C8C7A"],apt:["#3B2B5A","#8F7FB0"]};
+  const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"],PUR=["rgba(179,136,255,.45)","#D9C7FF"];
+  const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU,insider:PUR,spy:PUR,apt:PUR};
+  const TRC={sec:"120,240,255",a2:"156,255,87",cissp:"179,136,255"}; // tracer colors; others amber
   function drawBomber(x,y,u){
     // ground shadow
     ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(x-10*u,(fTop()+fBot())/2+30*u,34*u,6*u,0,0,7);ctx.fill();
@@ -1467,10 +1471,10 @@ function examStats(id){
 }
 function viewMenu(){
   const card=id=>{const X=EXAMS[id];
-    if(!X.ready)return `<div class="ocard off" style="--oc:${X.color}"><span class="ocode">${X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
+    if(!X.ready)return `<div class="ocard off" style="--oc:${X.color}"><span class="ocode">${X.badge||X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
       <div class="ostats" style="grid-template-columns:1fr"><div><span>Status</span><b style="font-size:16px">Arriving soon</b></div></div><span class="ogo">Questions are being written</span></div>`;
     const t=examStats(id);
-    return `<button class="ocard" data-ex="${id}" style="--oc:${X.color}"><span class="ocode">${X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
+    return `<button class="ocard" data-ex="${id}" style="--oc:${X.color}"><span class="ocode">${X.badge||X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
       <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
       <span class="ogo">Defend with ${X.name} →</span></button>`;};
   $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
@@ -1547,7 +1551,7 @@ function resetPart(k){
 function viewScores(){
   const B=S.base;
   const exBoard=id=>{const X=EXAMS[id],p=S.ex[id],m=p.best.mock,hist=p.mockHistory.slice(-5).reverse();
-    return `<div class="panel stack"><div class="row" style="justify-content:space-between"><div><span class="label">${X.code}</span><h3 style="font-size:22px;margin-top:2px">${X.name}</h3></div>${X.ready?"":`<span class="chip-s">Arriving soon</span>`}</div>
+    return `<div class="panel stack"><div class="row" style="justify-content:space-between"><div><span class="label">${X.badge||X.code}</span><h3 style="font-size:22px;margin-top:2px">${X.name}</h3></div>${X.ready?"":`<span class="chip-s">Arriving soon</span>`}</div>
       <div class="board">
         <div><small>Best mock exam</small><b>${m?m.scaled:"—"}</b><small>${m?`${m.pass?"Pass":"Below "+X.PASS} · ${esc(m.date)}`:"Not taken yet"}</small></div>
         <div><small>Best quick exam</small><b>${p.best.quick?p.best.quick+"/10":"—"}</b><small>10-question rounds</small></div>
@@ -1626,12 +1630,13 @@ function drawScoreCard(){
   shown.forEach((e,i)=>{const {X,p}=e,bx=x0+(i%cols)*(bw+gap),y=y0+Math.floor(i/cols)*(bh+gap),m=p.best.mock,col=X.color,px=bx+(sm?20:26);
     g.fillStyle="rgba(13,19,28,.92)";g.fillRect(bx,y,bw,bh);g.strokeStyle=col;g.lineWidth=2;g.strokeRect(bx+1,y+1,bw-2,bh-2);
     g.fillStyle=col;g.fillRect(bx,y,6,bh);
-    g.fillStyle=MU;g.font=mono(sm?12:14);g.fillText(X.code,px,y+(sm?28:34));g.fillStyle=INK;g.font=disp(700,sm?22:28);g.fillText(fit(g,X.name,bw-(sm?36:52)),px,y+(sm?56:66));
+    const k=sm?Math.min(1,bh/209):1; // shrink the compact boxes when three rows are needed
+    g.fillStyle=MU;g.font=mono(sm?Math.round(12*k):14);g.fillText(X.badge||X.code,px,y+(sm?28*k:34));g.fillStyle=INK;g.font=disp(700,sm?Math.round(22*k):28);g.fillText(fit(g,X.name,bw-(sm?36:52)),px,y+(sm?54*k:66));
     if(sm){
-      g.fillStyle=MU;g.font=mono(11);g.fillText("BEST MOCK (EST.)",px,y+92);g.fillText("BEST QUICK",px+122,y+92);
-      g.font=disp(700,32);g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",px,y+130);
-      g.fillStyle=p.best.quick?INK:MU;g.fillText(p.best.quick?p.best.quick+"/10":"—",px+122,y+130);
-      if(m){g.font=mono(12);g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(m.pass?"PASS":"BELOW "+X.PASS,px,y+154);}
+      g.fillStyle=MU;g.font=mono(Math.round(11*k));g.fillText("BEST MOCK (EST.)",px,y+88*k);g.fillText("BEST QUICK",px+122,y+88*k);
+      g.font=disp(700,Math.round(32*k));g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",px,y+124*k);
+      g.fillStyle=p.best.quick?INK:MU;g.fillText(p.best.quick?p.best.quick+"/10":"—",px+122,y+124*k);
+      if(m){g.font=mono(Math.round(12*k));g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(m.pass?"PASS":"BELOW "+X.PASS,px,y+148*k);}
       return;
     }
     g.fillStyle=MU;g.font=mono(13);g.fillText("BEST MOCK (EST.)",px,y+100);g.fillText("BEST QUICK EXAM",bx+270,y+100);
@@ -1685,7 +1690,7 @@ function setupScoreCard(){
 
 /* ---------------- Router ---------------- */
 let cleanup = null;
-const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool};
+const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool,concept:viewConcept};
 const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
 function route(){
   if(cleanup){cleanup();cleanup=null;}
@@ -1746,7 +1751,7 @@ function viewHome(){
       <div class="label" style="margin-bottom:10px">Training modes</div>
       <div class="modes">
         <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Quick Exams</h3><p>Each quick exam is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
-        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">90 min</span><h3>Mock Exam</h3><p>A timed 90-question exam weighted like the real ${EX.code}.</p><span class="best">${P.mock?"In progress: "+fmtTime(P.mock.ends-Date.now())+" left":P.mockHistory.length?"Last score: "+P.mockHistory[P.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
+        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">${EX.MOCK_MIN||90} min</span><h3>Mock Exam</h3><p>A timed ${MOCK_N()}-question exam weighted like the real ${EX.code}.</p><span class="best">${P.mock?"In progress: "+fmtTime(P.mock.ends-Date.now())+" left":P.mockHistory.length?"Last score: "+P.mockHistory[P.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
         ${gameCards()}
       </div>
     </section>
@@ -1835,11 +1840,16 @@ function practiceLink(d){
   return `<span class="src static">Practice Tests · Domain ${d}.0 <small>questions p. ${bp}, answers p. ${abp}</small></span>`;
 }
 const guideShort=o=>GUIDE?(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", "):"";
+// Study links. CompTIA exams point to Professor Messer and CompTIA; ISC2's CISSP points to a CISSP video search and ISC2.
+const isISC2=()=>EX&&EX.ORG==="ISC2";
 const SRC={
-  messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent("Professor Messer "+EX.code+" "+o+" "+OBJ[o][1]),
+  messerSearch:o=>"https://www.youtube.com/results?search_query="+encodeURIComponent((isISC2()?"CISSP domain "+o[0]+" ":"Professor Messer "+EX.code+" "+o+" ")+OBJ[o][1]),
+  videoName:()=>isISC2()?"CISSP videos":"Professor Messer videos",
   messerSite:"https://www.professormesser.com/",
-  objectives:()=>"https://www.google.com/search?q="+encodeURIComponent("CompTIA "+EX.name+" "+EX.code+" exam objectives PDF"),
-  comptiaSite:"https://www.comptia.org/"
+  objectives:()=>"https://www.google.com/search?q="+encodeURIComponent(isISC2()?"ISC2 CISSP exam outline PDF":"CompTIA "+EX.name+" "+EX.code+" exam objectives PDF"),
+  objName:()=>isISC2()?"ISC2 exam outline":"CompTIA exam objectives",
+  comptiaSite:"https://www.comptia.org/",
+  isc2Site:"https://www.isc2.org/"
 };
 const REVIEW_CLEAR=2; // correct answers in a row needed to clear a missed question
 // Updates stats and the review queue for one answered question; returns a short status note.
@@ -1889,7 +1899,7 @@ function viewReview(){
   <div class="panel">
     <span class="label">Study plan</span>
     <h3 style="font-size:22px;margin:4px 0 6px">What to go over next</h3>
-    <p class="muted" style="margin:0 0 14px;max-width:64ch">Built from your review queue and your accuracy on each ${EX.code} exam objective. Read the key facts, watch the matching Professor Messer video, then practice that objective until it clears.</p>
+    <p class="muted" style="margin:0 0 14px;max-width:64ch">Built from your review queue and your accuracy on each ${EX.code} exam objective. Read the key facts, watch a matching ${isISC2()?"CISSP":"Professor Messer"} video, then practice that objective until it clears.</p>
     ${weak.length?weak.map((r,ix)=>{
       const a=pct(r.c,r.w),notes=r.queue.concat(r.past).slice(0,6);
       return `<details class="obj"${ix<3?" open":""}>
@@ -1897,7 +1907,7 @@ function viewReview(){
         <div class="obj-body">
           ${GUIDE?`<div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp]=GUIDE.ch[c];
             return `<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>`:""}
-          <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.objectives(),"CompTIA exam objectives","official PDF")}</div>
+          <div class="srcs">${link(SRC.messerSearch(r.o),SRC.videoName(),"objective "+r.o)}${link(SRC.objectives(),SRC.objName(),"official PDF")}</div>
           ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
           <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
         </div></details>`;}).join("")
@@ -1907,9 +1917,8 @@ function viewReview(){
     <span class="label">Study sources</span>
     <h3 style="font-size:18px;margin:4px 0 10px">Where to learn more</h3>
     <div class="srcs">
-      ${link(SRC.messerSite,"Professor Messer",`free ${EX.code} video course and notes`)}
-      ${link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
-      ${link(SRC.objectives(),`${EX.code} exam objectives`,"find the official PDF")}
+      ${isISC2()?link(SRC.isc2Site,"ISC2","official CISSP certification page and exam outline"):link(SRC.messerSite,"Professor Messer",`free ${EX.code} video course and notes`)+link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
+      ${link(SRC.objectives(),`${EX.code} ${isISC2()?"exam outline":"exam objectives"}`,"find the official PDF")}
       ${GUIDE?`<span class="src static">Your study guide <small>${GUIDE.title}</small></span>`:""}
       ${GUIDE&&GUIDE.practice?`<span class="src static">Your practice tests <small>${GUIDE.practice.title}</small></span>`:""}
     </div>
@@ -1968,7 +1977,7 @@ function quizResult(st){
   D.final();
   if(st.label==="Quick Exam"&&st.pool.length===10)P.best.quick=Math.max(P.best.quick||0,st.correct);
   const p=Math.round(100*st.correct/st.pool.length);
-  const msg=p>=90?"Exam-ready on this set.":p>=72?`Solid. The real exam needs ${PASS} on a 100–900 scale, so aim for ${Math.round((PASS-100)/8)+3}% or better in practice.`:"Your misses are now in the review queue. Clear them next.";
+  const msg=p>=90?"Exam-ready on this set.":p>=72?`Solid. The real exam needs ${PASS} on a ${scaleTxt()} scale, so aim for ${passPct()+3}% or better in practice.`:"Your misses are now in the review queue. Clear them next.";
   $app.innerHTML=`<div class="panel result stack">
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
@@ -1980,16 +1989,19 @@ function quizResult(st){
 }
 
 /* ---------------- Mock exam ---------------- */
-const MOCK_N=90, MOCK_MS=90*60000;
+// Each exam can set its own mock length (MOCK_N), time (MOCK_MIN, minutes), score scale (SCALE) and scoring body (ORG).
+const MOCK_N=()=>(EX&&EX.MOCK_N)||90, MOCK_MS=()=>((EX&&EX.MOCK_MIN)||90)*60000;
+const SCALE=()=>(EX&&EX.SCALE)||[100,900], scaleTxt=()=>SCALE()[0]+"–"+SCALE()[1];
+const passPct=()=>Math.round(100*(PASS-SCALE()[0])/(SCALE()[1]-SCALE()[0]));
 const NET_MOCK_SPLIT={1:21,2:18,3:17,4:13,5:21}; // N10-009 weights (23/20/19/14/24%) applied to 90 questions
 const fmtTime=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");};
-const scaled=pct=>Math.round(100+800*pct);
+const scaled=pct=>Math.round(SCALE()[0]+(SCALE()[1]-SCALE()[0])*pct);
 function buildMock(){
   let ids=[];
   Object.entries(MOCK_SPLIT).forEach(([d,n])=>{ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>String(Q[i][0])===d)).slice(0,n));});
-  if(ids.length<MOCK_N)ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>!ids.includes(i))).slice(0,MOCK_N-ids.length));
+  if(ids.length<MOCK_N())ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>!ids.includes(i))).slice(0,MOCK_N()-ids.length));
   ids=shuffle(ids);
-  return {ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1),flag:ids.map(()=>0),cur:0,ends:Date.now()+MOCK_MS,start:Date.now()};
+  return {ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1),flag:ids.map(()=>0),cur:0,ends:Date.now()+MOCK_MS(),start:Date.now()};
 }
 function viewMock(){
   if(P.mock){if(!P.mock.pausedAt&&Date.now()>=P.mock.ends)return submitMock(true);return runMock();}
@@ -2000,8 +2012,8 @@ function mockIntro(){
   const hist=P.mockHistory.slice(-5).reverse();
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
-      <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">90 questions. 90 minutes.</h2></div>
-      <p class="muted" style="margin:0;max-width:64ch">This runs like the real ${EX.code}. Questions are split across the five domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The exam opens full screen. You can pause it at any time, which stops the clock. Quitting or leaving the exam ends it and erases your answers. The pass mark is ${PASS} on the 100–900 scale.</p>
+      <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">${MOCK_N()} questions. ${(EX.MOCK_MIN||90)} minutes.</h2></div>
+      <p class="muted" style="margin:0;max-width:64ch">${EX.mockNote||`This runs like the real ${EX.code}.`} Questions are split across the ${Object.keys(DOMAINS).length} domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The exam opens full screen. You can pause it at any time, which stops the clock. Quitting or leaving the exam ends it and erases your answers. The pass mark is ${PASS} on the ${scaleTxt()} scale.</p>
       <div class="domains">${Object.entries(DOMAINS).map(([k,d])=>`<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${MOCK_SPLIT[k]} Qs</span></div>`).join("")}</div>
       <p class="muted small" style="margin:0">The real exam also has performance-based questions (simulations), which this mock doesn't include. Keys: 1–4 to answer, ← and → to move, F to flag, P or Esc to pause.</p>
       <div><button class="btn primary" id="mstart">Start mock exam</button></div>
@@ -2143,7 +2155,7 @@ function submitMock(timedOut){
     recordAnswer(id,ok);
   });
   const n=M.ids.length,pct=correct/n,sc=scaled(pct),pass=sc>=PASS;
-  const used=Math.min(MOCK_MS,Date.now()-M.start-(M.pausedTotal||0));
+  const used=Math.min(MOCK_MS(),Date.now()-M.start-(M.pausedTotal||0));
   P.mockLast={ids:M.ids,opts:M.opts,ans:M.ans,correct,n,scaled:sc,pass,dom,used,timedOut};
   P.mockHistory.push({date:new Date().toLocaleDateString(),scaled:sc,correct,n,pass});
   if(!P.best.mock||sc>P.best.mock.scaled)P.best.mock={scaled:sc,correct,n,pass,date:new Date().toLocaleDateString()};
@@ -2158,8 +2170,8 @@ function mockResults(){
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div class="row" style="justify-content:space-between"><span class="label">Mock exam result${L.timedOut?" · time ran out":""}</span><span class="passchip ${L.pass?"pass":"fail"}">${L.pass?"PASS":"FAIL"}</span></div>
-      <div class="result" style="padding:0"><div class="big">${L.scaled}<span class="muted" style="font-size:28px"> / 900</span></div></div>
-      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. CompTIA doesn't publish how it scales scores, so this maps your percentage straight onto the 100–900 scale, where ${PASS} is about ${Math.round((PASS-100)/8)}%. Aim for 85% or better on mocks before booking the real exam.</p>
+      <div class="result" style="padding:0"><div class="big">${L.scaled}<span class="muted" style="font-size:28px"> / ${SCALE()[1]}</span></div></div>
+      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. ${EX.ORG||"CompTIA"} doesn't publish how it scales scores, so this maps your percentage straight onto the ${scaleTxt()} scale, where ${PASS} is about ${passPct()}%. Aim for 85% or better on mocks before booking the real exam.</p>
       <div class="mstats">
         <div><span class="label">Correct</span><b>${L.correct}/${L.n}</b></div>
         <div><span class="label">Percent</span><b>${pct}%</b></div>
@@ -2867,6 +2879,7 @@ const MATCH={
   attack:{n:"Attack Match",h:"Name the attack. 60 seconds.",d:"Each prompt describes an indicator or scenario. Pick the attack behind it.",rows:()=>ATTACKS,col:["Indicator you missed","Attack"]},
   hardware:{n:"Hardware Match",h:"Name the part. 60 seconds.",d:"Each prompt describes a connector, cable, component or tool. Pick what it is.",rows:()=>HARDWARE,col:["Description you missed","Answer"]},
   command:{n:"Command Match",h:"Name the command. 60 seconds.",d:"Each prompt is a job to do at the Windows or Linux command line. Pick the command that does it.",rows:()=>COMMANDS,col:["Task you missed","Command"],mono:true},
+  concept:{n:"Concept Match",h:"Name the concept. 60 seconds.",d:"Each prompt describes a CISSP concept, such as a security model, risk term, access control model or recovery site. Pick its name.",rows:()=>CONCEPTS,col:["Description you missed","Concept"]},
   wintool:{n:"Tool Match",h:"Name the Windows tool. 60 seconds.",d:"Each prompt is a job to do in Windows. Pick the tool or settings page for it.",rows:()=>WINTOOLS,col:["Task you missed","Tool"]}
 };
 function viewMatch(k){
@@ -2882,6 +2895,7 @@ function viewAttack(){viewMatch("attack");}
 function viewHardware(){viewMatch("hardware");}
 function viewCommand(){viewMatch("command");}
 function viewWintool(){viewMatch("wintool");}
+function viewConcept(){viewMatch("concept");}
 function runMatch(k){
   const M=MATCH[k],ROWS=M.rows(),DUR=60000;let end=Date.now()+DUR,score=0,cur=null,locked=false;const misses=[];
   $app.innerHTML=`<div class="panel" id="bz">
@@ -3547,6 +3561,290 @@ const A2_Q = [ // [domain, question, correct, [wrong x3], explanation, objective
  [2,"Where should a technician download a web browser from?","The browser vendor's official site or the OS app store",["A pop-up ad offering a faster browser","A file-sharing site","An email attachment from an unknown sender"],"Official sources reduce the risk of bundled malware. Some vendors also publish hashes to verify the download.","2.11"]
 ];
 
+/* ---------------- CISSP content ---------------- */
+// ISC2 CISSP objectives (2024 outline), with a short topic used to search for study videos.
+const CISSP_OBJ={
+ "1.1":["Understand, adhere to, and promote professional ethics","ISC2 code of ethics"],
+ "1.2":["Understand and apply security concepts","security concepts"],
+ "1.3":["Evaluate, apply, and sustain security governance principles","security governance"],
+ "1.4":["Understand legal, regulatory, and compliance issues that pertain to information security in a holistic context","legal and regulatory issues"],
+ "1.5":["Understand requirements for investigation types","investigation types"],
+ "1.6":["Develop, document, and implement security policy, standards, procedures, and guidelines","security policy"],
+ "1.7":["Identify, analyze, assess, prioritize, and implement business continuity (BC) requirements","business continuity requirements"],
+ "1.8":["Contribute to and enforce personnel security policies and procedures","personnel security"],
+ "1.9":["Understand and apply risk management concepts","risk management"],
+ "1.10":["Understand and apply threat modeling concepts and methodologies","threat modeling"],
+ "1.11":["Apply supply chain risk management (SCRM) concepts","supply chain risk management"],
+ "1.12":["Establish and maintain a security awareness, education, and training program","security awareness"],
+ "2.1":["Identify and classify information and assets","data classification"],
+ "2.2":["Establish information and asset handling requirements","asset handling"],
+ "2.3":["Provision information and assets securely","asset provisioning"],
+ "2.4":["Manage data lifecycle","data lifecycle"],
+ "2.5":["Ensure appropriate asset retention","asset retention"],
+ "2.6":["Determine data security controls and compliance requirements","data security controls"],
+ "3.1":["Research, implement, and manage engineering processes using secure design principles","secure design principles"],
+ "3.2":["Understand the fundamental concepts of security models","security models"],
+ "3.3":["Select controls based upon systems security requirements","selecting controls"],
+ "3.4":["Understand security capabilities of information systems (IS)","information system security capabilities"],
+ "3.5":["Assess and mitigate the vulnerabilities of security architectures, designs, and solution elements","architecture vulnerabilities"],
+ "3.6":["Select and determine cryptographic solutions","cryptography"],
+ "3.7":["Understand methods of cryptanalytic attacks","cryptanalytic attacks"],
+ "3.8":["Apply security principles to site and facility design","site and facility design"],
+ "3.9":["Design site and facility security controls","facility security controls"],
+ "3.10":["Manage the information system lifecycle","system lifecycle"],
+ "4.1":["Apply secure design principles in network architectures","secure network architecture"],
+ "4.2":["Secure network components","network components"],
+ "4.3":["Implement secure communication channels according to design","secure communication channels"],
+ "5.1":["Control physical and logical access to assets","access control"],
+ "5.2":["Design identification and authentication strategy","identification and authentication"],
+ "5.3":["Federated identity with a third-party service","federated identity"],
+ "5.4":["Implement and manage authorization mechanisms","authorization mechanisms"],
+ "5.5":["Manage the identity and access provisioning lifecycle","identity lifecycle"],
+ "5.6":["Implement authentication systems","authentication systems"],
+ "6.1":["Design and validate assessment, test, and audit strategies","assessment strategies"],
+ "6.2":["Conduct security control testing","security control testing"],
+ "6.3":["Collect security process data","security process data"],
+ "6.4":["Analyze test output and generate report","test reporting"],
+ "6.5":["Conduct or facilitate security audits","security audits"],
+ "7.1":["Understand and comply with investigations","investigations"],
+ "7.2":["Conduct logging and monitoring activities","logging and monitoring"],
+ "7.3":["Perform configuration management (CM)","configuration management"],
+ "7.4":["Apply foundational security operations concepts","security operations concepts"],
+ "7.5":["Apply resource protection","resource protection"],
+ "7.6":["Conduct incident management","incident management"],
+ "7.7":["Operate and maintain detection and preventative measures","detective and preventive measures"],
+ "7.8":["Implement and support patch and vulnerability management","patch management"],
+ "7.9":["Understand and participate in change management processes","change management"],
+ "7.10":["Implement recovery strategies","recovery strategies"],
+ "7.11":["Implement disaster recovery (DR) processes","disaster recovery"],
+ "7.12":["Test disaster recovery plans (DRP)","DR testing"],
+ "7.13":["Participate in business continuity (BC) planning and exercises","BC exercises"],
+ "7.14":["Implement and manage physical security","physical security"],
+ "7.15":["Address personnel safety and security concerns","personnel safety"],
+ "8.1":["Understand and integrate security in the software development life cycle (SDLC)","secure SDLC"],
+ "8.2":["Identify and apply security controls in software development ecosystems","software development security controls"],
+ "8.3":["Assess the effectiveness of software security","software security assessment"],
+ "8.4":["Assess security impact of acquired software","acquired software"],
+ "8.5":["Define and apply secure coding guidelines and standards","secure coding"]
+};
+// CISSP armory: the same mechanics under CISSP names, with its own upgrade levels.
+const CISSP_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
+  {n:"Defense in depth",d:"+35% turret damage"},{n:"Continuous monitoring",d:"+20% turret fire rate"},{n:"Security architecture",d:"Adds another turret to the wall"},
+  {n:"Hardened perimeter",d:"+40 wall integrity"},{n:"Risk reserve",d:"+20 starting ammo and +5 per correct answer"}][i]));
+const CISSP_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
+  {n:"Incident response team",d:"Contains hostiles that reach the wall. Uses no ammo."},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
+  {n:"Cryptographic mine",d:"Shatters the densest pack with splash damage."},{n:"Zero Trust lance",d:"A beam that verifies, then destroys, every hostile in its lane."}][i]));
+// Concept Match (CISSP): [description, concept]
+const CONCEPTS=[
+ ["Security model: no read up, no write down","Bell-LaPadula"],["Integrity model: no read down, no write up","Biba"],
+ ["Integrity model built on well-formed transactions and separation of duties","Clark-Wilson"],["Model that stops conflicts of interest, also called the Chinese wall","Brewer-Nash"],
+ ["Annualized loss expectancy is calculated as","SLE × ARO"],["Responding to risk by buying insurance","Risk transfer"],
+ ["Stopping the activity that creates the risk","Risk avoidance"],["Risk left after controls are applied","Residual risk"],
+ ["Longest an organization can survive a function being down","MTD"],["Target time to restore a function after a disruption","RTO"],
+ ["Maximum acceptable data loss, measured in time","RPO"],["Threat model of spoofing, tampering, repudiation, information disclosure, denial of service and elevation of privilege","STRIDE"],
+ ["Mandatory, specific rules for products and configurations","Standard"],["Optional advice that helps people follow policy","Guideline"],
+ ["Doing what a reasonable person would do to protect assets","Due care"],["Investigating and understanding risks before acting","Due diligence"],
+ ["Access decided by labels and clearances that the system enforces","Mandatory access control"],["Access decided by the data owner","Discretionary access control"],
+ ["Access granted by job role","Role-based access control"],["Access decided by attributes such as time, location and department","Attribute-based access control"],
+ ["XML standard for exchanging authentication assertions between an IdP and a service provider","SAML"],["Framework for delegating authorization to apps with access tokens","OAuth 2.0"],
+ ["Identity layer built on top of OAuth 2.0","OpenID Connect"],["Ticket a Kerberos client gets first from the KDC","Ticket-granting ticket"],
+ ["Point where false accept and false reject rates are equal","Crossover error rate"],["A biometric system accepting the wrong person","Type 2 error"],
+ ["Sanitizing media so lab techniques can't recover data, while allowing reuse","Purging"],["Data that remains on media after deletion","Data remanence"],
+ ["Combining many low-sensitivity records into something sensitive","Aggregation"],["Working out sensitive facts from data you're allowed to see","Inference"],
+ ["Attacker knows some plaintext and its matching ciphertext","Known-plaintext attack"],["Attack that looks for hash collisions","Birthday attack"],
+ ["Fully equipped recovery site ready within hours","Hot site"],["Recovery site with space and power but no equipment","Cold site"],
+ ["DR test that runs recovery systems alongside production","Parallel test"],["Testing software by feeding it random, unexpected input","Fuzzing"],
+ ["Analyzing source code without running it","SAST"],["Testing a running application from the outside","DAST"],
+ ["Audit report on how well a provider's controls operated over a period of time","SOC 2 Type II"],["Original document preferred over a copy as evidence","Best evidence rule"]
+];
+const CISSP_Q = [ // [domain, question, correct, [wrong x3], explanation, objective] — original items written against the 2024 CISSP outline
+ [1,"Which canon comes first in the ISC2 Code of Ethics?","Protect society, the common good, necessary public trust and confidence, and the infrastructure",["Act honorably, honestly, justly, responsibly, and legally","Provide diligent and competent service to principals","Advance and protect the profession"],"The four canons are applied in order. Protecting society comes first, then acting honorably and legally, then serving principals, then advancing the profession.","1.1"],
+ [1,"Two ISC2 canons seem to conflict in a situation. How should a member resolve it?","Give priority to the canon that comes earlier in the order",["Follow whichever canon their employer prefers","Follow the canon that benefits the client most","Ignore both and consult a lawyer only"],"The canons are listed in priority order, so duty to society outweighs duty to an employer or client.","1.1"],
+ [1,"A certified colleague falsifies evidence for an audit. What does the ISC2 Code of Ethics expect you to do?","Report the violation through the proper channels, which can include ISC2",["Ignore it to protect the team","Post about it on social media","Quietly fix the evidence yourself"],"Members are expected to act honorably and protect the profession, which includes reporting ethics violations through proper channels.","1.1"],
+ [1,"An attacker quietly changes amounts in payroll records. Which security goal is violated?","Integrity",["Confidentiality","Availability","Nonrepudiation"],"Integrity means data is accurate and protected from unauthorized change. Confidentiality would be violated if the records were only read.","1.2"],
+ [1,"Which concept stops a sender from later denying that they sent a digitally signed message?","Nonrepudiation",["Availability","Least privilege","Obfuscation"],"A digital signature made with the sender's private key proves who sent the message, so they can't credibly deny it.","1.2"],
+ [1,"A flood of traffic takes an online store offline. Which element of the CIA triad is mainly affected?","Availability",["Confidentiality","Integrity","Authenticity"],"Denial-of-service attacks stop authorized users reaching systems. No data has to be read or changed for the attack to succeed.","1.2"],
+ [1,"Who holds ultimate responsibility for protecting an organization's information?","Senior management",["The security team","System administrators","External auditors"],"Senior leadership is accountable for security and delegates the work. The security team designs and runs the program.","1.3"],
+ [1,"Which framework, published by ISACA, focuses on IT governance and management?","COBIT",["ITIL","PCI DSS","OWASP"],"COBIT aligns IT goals with business goals. ITIL covers IT service management, and PCI DSS is a card industry standard.","1.3"],
+ [1,"An organization researches its vendors' security practices before signing contracts. Which concept is this?","Due diligence",["Due care","Due process","Negligence"],"Due diligence is investigating and understanding risk. Due care is acting on that knowledge the way a reasonable person would.","1.3"],
+ [1,"Which regulation protects the personal data of people in the European Union, even when the company is elsewhere?","GDPR",["HIPAA","SOX","FERPA"],"GDPR applies to anyone processing EU residents' personal data. HIPAA covers US health data, SOX covers financial reporting, and FERPA covers US student records.","1.4"],
+ [1,"Which type of intellectual property protects a company's logo?","A trademark",["A patent","A copyright","A trade secret"],"Trademarks protect brand names and logos. Patents protect inventions, copyrights protect creative works, and trade secrets protect confidential business information.","1.4"],
+ [1,"A company keeps its manufacturing formula confidential instead of patenting it. How is the formula protected?","As a trade secret",["As a trademark","As a copyright","It has no protection"],"A trade secret stays protected as long as the company takes reasonable steps, such as NDAs, to keep it secret. A patent would make the formula public in exchange for protection.","1.4"],
+ [1,"Which type of investigation needs proof beyond a reasonable doubt?","Criminal",["Civil","Administrative","Regulatory"],"Criminal cases need the highest standard of proof. Civil cases use a preponderance of the evidence.","1.5"],
+ [1,"Which standard of proof is used in most civil cases?","A preponderance of the evidence",["Beyond a reasonable doubt","Absolute certainty","No standard at all"],"In civil cases, one side must show that its claim is more likely true than not.","1.5"],
+ [1,"An internal investigation looks into a staff member breaking the acceptable use policy. What type is this?","Administrative",["Criminal","Civil","Regulatory"],"Administrative (operational) investigations deal with internal issues. They follow company policy and usually have a lower standard of proof.","1.5"],
+ [1,"Which document is mandatory and names the specific technologies or settings to use?","A standard",["A guideline","A policy","A baseline review"],"Standards support policies with specific, mandatory requirements, such as AES-256 for data at rest. Guidelines are recommendations.","1.6"],
+ [1,"Which document gives optional advice to help people meet a policy?","A guideline",["A standard","A procedure","A regulation"],"Guidelines are recommendations and are not mandatory. Policies, standards and procedures are mandatory.","1.6"],
+ [1,"Which document is a high-level statement of management's intent and direction for security?","A policy",["A procedure","A guideline","A baseline"],"Policies are broad and set direction. Standards, baselines and procedures fill in the specifics.","1.6"],
+ [1,"Which business continuity activity identifies critical processes and how the impact of losing them grows over time?","A BIA",["A penetration test","A vulnerability scan","A tabletop exercise"],"The business impact analysis finds critical functions, their dependencies and their MTD, RTO and RPO, which drive the recovery strategy.","1.7"],
+ [1,"How does the RTO relate to the MTD?","The RTO must be shorter than or equal to the MTD",["The RTO must be longer than the MTD","They are always equal","They aren't related"],"The recovery time objective has to fit inside the maximum tolerable downtime, or the business won't survive the outage.","1.7"],
+ [1,"What should come first when starting a business continuity planning project?","Getting senior management support and defining the project's scope",["Buying a hot site","Writing recovery procedures","Running a full interruption test"],"Without management sponsorship and a clear scope, the plan won't get the resources and authority it needs.","1.7"],
+ [1,"Which practice helps uncover fraud by requiring employees to be away from their duties for a while?","Mandatory vacation",["Job enrichment","Least privilege","Single sign-on"],"While the employee is away, someone else does the work, which often exposes ongoing fraud.","1.8"],
+ [1,"An employee is being terminated. When should their access be removed?","At or before the time they are told",["One week after they leave","When they return their badge","After their final paycheck"],"Removing access promptly stops an upset employee from damaging systems or taking data.","1.8"],
+ [1,"What should new employees sign to protect the company's confidential information?","An NDA",["An SLA","An MOU","An ISA"],"A non-disclosure agreement legally binds employees to keep confidential information private.","1.8"],
+ [1,"A $500,000 asset has a 40% exposure factor and an ARO of 0.5. What is the ALE?","$100,000",["$200,000","$250,000","$40,000"],"SLE = $500,000 × 0.4 = $200,000. ALE = SLE × ARO = $200,000 × 0.5 = $100,000.","1.9"],
+ [1,"A company buys cyber insurance to cover breach costs. Which risk response is this?","Transfer",["Avoidance","Acceptance","Mitigation"],"Insurance shifts the financial impact to another party. The organization still owns the risk itself and its legal duties.","1.9"],
+ [1,"What is residual risk?","The risk that remains after controls are applied",["The risk before any controls","Risk that has been transferred","Risk that has been avoided completely"],"Residual risk must be at or below the organization's risk appetite. Total risk is the level before controls.","1.9"],
+ [1,"In the STRIDE threat model, which threat category covers an attacker changing data without permission?","Tampering",["Spoofing","Repudiation","Information disclosure"],"STRIDE stands for spoofing, tampering, repudiation, information disclosure, denial of service and elevation of privilege. Tampering is the threat to integrity.","1.10"],
+ [1,"Which threat modeling method ranks each threat with a score built from five factors, such as how much damage it could do and how easy it is to reproduce?","DREAD",["STRIDE","PASTA","OCTAVE"],"DREAD scores and ranks threats. STRIDE classifies them by type, and PASTA is a risk-centric process.","1.10"],
+ [1,"Which threat modeling methodology is a seven-stage, risk-centric process?","PASTA",["STRIDE","DREAD","VAST"],"PASTA (Process for Attack Simulation and Threat Analysis) aligns technical threats with business impact across seven stages.","1.10"],
+ [1,"A batch of network switches arrives with a hidden hardware implant added during manufacturing. Which risk is this?","A supply chain risk",["An insider threat","A social engineering attack","A natural disaster"],"Supply chain attacks compromise products before they reach the customer, which makes them hard to detect.","1.11"],
+ [1,"Which practice best reduces supply chain risk when buying hardware?","Vetting suppliers and setting minimum security requirements in contracts",["Always choosing the cheapest vendor","Skipping inspection to save time","Buying from unknown resellers"],"Supplier assessments, provenance checks and contract requirements such as audit rights reduce supply chain risk.","1.11"],
+ [1,"Which document lists the third-party components inside a piece of software?","An SBOM",["An SLA","A BIA","An NDA"],"A software bill of materials lets you check quickly whether a new vulnerability affects any component you use.","1.11"],
+ [1,"Which builds the specific skills people need to do their jobs securely, such as secure coding for developers?","Training",["Awareness","Education","Marketing"],"Awareness gets people's attention, training teaches job skills, and education builds deep understanding, such as a degree or certification.","1.12"],
+ [1,"Which activity safely tests whether employees can recognize phishing?","Simulated phishing campaigns",["Real attacks against staff","Firing anyone who clicks","Sending phishing only to IT"],"Simulations measure behavior and teach in a safe setting, especially when followed by brief training.","1.12"],
+ [1,"How should a security awareness program stay effective over time?","Review and update its content regularly to match current threats",["Run the same course unchanged for years","Train people only when they're hired","Make it optional"],"Threats change, so content must change too. Regular reviews and metrics keep the program relevant.","1.12"],
+ [2,"Who is responsible for deciding how a dataset is classified?","The data owner",["The data custodian","The data user","The auditor"],"Owners are accountable for the data and set its classification and access rules. Custodians carry out the protection day to day.","2.1"],
+ [2,"Which is the highest of these US government classification levels?","Top Secret",["Secret","Confidential","Unclassified"],"The order from highest is Top Secret, Secret, Confidential and Unclassified. The higher the level, the greater the harm if the data is disclosed.","2.1"],
+ [2,"In a commercial classification scheme, which label fits a press release approved for publication?","Public",["Confidential","Private","Sensitive"],"Commercial schemes often use public, sensitive, private and confidential. Public data causes no harm if disclosed.","2.1"],
+ [2,"Why are classified documents and media labeled?","So people and systems handle them according to their classification",["To make them easier to throw away","To speed up printing","To meet font standards"],"Marking and labeling tell everyone how to store, send and destroy each item.","2.2"],
+ [2,"Backup tapes holding sensitive data must go to an off-site vault. What's the best handling?","Encrypt them and use a trusted courier with a chain of custody",["Send them by regular mail","Leave them unencrypted in a labeled box","Let any employee drive them over"],"Encryption protects the data if a tape is lost, and a chain of custody records who handled it.","2.2"],
+ [2,"Which role carries out day-to-day protection of data, such as backups and applying access rules?","The data custodian",["The data owner","The data subject","The senior executive"],"Custodians, usually IT staff, put the owner's decisions into practice.","2.2"],
+ [2,"How should a new laptop be provisioned before it goes to an employee?","With a hardened standard image, and recorded in the asset inventory",["With the vendor's default settings","With admin rights for the user","Without tracking, to save time"],"A secure baseline and an inventory record mean the device starts secure and can be tracked through its life.","2.3"],
+ [2,"Why does secure asset management start with an accurate inventory?","You can't protect assets you don't know you have",["Inventories replace firewalls","Auditors require colorful reports","It makes assets run faster"],"Unknown assets go unpatched and unmonitored, which makes them easy targets.","2.3"],
+ [2,"Under GDPR, what is a data processor?","An organization that processes personal data on behalf of a controller",["The person the data is about","The regulator that enforces GDPR","Software that encrypts data"],"The controller decides why and how data is processed. The processor acts on the controller's instructions.","2.3"],
+ [2,"What is data remanence?","Data that remains on media after it was deleted or formatted",["Data stored in RAM only","Data waiting to be backed up","Data held by a third party"],"Deleting files usually removes only references to them. Proper sanitization deals with remanence.","2.4"],
+ [2,"Which sanitization level makes data unrecoverable even with lab techniques, while leaving the media reusable?","Purging",["Clearing","Destruction","Deleting"],"Clearing protects against simple recovery tools. Purging protects against lab-level recovery, and destruction physically ruins the media.","2.4"],
+ [2,"How does pseudonymization differ from anonymization?","Pseudonymized data can be re-linked to the person with a separate key",["Pseudonymized data can never be re-linked","Anonymization uses encryption keys","They are the same thing"],"Pseudonymization replaces identifiers with tokens, so it's reversible with the mapping. Anonymization removes the link permanently.","2.4"],
+ [2,"What's the risk of keeping data longer than the retention schedule requires?","More legal exposure and a bigger impact if it's breached",["Faster searches","Lower storage costs","Better encryption"],"Data that should have been destroyed can still be demanded in court and stolen in a breach.","2.5"],
+ [2,"What does end of support mean for a product?","The vendor no longer provides patches or help",["The product is brand new","The product can't be sold anymore, but patches continue","The warranty has just started"],"End-of-support products stop getting security fixes, so plan to replace them or add compensating controls.","2.5"],
+ [2,"A company receives a legal hold notice. What must it do with the relevant data?","Preserve it and suspend any scheduled deletion",["Delete it immediately","Move it to an unencrypted share","Anonymize it before anyone sees it"],"Destroying data covered by a legal hold can lead to sanctions for spoliation of evidence.","2.5"],
+ [2,"What is tailoring when selecting security controls?","Adjusting a baseline's controls to fit the organization's mission and environment",["Removing all controls","Buying custom hardware","Encrypting all data at rest"],"Scoping picks which baseline controls apply. Tailoring changes parameters and adds compensating controls to fit.","2.6"],
+ [2,"Data being processed by the CPU is in which state?","In use",["At rest","In transit","Archived"],"Data in use is the hardest state to protect. Memory encryption and secure enclaves help.","2.6"],
+ [2,"Which control detects and blocks sensitive data from leaving the organization?","DLP",["IDS","WAF","NAC"],"Data loss prevention inspects content in email, uploads, USB copies and more, and enforces policy.","2.6"],
+ [3,"A firewall's management service crashes. Which secure design principle says it should block traffic rather than allow it?","Fail securely",["Open design","Economy of mechanism","Least common mechanism"],"A secure failure defaults to denying access, so a crash doesn't open a gap.","3.1"],
+ [3,"Which principle says a system's security shouldn't depend on keeping its design secret?","Open design",["Security through obscurity","Fail open","Implicit trust"],"Strong systems stay secure even when attackers know how they work. Kerckhoffs's principle says the same about cryptography: only the key must be secret.","3.1"],
+ [3,"Which principle means building privacy into a system from the start instead of adding it later?","Privacy by design",["Privacy by default only","Data monetization","Security through obscurity"],"Privacy by design makes privacy part of requirements and architecture, with privacy-protective defaults.","3.1"],
+ [3,"Which security model's rules are no read up and no write down?","Bell-LaPadula",["Biba","Clark-Wilson","Brewer-Nash"],"Bell-LaPadula protects confidentiality. Subjects can't read above their clearance or write data down to a lower level.","3.2"],
+ [3,"Which model protects integrity with the rules no read down and no write up?","Biba",["Bell-LaPadula","Brewer-Nash","Take-Grant"],"Biba is the integrity counterpart of Bell-LaPadula. It stops less trusted data from contaminating more trusted data.","3.2"],
+ [3,"A consultancy must stop an analyst who works for one bank from seeing a competing bank's data. Which model fits?","Brewer-Nash",["Biba","Bell-LaPadula","Clark-Wilson"],"Brewer-Nash, the Chinese wall model, changes access dynamically to prevent conflicts of interest.","3.2"],
+ [3,"What does a Common Criteria EAL tell you about a product?","How rigorously its security was evaluated",["How fast it runs","How much it costs","Which country made it"],"Evaluation assurance levels range from EAL1 to EAL7. A higher level means more rigorous testing, not necessarily more security features.","3.3"],
+ [3,"What's the difference between certification and accreditation?","Certification is a technical evaluation; accreditation is management's formal approval to operate",["They mean the same thing","Accreditation is a technical test; certification is a management decision","Certification applies only to people"],"Certification checks that the controls meet requirements. An authorizing official then accepts the remaining risk by accrediting the system.","3.3"],
+ [3,"What should drive the selection of controls for a new system?","Its security requirements, based on the data's classification and the risks",["The cheapest available tools","What competitors use","The developers' preferences"],"Controls are chosen to meet requirements that come from the system's categorization and risk assessment.","3.3"],
+ [3,"Which capability stops one process from reading another process's memory?","Memory protection and process isolation",["Data remanence","Hyper-threading","Virtual memory paging only"],"The OS and CPU give each process its own address space, which protects confidentiality and integrity.","3.4"],
+ [3,"Which hardware feature runs code and data in a protected area that even the operating system can't read?","A trusted execution environment, or secure enclave",["A swap file","The BIOS splash screen","A RAID controller"],"Secure enclaves protect sensitive operations, such as key handling, even if the OS is compromised.","3.4"],
+ [3,"In the CPU's protection ring model, where does the operating system kernel run?","Ring 0",["Ring 3","Ring 1 only","Outside the rings"],"Ring 0 is the most privileged level, for the kernel. User applications run in ring 3.","3.4"],
+ [3,"An attacker learns a secret key by measuring how long cryptographic operations take. What attack is this?","A side-channel attack",["A brute force attack","A replay attack","Phishing"],"Side-channel attacks use physical leaks such as timing, power use or emissions, not flaws in the algorithm itself.","3.5"],
+ [3,"A user combines many low-sensitivity database records to learn something highly sensitive. What is this?","Aggregation",["Inference","Polyinstantiation","Normalization"],"Aggregation creates sensitive information by collecting many low-level items. Inference deduces a sensitive fact from what you can see.","3.5"],
+ [3,"A program checks a file's permissions, then opens it a moment later, and an attacker swaps the file in between. What is this?","A TOCTOU race condition",["A buffer overflow","SQL injection","A covert channel"],"Time-of-check to time-of-use flaws exploit the gap between a check and the action. Fix them with atomic operations.","3.5"],
+ [3,"Which of these algorithms is asymmetric?","RSA",["AES","3DES","Blowfish"],"RSA uses a public and private key pair. AES, 3DES and Blowfish are symmetric ciphers that use one shared key.","3.6"],
+ [3,"How many symmetric keys do 100 users need so every pair can talk privately?","4,950",["100","200","9,900"],"The formula is n(n−1)/2 = 100 × 99 / 2 = 4,950. Asymmetric cryptography needs only 200 keys, a pair per user.","3.6"],
+ [3,"Which key does a sender use to digitally sign a message?","Their own private key",["Their own public key","The recipient's public key","The recipient's private key"],"Anyone can check the signature with the sender's public key. Encrypting for confidentiality uses the recipient's public key instead.","3.6"],
+ [3,"An attacker has several plaintext messages and their matching ciphertexts and tries to find the key. What is this?","A known-plaintext attack",["A ciphertext-only attack","A chosen-ciphertext attack","A birthday attack"],"In a known-plaintext attack the attacker has matched pairs but didn't choose them. In a chosen-plaintext attack they choose what gets encrypted.","3.7"],
+ [3,"What does a birthday attack try to find?","Two inputs that produce the same hash",["The key from one ciphertext","A user's birthday","A weak random number generator seed"],"The birthday paradox makes hash collisions far easier to find than you'd expect, which is why longer hashes are used.","3.7"],
+ [3,"An attacker gets the target system to decrypt ciphertexts of the attacker's choosing. What is this?","A chosen-ciphertext attack",["A known-plaintext attack","A ciphertext-only attack","A meet-in-the-middle attack"],"Studying the decryptions of chosen ciphertexts can reveal the key or plaintext.","3.7"],
+ [3,"Placing windows and lighting so people can easily see who's near the entrances is which CPTED strategy?","Natural surveillance",["Natural access control","Territorial reinforcement","Target hardening"],"Crime Prevention Through Environmental Design uses natural surveillance, natural access control and territorial reinforcement to discourage crime.","3.8"],
+ [3,"Which is the best location for a new data center?","Away from flood plains, with access to redundant utilities",["Next to a chemical plant","In a basement below the water table","Under an airport flight path"],"Site selection should reduce natural and man-made hazards and give reliable power and connectivity.","3.8"],
+ [3,"Why place a server room in the middle of a building rather than against an outside wall?","It's better protected from weather, vehicles and intruders",["It's cheaper to cool","It needs no fire suppression","It improves Wi-Fi coverage"],"Interior rooms add layers of physical protection. Avoid basements, which flood, and top floors, which leak.","3.8"],
+ [3,"Which sprinkler type fills its pipes only when a detector triggers, then needs heat to open each head?","Pre-action",["Wet pipe","Deluge","Dry pipe only"],"Pre-action systems need two triggers before water flows, which reduces accidental discharges in data centers.","3.9"],
+ [3,"What relative humidity is generally recommended for a data center?","About 40–60%",["Below 10%","Above 90%","Exactly 0%"],"Too dry increases static discharge, and too humid causes condensation and corrosion.","3.9"],
+ [3,"Which suppression method is safe for people and equipment and replaced Halon in many data centers?","A clean agent gas such as FM-200",["Water sprinklers only","Dry chemical powder","Carbon dioxide in occupied rooms"],"Clean agents put out fires without residue. Halon was phased out because it damages the ozone layer, and CO2 is dangerous where people work.","3.9"],
+ [3,"In which phase of the system lifecycle should security requirements first be defined?","Initiation and requirements",["Operations and maintenance","Disposal","After deployment"],"Defining security early is far cheaper than adding it later.","3.10"],
+ [3,"What should happen when a system is retired?","Sanitize or destroy its media and update the inventory",["Leave it powered on in storage","Sell it as is","Delete only the user accounts"],"Disposal includes sanitizing data, removing access and updating records.","3.10"],
+ [3,"During operations and maintenance, how does security stay effective?","Through monitoring, patching and regular reassessment",["By freezing the configuration forever","By removing all logging","By skipping change management"],"Threats and systems change, so controls need ongoing care for the whole life of the system.","3.10"],
+ [4,"Which OSI layer handles logical addressing and routing?","Layer 3, Network",["Layer 2, Data Link","Layer 4, Transport","Layer 7, Application"],"Routers and IP work at the Network layer. Switches work at Layer 2, and TCP and UDP at Layer 4.","4.1"],
+ [4,"What does micro-segmentation do?","Isolates individual workloads with fine-grained security policies",["Combines every VLAN into one","Speeds up Wi-Fi","Replaces encryption"],"Micro-segmentation limits lateral movement, so a single breach can't spread easily through the data center.","4.1"],
+ [4,"Which protocol finds the MAC address that matches an IPv4 address on a LAN?","ARP",["DNS","DHCP","ICMP"],"ARP maps IP addresses to MAC addresses. Its lack of authentication makes ARP poisoning possible.","4.1"],
+ [4,"Which IPsec mode encrypts the entire original packet, which suits gateway-to-gateway VPNs?","Tunnel mode",["Transport mode","Aggressive mode","Main mode"],"Tunnel mode wraps the whole packet in a new IP header. Transport mode protects only the payload and is used host to host.","4.1"],
+ [4,"What does software-defined networking separate?","The control plane from the data plane",["Copper from fiber","IPv4 from IPv6","Users from administrators"],"A central controller makes forwarding decisions, while switches just forward traffic, which allows programmable, centralized control.","4.1"],
+ [4,"What does iSCSI do?","Carries storage commands over IP networks",["Encrypts email","Assigns IP addresses","Translates domain names"],"iSCSI is a converged protocol that lets servers use remote block storage over ordinary networks. Isolate and secure that traffic.","4.1"],
+ [4,"Which firewall tracks the state of connections, allowing return traffic only for sessions started inside?","A stateful firewall",["A static packet filter","A hub","A repeater"],"Stateful firewalls keep a state table. Static packet filters judge each packet alone.","4.2"],
+ [4,"Which control checks a device's health and identity before letting it join the network?","NAC",["DLP","SIEM","WAF"],"Network access control can check patches and antivirus before granting access, and quarantines devices that don't comply.","4.2"],
+ [4,"Which transmission medium is hardest to tap without being noticed?","Fiber optic cable",["Unshielded twisted pair","Coaxial cable","Wi-Fi"],"Fiber gives off no electromagnetic signal, and tapping it usually causes a measurable loss of light.","4.2"],
+ [4,"Which firewall can inspect application content, such as HTTP requests?","An application-level or next-generation firewall",["A static packet filter","A circuit-level gateway only","An unmanaged switch"],"Application-layer inspection understands protocols and can block attacks hidden inside allowed ports.","4.2"],
+ [4,"Which tool detects and responds to threats on laptops and servers?","EDR",["NAT","DHCP","VLAN"],"Endpoint detection and response records endpoint activity, detects suspicious behavior, and can isolate the host.","4.2"],
+ [4,"How should unused switch ports be handled?","Disable them or put them in an unused VLAN",["Leave them active for convenience","Connect them to the internet","Turn on PoE on all of them"],"Disabled ports stop anyone plugging in a rogue device inside the building.","4.2"],
+ [4,"Which standard provides end-to-end encryption and signing for email?","S/MIME",["SMTP","POP3","IMAP"],"S/MIME uses certificates to encrypt and sign messages. Plain SMTP, POP3 and IMAP don't protect message content.","4.3"],
+ [4,"Which protocol protects the audio of VoIP calls?","SRTP",["SIP","RTP","H.323"],"Secure RTP encrypts and authenticates the media. SIP sets up the call, and plain RTP carries media unprotected.","4.3"],
+ [4,"Which protocol should replace Telnet for remote administration of network devices?","SSH",["FTP","HTTP","TFTP"],"SSH encrypts the session, including the credentials. Telnet sends everything in plain text.","4.3"],
+ [4,"In 802.1X, which device plays the authenticator role?","The switch or wireless access point",["The RADIUS server","The user's laptop","The DNS server"],"The supplicant is the client, the authenticator is the switch or AP, and the authentication server is usually RADIUS.","4.3"],
+ [4,"Two organizations connect their networks with a VPN. Which document sets the technical security requirements for the link?","An ISA",["An NDA","An SLA","An AUP"],"An interconnection security agreement documents the connection's technical security requirements, often alongside an MOU.","4.3"],
+ [4,"Which TLS version should new systems prefer?","TLS 1.3",["SSL 3.0","TLS 1.0","TLS 1.1"],"TLS 1.3 removes weak ciphers and speeds up the handshake. SSL and early TLS versions are deprecated.","4.3"],
+ [5,"Which access control model uses security labels and clearances that the system enforces and users can't change?","MAC",["DAC","RBAC","Rule-based access control"],"Mandatory access control is common in government systems. In discretionary access control, data owners set permissions themselves.","5.1"],
+ [5,"In which access control model does the data owner decide who gets access?","DAC",["MAC","ABAC","Lattice-based access control"],"Discretionary access control, like NTFS permissions set by file owners, is flexible but relies on owners making good choices.","5.1"],
+ [5,"Employees use the same card to open doors and to sign in to their workstations. What is this?","A smart card that combines physical and logical access",["A password manager","A mantrap","A cable lock"],"Bringing physical and logical access together on one credential simplifies management and gives a fuller audit trail.","5.1"],
+ [5,"Which authentication factor type is a fingerprint?","Something you are",["Something you know","Something you have","Somewhere you are"],"Biometrics are something you are, a PIN is something you know, and a token is something you have.","5.2"],
+ [5,"What does a biometric system's crossover error rate tell you?","Where false acceptances equal false rejections. Lower is more accurate",["Its maximum number of users","How fast it scans","How much it costs"],"The CER, also called the EER, is used to compare biometric systems. A lower CER means a more accurate system.","5.2"],
+ [5,"A biometric reader lets an unauthorized person in. What type of error is this?","Type 2, a false acceptance",["Type 1, a false rejection","A crossover error","A false negative alarm"],"Type 1 errors reject valid users and frustrate them. Type 2 errors accept impostors, which is the more dangerous failure.","5.2"],
+ [5,"Which XML-based standard passes authentication assertions from an identity provider to a service provider?","SAML",["OAuth 2.0","LDAP","RADIUS"],"SAML is widely used for web single sign-on between organizations and cloud apps.","5.3"],
+ [5,"Which framework is for delegating authorization, such as letting an app read your calendar, and isn't an authentication protocol by itself?","OAuth 2.0",["SAML","Kerberos","OpenID Connect"],"OAuth 2.0 issues access tokens. OpenID Connect adds an identity layer on top of it for authentication.","5.3"],
+ [5,"Which protocol adds user authentication on top of OAuth 2.0 with an ID token?","OpenID Connect",["SAML 1.1","TACACS+","Diameter"],"OpenID Connect is common for sign-in with providers such as Microsoft or Google in modern web and mobile apps.","5.3"],
+ [5,"Access to the payroll system is granted to everyone in the HR specialist position. Which model is this?","Role-based access control",["Discretionary access control","Mandatory access control","Rule-based access control"],"RBAC assigns permissions to roles, and users get them by holding the role, which makes job changes simpler.","5.4"],
+ [5,"A policy allows access only to managers in the finance department, during business hours, from company devices. Which model fits best?","Attribute-based access control",["Role-based access control only","Discretionary access control","Mandatory access control"],"ABAC evaluates attributes of the user, the resource and the environment, which allows very fine-grained policies.","5.4"],
+ [5,"A firewall's rules apply the same way to everyone who sends traffic through it. Which model is this?","Rule-based access control",["Role-based access control","Discretionary access control","Attribute-based access control"],"Rule-based access control applies global rules to every subject, unlike role-based control, which depends on who the user is.","5.4"],
+ [5,"Employees keep old permissions every time they change jobs. What is this, and what fixes it?","Privilege creep, fixed by regular access reviews",["Least privilege, fixed by more admin rights","Separation of duties, fixed by shared accounts","Federation, fixed by turning off SSO"],"Periodic access reviews remove permissions people no longer need.","5.5"],
+ [5,"Which process has managers regularly confirm that their staff's access is still needed?","Access recertification",["Account provisioning","Password rotation","Federation"],"Recertification catches excessive access that provisioning alone misses.","5.5"],
+ [5,"What is just-in-time privileged access?","Granting elevated rights only when they're needed, for a limited time",["Giving all admins permanent rights","Removing all admin accounts","Sharing one admin password"],"Just-in-time access shrinks the window in which a privileged account can be abused.","5.5"],
+ [5,"In Kerberos, what does a client get first from the KDC?","A ticket-granting ticket",["A service ticket","A SAML assertion","An access token"],"The client uses the TGT to request service tickets for each resource, so it doesn't send its password again.","5.6"],
+ [5,"What's a well-known weakness of Kerberos?","The KDC is a single point of failure, and clocks must be in sync",["It sends passwords in clear text","It can't work in a domain","It only supports biometrics"],"If the KDC goes down, nobody can get tickets. Time skew also breaks authentication, so redundancy and time sync are essential.","5.6"],
+ [5,"Which AAA protocol uses UDP and encrypts only the password?","RADIUS",["TACACS+","Kerberos","LDAPS"],"RADIUS combines authentication and authorization. TACACS+ uses TCP, separates the AAA functions, and encrypts the whole payload.","5.6"],
+ [6,"Which type of audit offers the most independence?","A third-party audit",["A self-assessment","An internal audit","A peer review within the team"],"Third-party auditors have no stake in the outcome, so customers and regulators trust their results most.","6.1"],
+ [6,"A customer wants to know how well a service provider's controls worked over the past year. Which report fits?","A System and Organization Controls 2 Type II report",["A System and Organization Controls 2 Type I report","A System and Organization Controls 1 Type I report","A press release"],"Type I looks at control design at a point in time. Type II tests how well the controls operated over a period. Report 1 covers financial reporting controls, and report 2 covers security and related trust criteria.","6.1"],
+ [6,"Which System and Organization Controls report is meant for general public distribution?","Report 3",["Report 1","Report 2 Type II","Report 2 Type I"],"The System and Organization Controls 3 report is a summary that can be shared freely. Reports 1 and 2 are restricted to customers and their auditors.","6.1"],
+ [6,"What should determine the scope of a security assessment?","The organization's business requirements and risks",["The assessor's favorite tools","Whatever is cheapest","Only the systems the assessor knows well"],"Assessments should focus on what matters to the business and its risk profile.","6.1"],
+ [6,"Testers get the source code, network diagrams and credentials before the test. What kind of test is this?","A white box test",["A black box test","A blind test","A double-blind test"],"White box (full knowledge) testing is thorough and efficient. Black box testing simulates an outside attacker with no knowledge.","6.2"],
+ [6,"Which testing technique feeds large amounts of random or malformed input into software to find crashes?","Fuzzing",["Static analysis","Code review","Regression testing"],"Fuzzing finds input-handling flaws such as buffer overflows that developers may not have expected.","6.2"],
+ [6,"Which testing looks at how an attacker could abuse an application's features?","Misuse case testing",["Use case testing only","Load testing","Unit testing"],"Misuse cases describe what attackers might try. Tests then confirm the system resists those actions.","6.2"],
+ [6,"What is a Fagan inspection?","A formal, structured code review process",["A type of firewall","A vulnerability scanner","A disaster recovery test"],"Fagan inspections move through set stages: planning, overview, preparation, inspection, rework and follow-up.","6.2"],
+ [6,"Which metric warns that the likelihood or impact of a risk is rising?","A key risk indicator",["A key performance indicator","A service level agreement","A mean time to repair figure only"],"KRIs track exposure to risk, such as a growing number of unpatched critical systems. KPIs measure performance.","6.3"],
+ [6,"How can you check that account management is working?","Compare active accounts against HR records to find orphaned accounts",["Count the total number of passwords","Ask users if they like their accounts","Check the screen saver settings"],"Accounts belonging to people who left are a common finding and a real risk.","6.3"],
+ [6,"Which process data proves that backups can actually be used?","Records of successful test restores",["The number of backup jobs scheduled","The backup software's version","The size of the backup drive"],"Only a test restore proves recovery works. Successful job logs aren't enough.","6.3"],
+ [6,"How do security awareness records support management reporting?","They show training completion rates and results such as phishing simulation outcomes",["They replace incident reports","They list employees' passwords","They show network bandwidth"],"Awareness data shows whether the program reaches people and changes their behavior.","6.3"],
+ [6,"A vulnerability scan reports a flaw that isn't actually present. What is this?","A false positive",["A false negative","A true positive","A zero-day"],"False positives waste time. False negatives are more dangerous, because real flaws go unreported.","6.4"],
+ [6,"How should accepted risks from a test be recorded in the report?","As documented exceptions with an owner, a justification and a review date",["Removed from the report","Marked as fixed","Ignored if they're old"],"Documented exceptions keep accepted risks visible and accountable, so they're revisited.","6.4"],
+ [6,"What's the purpose of a test report's executive summary?","To explain the business impact and key risks in plain terms",["To list every raw scanner finding","To show the testers' tools","To include exploit code"],"Leaders need to understand risk and priorities. Technical detail goes in later sections for the people fixing things.","6.4"],
+ [6,"How should test findings be prioritized for remediation?","By risk, considering severity, exploitability and the asset's value",["Alphabetically","By the order the scanner found them","By the easiest fix first, always"],"Risk-based prioritization fixes the most dangerous issues on the most important assets first.","6.4"],
+ [6,"What's the first step in planning a security audit?","Defining the scope and objectives",["Collecting evidence","Writing the final report","Interviewing every employee"],"A clear scope and objectives guide what evidence to gather and how to judge it.","6.5"],
+ [6,"Which audit evidence is generally most reliable?","Evidence the auditor gathers and observes directly",["Verbal claims from the team being audited","Undated screenshots sent by email","Hearsay from former staff"],"Evidence the auditor gets independently and firsthand is more reliable than statements from the people being audited.","6.5"],
+ [6,"Who should receive the results of an internal security audit?","Senior management and the audit committee or board",["Only the IT help desk","The public","Only the team that was audited"],"Audit results support governance. Leadership must see them to make risk decisions.","6.5"],
+ [6,"What does a right-to-audit clause in a vendor contract allow?","The customer can audit the vendor's controls",["The vendor can audit the customer's finances","Either party can end the contract at once","The vendor can skip security reviews"],"Right-to-audit clauses give the customer a way to verify a vendor's security directly.","6.5"],
+ [7,"Following the order of volatility, which evidence should be collected first?","CPU registers, cache and RAM",["Hard disk contents","Archived backups","Printed documents"],"Collect the most volatile data first, because it's lost when the system powers down. Disks and backups last longer.","7.1"],
+ [7,"What does the best evidence rule say?","Courts prefer original documents over copies",["Evidence must be collected by police","Only digital evidence counts","Hearsay is always admissible"],"Where the original isn't available, a verified copy, such as a forensic image with matching hashes, may be accepted.","7.1"],
+ [7,"Which system collects logs from many sources and correlates them to spot attacks?","A SIEM",["A DHCP server","A NAS","A proxy cache"],"Security information and event management centralizes logs, correlates events and raises alerts.","7.2"],
+ [7,"How can logs be protected from attackers who want to cover their tracks?","Send them to a central, write-protected store with integrity checks",["Keep them only on each server","Let administrators edit them freely","Turn logging off at night"],"Centralized, tamper-evident logs keep the evidence even if a server is compromised.","7.2"],
+ [7,"What is a configuration baseline?","A documented, approved configuration that systems are built and checked against",["The first ticket of the day","The cheapest hardware option","A list of user passwords"],"Baselines make systems consistent and make unauthorized changes easy to spot.","7.3"],
+ [7,"What's a security benefit of infrastructure as code?","Consistent, repeatable, reviewable builds that drift less",["It removes the need for access control","It makes systems invisible to attackers","It replaces backups"],"Templates in version control can be reviewed and tested, which reduces manual mistakes.","7.3"],
+ [7,"An analyst has clearance for Secret data but works only on one project. Which principle limits access to that project's data?","Need to know",["Clearance alone","Job rotation","Separation of duties"],"Clearance sets the maximum level of data a person may see. Need to know limits them to what their job actually requires.","7.4"],
+ [7,"Opening a vault requires two people, each holding part of the combination. What is this called?","Dual control",["Job rotation","Mandatory vacation","Least privilege"],"Dual control means no one person can complete a critical action alone.","7.4"],
+ [7,"How should backup media holding sensitive data be protected?","Encrypt it, label it, track it, and store it securely",["Leave it on a desk","Reuse it without sanitizing","Send it with no records"],"Media protection follows the data's classification through storage, transport and disposal.","7.5"],
+ [7,"Why protect system images and master installation media?","Tampered images would spread compromise to every system built from them",["They're too large to store","They contain user passwords","They're only used once"],"Protecting the integrity of golden images and installers prevents compromises at scale.","7.5"],
+ [7,"In ISC2's incident management steps, what comes right after detection?","Response",["Lessons learned","Recovery","Remediation"],"The steps are detection, response, mitigation, reporting, recovery, remediation and lessons learned.","7.6"],
+ [7,"What's the main goal of the lessons learned step after an incident?","Improving defenses and processes to prevent a repeat",["Blaming the people involved","Deleting the evidence","Closing the ticket quickly"],"A no-blame review finds the root causes and leads to concrete improvements.","7.6"],
+ [7,"Which system lures attackers away from real assets so their methods can be studied?","A honeypot",["A bastion host","A jump server","A proxy"],"Honeypots have no business purpose, so any activity on them is suspicious. Don't use them to entrap.","7.7"],
+ [7,"Which detection method compares traffic with known attack patterns?","Signature-based detection",["Anomaly-based detection","Heuristic sandboxing only","Honeypot logging"],"Signature-based detection is accurate for known threats but misses new ones. Anomaly detection can catch unknown attacks but raises more false positives.","7.7"],
+ [7,"Before deploying a critical patch to all servers, what should normally happen?","Test it in a non-production environment first",["Deploy it everywhere at once","Wait a year","Let each user decide"],"Testing catches compatibility problems. Emergency patches may move faster, but they still follow change control.","7.8"],
+ [7,"Which system scores how severe a vulnerability is?","CVSS",["CVE","CWE","SCAP"],"CVSS gives a severity score from 0 to 10. CVE names individual vulnerabilities, and CWE categorizes weakness types.","7.8"],
+ [7,"A critical fix must go in tonight to stop an active attack. How should change management handle it?","As an emergency change, approved quickly and fully documented and reviewed afterward",["Skip change management entirely","Wait for next month's board meeting","Let anyone make the change without records"],"Emergency changes keep oversight while allowing speed.","7.9"],
+ [7,"Which control detects unauthorized changes to critical system files?","File integrity monitoring",["Load balancing","Disk defragmentation","Spam filtering"],"FIM compares file hashes with a baseline and alerts when something changes.","7.9"],
+ [7,"Which recovery site has equipment and current data, ready to take over within hours?","A hot site",["A cold site","A warm site","A mobile office with no equipment"],"Hot sites recover fastest but cost the most. Cold sites provide only space and power.","7.10"],
+ [7,"What does a cold site provide?","Space, power and environmental controls, but no equipment or data",["A full copy of production","Live replicated servers","A second active data center"],"Cold sites are cheap but take weeks to bring online, which suits only processes with a long MTD.","7.10"],
+ [7,"During a disaster, what is always the first priority?","The safety of people",["Restoring email","Protecting the servers","Notifying customers"],"Life safety comes first, every time. Recovering systems comes after people are safe.","7.11"],
+ [7,"Who declares a disaster and starts the recovery plan?","The person or role the DR plan authorizes",["Any employee who notices an outage","The newest IT technician","An outside vendor"],"Clear authority prevents confusion and wrong declarations.","7.11"],
+ [7,"Which DR test brings up recovery systems alongside production, without disrupting production?","A parallel test",["A full interruption test","A checklist review","A structured walkthrough"],"Parallel tests prove recovery systems work. Full interruption tests shut down production and are the riskiest.","7.12"],
+ [7,"Which DR test is the most disruptive and risky?","A full interruption test",["A read-through","A tabletop walkthrough","A simulation"],"A full interruption test shuts down the primary site to prove the recovery site works. It needs management approval and careful planning.","7.12"],
+ [7,"How often should a business continuity plan be reviewed and updated?","At least annually, and after major business or technology changes",["Only when it's first written","Every ten years","Only after a disaster"],"Plans go stale quickly as people, systems and processes change.","7.13"],
+ [7,"In a BC walkthrough exercise, what do team members do?","Step through the plan together to check that it's complete and that they know their roles",["Shut down the data center","Restore every system from tape","Run a live phishing campaign"],"Walkthroughs are low-risk discussions that find gaps before a real event.","7.13"],
+ [7,"What do security guards offer that technical controls can't?","Human judgment to respond to unusual situations",["Lower cost than cameras","Perfect memory","Invisibility to intruders"],"Guards can assess context and act flexibly. They also deter, and can verify what cameras only record.","7.14"],
+ [7,"Which control detects someone climbing a perimeter fence?","A perimeter intrusion detection sensor",["A deadbolt","A privacy screen","A login banner"],"Perimeter sensors and cameras detect intrusions so guards can respond.","7.14"],
+ [7,"What's a duress code used for?","Silently signaling that someone is being forced to act",["Resetting a password","Opening a door faster","Disabling the fire alarm"],"A duress code, such as a special PIN, triggers a silent alert while appearing to comply with the attacker.","7.15"],
+ [7,"Staff are traveling to a high-risk country. What's a good practice?","Give them clean loaner devices with only the data they need",["Bring every laptop with full data","Turn off encryption to pass customs faster","Use public Wi-Fi without a VPN"],"Loaner devices limit exposure if equipment is seized or tampered with. Check or wipe them when they come back.","7.15"],
+ [8,"When should security be built into software development?","From the requirements phase, throughout the lifecycle",["Only right before release","Only after a breach","Only during maintenance"],"Fixing flaws early costs far less. Requirements, design, coding and testing all include security.","8.1"],
+ [8,"How do agile teams build security into each sprint?","By adding security requirements and acceptance criteria to user stories",["By skipping security until the final sprint","By banning all changes","By testing only once a year"],"Security stories, abuse cases and definitions of done keep security part of every iteration.","8.1"],
+ [8,"What does DevSecOps add to DevOps?","Automated security checks in the CI/CD pipeline",["Manual approval for every commit","Removing testing to ship faster","A separate security team that reviews code once a year"],"DevSecOps runs SAST, dependency and container scans automatically, so issues are caught early without slowing delivery.","8.1"],
+ [8,"Which testing analyzes source code for security flaws without running it?","SAST",["DAST","Fuzzing","Penetration testing"],"Static analysis finds issues such as injection risks early. Dynamic testing needs a running application.","8.2"],
+ [8,"Which testing probes a running web application from the outside?","DAST",["SAST","SCA","Code review"],"Dynamic testing finds runtime issues such as misconfigurations and injection flaws, much like an external attacker would.","8.2"],
+ [8,"Which tool finds vulnerable third-party libraries in an application?","Software composition analysis",["A port scanner","A protocol analyzer","A password cracker"],"SCA lists the open-source components an application uses and flags those with known vulnerabilities and license issues.","8.2"],
+ [8,"Why run regression tests after changing code?","To make sure the change didn't break existing functions or security controls",["To test the new feature only","To measure network speed","To replace code reviews"],"Changes can reopen old flaws. Automated regression suites catch them.","8.3"],
+ [8,"Which practice helps assess software security over time?","Tracking metrics such as open vulnerabilities and time to fix",["Counting lines of code only","Measuring developer satisfaction only","Ignoring findings from earlier releases"],"Trends in defect density and remediation time show whether the security of the software is improving.","8.3"],
+ [8,"Why log and audit changes to production code?","To detect unauthorized changes and support investigations",["To slow developers down","To replace version control","To reduce storage use"],"Audit trails show who changed what and when, which supports accountability and incident response.","8.3"],
+ [8,"Before buying commercial software, what helps assess its security?","Reviewing the vendor's security practices, SBOM and patch commitments",["Trusting the marketing material","Checking only the price","Assuming popular software is secure"],"Acquired software brings the vendor's risk into your environment, so evaluate it like any supplier.","8.4"],
+ [8,"What's a key risk of using open-source components?","Unpatched vulnerabilities and license obligations",["They never have bugs","They can't be inspected","They always cost more than commercial software"],"Track components, monitor their vulnerabilities, and follow license terms such as copyleft rules.","8.4"],
+ [8,"A company adopts a SaaS application. How can it assess the provider's security without auditing them itself?","Review independent reports, such as a System and Organization Controls 2 Type II, and the shared responsibility terms",["Assume the provider handles everything","Ask the provider's sales team only","Skip the review for cloud apps"],"Independent attestations and clear responsibility splits show what the provider covers and what you still have to do.","8.4"],
+ [8,"Which coding practice best prevents SQL injection?","Parameterized queries",["Client-side validation only","Hiding error messages only","Longer database passwords"],"Parameterized queries keep data separate from SQL commands. Client-side checks are easily bypassed.","8.5"],
+ [8,"Where must input validation happen to be trusted?","On the server side",["Only in the browser","Only in the database backups","Only in the firewall logs"],"Attackers can bypass anything that runs on the client. Validate on the server, preferably against an allow list.","8.5"],
+ [8,"How should applications handle secrets such as API keys?","Store them in a secrets vault, not hardcoded in the source",["Put them in comments","Commit them to the public repository","Email them to developers"],"Hardcoded secrets leak through repositories and builds. Vaults control, rotate and audit access to them.","8.5"]
+];
+
 /* ---------------- Exams ---------------- */
 const SEC_DOMAINS = {
   1:{name:"General Security Concepts", w:12, c:"var(--orange)"},
@@ -3573,6 +3871,7 @@ const GAMES={
   subnet:{n:"Subnet Sprint",lbl:"Endless",d:"Work out network, broadcast, host ranges and masks by hand.",c:"var(--brown)",rec:p=>p.best.subnet,fmt:v=>`Best streak: ${v}`},
   hardware:{n:"Hardware Match",lbl:"60 seconds",d:"Name the connector, cable, part or tool from its description. A wrong answer costs 3 seconds.",c:"var(--blue)",rec:p=>p.best.hardware,fmt:v=>`Best: ${v}`},
   command:{n:"Command Match",lbl:"60 seconds",d:"Pick the Windows or Linux command for each job. A wrong answer costs 3 seconds.",c:"var(--green)",rec:p=>p.best.command,fmt:v=>`Best: ${v}`},
+  concept:{n:"Concept Match",lbl:"60 seconds",d:"Name the CISSP concept from its description: security models, risk terms, access control, crypto attacks and more. A wrong answer costs 3 seconds.",c:"var(--blue)",rec:p=>p.best.concept,fmt:v=>`Best: ${v}`},
   wintool:{n:"Tool Match",lbl:"60 seconds",d:"Pick the Windows tool or settings page for each job. A wrong answer costs 3 seconds.",c:"var(--orange)",rec:p=>p.best.wintool,fmt:v=>`Best: ${v}`}
 };
 const EXAMS={
@@ -3601,10 +3900,14 @@ const EXAMS={
     blurb:"Answer practice questions across all four 220-1202 domains, and match commands and Windows tools to the job against the clock.",
     DOMAINS:A2_DOMAINS,Q:A2_Q,OBJ:A2_OBJ,GUIDE:null,TIER:{1:2,2:2,3:3,4:1},MOCK_SPLIT:{1:25,2:25,3:21,4:19},PASS:700,UPG:A2_UPG,WPN:A2_WPN,
     games:["command","wintool"]},
-  // CISSP (ISC2) has a menu slot but no content yet (ready:false). Its eight domains and weights are set for when it's built.
-  cissp:{id:"cissp",name:"CISSP",full:"ISC2 CISSP",code:"ISC2 · CISSP",ready:false,color:"#B388FF",
-    foes:"",tagline:"Security leadership across eight domains, from risk management to software security.",blurb:"",
-    DOMAINS:CISSP_DOMAINS,Q:[],OBJ:{},GUIDE:null,TIER:{},MOCK_SPLIT:{},PASS:700,UPG:NET_UPG,WPN:NET_WPN,games:[]}
+  cissp:{id:"cissp",name:"CISSP",full:"ISC2",code:"CISSP",badge:"ISC2 · CISSP",ready:true,color:"#B388FF",ORG:"ISC2",
+    foes:"CISSP nights bring insiders in suits, fast spies, and APT brutes that slowly heal themselves unless you finish them off.",
+    tagline:"Security leadership across eight domains, from risk management to software security.",
+    blurb:"Answer practice questions across all eight CISSP domains, name security models, risk terms and access control concepts against the clock, and match attacks to their indicators.",
+    DOMAINS:CISSP_DOMAINS,Q:CISSP_Q,OBJ:CISSP_OBJ,GUIDE:null,TIER:{1:2,2:1,3:3,4:2,5:1,6:1,7:2,8:2},
+    MOCK_SPLIT:{1:16,2:10,3:13,4:13,5:13,6:12,7:13,8:10},MOCK_N:100,MOCK_MIN:120,SCALE:[0,1000],PASS:700,
+    mockNote:"The real CISSP is adaptive: it gives 100 to 150 questions in up to 3 hours and adjusts to your answers. This mock is a fixed 100-question version at a similar pace.",
+    UPG:CISSP_UPG,WPN:CISSP_WPN,games:["concept","attack"]}
 };
 // The current exam's content and progress. setExam() points these at one exam.
 let EX=null,P=null,DOMAINS=NET_DOMAINS,Q=NET_Q,OBJ=NET_OBJ,GUIDE=NET_GUIDE,TIER=NET_TIER,MOCK_SPLIT=NET_MOCK_SPLIT,PASS=720,UPG=NET_UPG,WPN=NET_WPN;
