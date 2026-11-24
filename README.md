@@ -17,7 +17,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Port Blitz:** 60 seconds of matching services and port numbers. Each wrong answer costs 3 seconds. Includes a port reference table.
 - **OSI Stack:** a scavenging mission. Put devices, protocols and PDUs on the correct OSI layer, 12 items per round. Each correct layer brings back 6 scrap and 4 XP straight away.
 - **Subnet Sprint:** endless random subnetting problems (network and broadcast address, host range, host count, mask) with a worked binary breakdown after each one.
-- **Review:** every question you miss goes into a review queue and stays there until you answer it correctly twice in a row. You can also practice every question you've ever missed. A study plan lists the exam objectives you're weakest on, with the key facts from the questions you missed, the chapters and pages that cover it in the Network+ study guide in `guides/`, links to Professor Messer's videos and CompTIA's exam objectives, and a button to practice just that objective. When you open the app from a checkout of this repo with the PDFs downloaded, the chapter links open the guide at the right page.
+- **Review:** every question you miss goes into a review queue and stays there until you answer it correctly twice in a row. You can also practice every question you've ever missed. A study plan lists the exam objectives you're weakest on, with the key facts from the questions you missed, the chapters and page numbers that cover it in the Sybex CompTIA Network+ Study Guide, links to Professor Messer's videos and CompTIA's exam objectives, and a button to practice just that objective.
 
 ## Security+ modes
 
@@ -34,7 +34,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Mock Exam:** 90 questions in 90 minutes, split 12/21/22/10/25 by the domain weights (13/23/25/11/28%). The pass mark is 675 on the 100–900 scale.
 - **Port Blitz:** the port drill, limited to the 15 ports the A+ objectives list (including NetBIOS 137–139), with its own high score.
 - **Hardware Match:** 60 seconds to name connectors, cables, components, printer parts and tools from their descriptions.
-- **Review:** the same review queue and study plan, with Professor Messer and CompTIA objective links for each weak objective. There's no A+ study guide in `guides/` yet, so no chapter links.
+- **Review:** the same review queue and study plan, with Professor Messer and CompTIA objective links for each weak objective. There's no A+ study guide mapped yet, so no chapter references.
 
 ## A+ Core 2 modes (220-1202)
 
@@ -84,15 +84,12 @@ Questions, explanations, the port table and OSI items spell out abbreviations th
 
 ## Study guides
 
-The `guides/` folder holds PDF study guides to read alongside the game:
+The study plans name the chapters and page numbers that cover each weak objective in these books, so you can read along in your own copy:
 
-| Exam | Guide | Size |
-|---|---|---|
-| Network+ | [CompTIA Network+ Study Guide](guides/Network%2B/CompTIA%20Network%2B%20Study%20Guide.pdf) | 561 MB |
-| Security+ (SY0-701) | [Security+ Study Guide, Ninth Edition](guides/Security%2B/Security%2B%20SY0-701%20Study%20Guide/09102025_Security%2B%C2%AE%20Study%20Guide%20Ninth%20Edition.pdf) | 189 MB |
-| Security+ (SY0-701) | [Security+ Practice Tests, Third Edition](guides/Security%2B/Security%2B%20Practice%20Tests%20SY0-701/09102025_Security%2B%20Practice%20Tests%20Exam%20SYO-701%20Third%20Edition.pdf) | 48 MB |
+- **Network+:** Sybex *CompTIA Network+ Study Guide, Sixth Edition* (N10-009)
+- **Security+:** Sybex *CompTIA Security+ Study Guide, Ninth Edition* and *CompTIA Security+ Practice Tests, Third Edition* (SY0-701)
 
-The PDFs are stored with [Git LFS](https://git-lfs.com). Install it before you clone (`brew install git-lfs`, then `git lfs install`), or the files download as small text pointers instead of the PDFs. These are copyrighted books, so keep this repository private.
+The books themselves aren't in this repository.
 
 ## Run it
 

@@ -1450,7 +1450,6 @@ const D=(function(){
 function setExam(id){
   EX=EXAMS[id];S.exam=id;P=S.ex[id];
   ({DOMAINS,Q,OBJ,GUIDE,TIER,MOCK_SPLIT,PASS,UPG,WPN}=EX);
-  checkGuide(GUIDE);
 }
 function gameCards(){
   return EX.games.map(k=>{const g=GAMES[k];return `<a class="mode" href="#${k}" style="--c:${g.c}"><span class="label">${g.lbl}</span><h3>${g.n}</h3><p>${g.d}</p><span class="best">${g.fmt(g.rec(P))}</span></a>`;}).join("");
@@ -1813,12 +1812,11 @@ const NET_OBJ={
  "5.4":["Given a scenario, troubleshoot common performance issues","performance issues"],
  "5.5":["Given a scenario, use the appropriate tool or protocol to solve networking issues","network tools"]
 };
-// The owner's study guide: Sybex CompTIA Network+ Study Guide, Sixth Edition (Lammle, Buhagiar), in guides/ via Git LFS.
+// The owner's study guide: Sybex CompTIA Network+ Study Guide, Sixth Edition (Lammle, Buhagiar). Chapters show as text with page numbers.
 // GUIDE.ch: chapter -> [title, book page, PDF page]. GUIDE.obj: objective -> chapters, from the book's objective map
 // plus chapter openings (1.2 is also covered in chapter 5, and 2.4 in chapter 15).
 const NET_GUIDE={
   title:"CompTIA Network+ Study Guide, 6th ed.",
-  pdf:"guides/Network%2B/CompTIA%20Network%2B%20Study%20Guide.pdf",
   ch:{1:["Introduction to Networks",1,51],2:["The OSI Reference Model",35,85],3:["Networking Connectors and Wiring Standards",61,111],
     4:["The Current Ethernet Specifications",101,151],5:["Networking Devices",133,183],6:["Introduction to the Internet Protocol",193,243],
     7:["IP Addressing",241,291],8:["IP Subnetting, Troubleshooting IP, and NAT",271,320],9:["Introduction to IP Routing",319,367],
@@ -1831,21 +1829,10 @@ const NET_GUIDE={
     "2.1":[8,9,10],"2.2":[11],"2.3":[5,12],"2.4":[15,16],"3.1":[15],"3.2":[14],"3.3":[16],"3.4":[5,7],"3.5":[13],
     "4.1":[20,21],"4.2":[21],"4.3":[21],"5.1":[18],"5.2":[3,18],"5.3":[11,18],"5.4":[11,18],"5.5":[19]}
 };
-// The PDF only opens where the repo is checked out with Git LFS (opened locally or served from the repo), not in hosted previews.
-function checkGuide(G){
-  if(!G)return;
-  [G,G.practice].forEach(T=>{
-    if(!T||T.checked)return;T.checked=true;T.ok=location.protocol==="file:";
-    if(!T.ok&&/^https?:$/.test(location.protocol)){
-      try{fetch(T.pdf,{method:"HEAD"}).then(r=>{T.ok=r.ok&&/pdf/i.test(r.headers.get("content-type")||"");}).catch(()=>{});}catch(e){}
-    }
-  });
-}
 // Security+ also points to the practice tests book's chapter for the objective's domain.
 function practiceLink(d){
-  const T=GUIDE&&GUIDE.practice;if(!T)return "";const [bp,pp,abp]=T.dom[d];
-  const txt=`Practice Tests · Domain ${d}.0 <small>questions p. ${bp}, answers p. ${abp}</small>`;
-  return T.ok?`<a class="src" href="${T.pdf}#page=${pp}" target="_blank" rel="noopener">${txt} ↗</a>`:`<span class="src static">${txt}</span>`;
+  const T=GUIDE&&GUIDE.practice;if(!T)return "";const [bp,,abp]=T.dom[d];
+  return `<span class="src static">Practice Tests · Domain ${d}.0 <small>questions p. ${bp}, answers p. ${abp}</small></span>`;
 }
 const guideShort=o=>GUIDE?(GUIDE.obj[o]||[]).map(c=>"Ch "+c).join(", "):"";
 const SRC={
@@ -1908,8 +1895,8 @@ function viewReview(){
       return `<details class="obj"${ix<3?" open":""}>
         <summary><span class="oc">${r.o}</span><span class="ot">${esc(OBJ[r.o][0])}</span><span class="chips">${r.queue.length?`<span class="chip-s bad">${r.queue.length} to review</span>`:""}${a!==null?`<span class="chip-s">${a}% correct over ${r.c+r.w} answers</span>`:""}<span class="chip-s">Domain ${r.o[0]}.0 · ${esc(DOMAINS[r.o[0]].name)}</span></span></summary>
         <div class="obj-body">
-          ${GUIDE?`<div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp,pp]=GUIDE.ch[c];
-            return GUIDE.ok?`<a class="src" href="${GUIDE.pdf}#page=${pp}" target="_blank" rel="noopener">Ch ${c} · ${esc(t)} <small>p. ${bp}</small> ↗</a>`:`<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>`:""}
+          ${GUIDE?`<div class="guide-ch"><span class="label">In your study books</span>${(GUIDE.obj[r.o]||[]).map(c=>{const [t,bp]=GUIDE.ch[c];
+            return `<span class="src static">Ch ${c} · ${esc(t)} <small>p. ${bp}</small></span>`;}).join("")}${practiceLink(r.o[0])}</div>`:""}
           <div class="srcs">${link(SRC.messerSearch(r.o),"Professor Messer videos","objective "+r.o)}${link(SRC.objectives(),"CompTIA exam objectives","official PDF")}</div>
           ${notes.length?`<div class="label">Key facts from questions you missed</div>`+notes.map(id=>`<div class="note"><div class="nq">${esc(expand(Q[id][1]))}</div><div><b>${esc(expand(Q[id][2]))}</b></div><div>${esc(expand(Q[id][4]))}</div></div>`).join(""):""}
           <div><button class="btn" data-po="${r.o}">Practice ${r.o} · ${r.ids.length} questions</button></div>
@@ -1923,8 +1910,8 @@ function viewReview(){
       ${link(SRC.messerSite,"Professor Messer",`free ${EX.code} video course and notes`)}
       ${link(SRC.comptiaSite,"CompTIA",`official ${EX.name} certification page`)}
       ${link(SRC.objectives(),`${EX.code} exam objectives`,"find the official PDF")}
-      ${!GUIDE?"":GUIDE.ok?link(GUIDE.pdf,"Your study guide",GUIDE.title):`<span class="src static">Your study guide <small>${GUIDE.title}, in the repo's guides folder</small></span>`}
-      ${GUIDE&&GUIDE.practice?(GUIDE.practice.ok?link(GUIDE.practice.pdf,"Your practice tests",GUIDE.practice.title):`<span class="src static">Your practice tests <small>${GUIDE.practice.title}, in the repo's guides folder</small></span>`):""}
+      ${GUIDE?`<span class="src static">Your study guide <small>${GUIDE.title}</small></span>`:""}
+      ${GUIDE&&GUIDE.practice?`<span class="src static">Your practice tests <small>${GUIDE.practice.title}</small></span>`:""}
     </div>
     <p class="muted small" style="margin:12px 0 0">The objectives PDF is CompTIA's own list of everything the exam covers. Use it as a checklist alongside the study plan.</p>
   </div>
@@ -2762,12 +2749,11 @@ const SEC_OBJ={
  "5.5":["Explain types and purposes of audits and assessments","audits and assessments"],
  "5.6":["Given a scenario, implement security awareness practices","security awareness"]
 };
-// The owner's Security+ books (Sybex, in guides/ via Git LFS). ch: chapter -> [title, book page, PDF page].
+// The owner's Security+ books (Sybex). ch: chapter -> [title, book page, PDF page].
 // obj: objective -> chapters, from the study guide's objective map.
 // practice.dom: domain -> [questions book page, questions PDF page, answers book page, answers PDF page].
 const SEC_GUIDE={
   title:"CompTIA Security+ Study Guide, 9th ed.",
-  pdf:"guides/Security%2B/Security%2B%20SY0-701%20Study%20Guide/09102025_Security%2B%C2%AE%20Study%20Guide%20Ninth%20Edition.pdf",
   ch:{1:["Today's Security Professional",1,39],2:["Cybersecurity Threat Landscape",21,59],3:["Malicious Code",49,87],
     4:["Social Engineering and Password Attacks",69,106],5:["Security Assessment and Testing",85,121],6:["Application Security",141,176],
     7:["Cryptography and the PKI",189,223],8:["Identity and Access Management",237,271],9:["Resilience and Physical Security",269,302],
@@ -2778,7 +2764,6 @@ const SEC_GUIDE={
     "2.5":[8,11,12,14,16],"3.1":[9,10,11,12],"3.2":[12],"3.3":[1,10,13,17],"3.4":[9,17],"4.1":[6,10,11,12,13],"4.2":[11],"4.3":[2,5,6],
     "4.4":[5,11,12,14],"4.5":[11,12],"4.6":[8],"4.7":[6],"4.8":[14,15],"4.9":[14],"5.1":[16,17],"5.2":[17],"5.3":[16],"5.4":[16],"5.5":[5],"5.6":[16]},
   practice:{title:"CompTIA Security+ Practice Tests, 3rd ed.",
-    pdf:"guides/Security%2B/Security%2B%20Practice%20Tests%20SY0-701/09102025_Security%2B%20Practice%20Tests%20Exam%20SYO-701%20Third%20Edition.pdf",
     dom:{1:[1,16,218,227],2:[29,44,233,241],3:[69,83,255,262],4:[115,126,283,290],5:[169,179,309,316]}}
 };
 // Security+ armory: the same mechanics as Network+ under Security+ names, with its own upgrade levels.
