@@ -37,7 +37,7 @@ Each question is one line in `Q`:
 - Write explanations that teach: give the right answer, then why the distractors are wrong or how they differ.
 - Questions are original practice items, never copied from real exams or third-party question banks.
 - `MOCK_SPLIT` must stay fillable from the bank: each domain needs at least that many questions.
-- Current bank: 147 questions. Domain 1: 22, domain 2: 21, domain 3: 20, domain 4: 35, domain 5: 49.
+- Current bank: 219 questions. Domain 1: 55, domain 2: 36, domain 3: 39, domain 4: 35, domain 5: 54. Every objective has at least 4 questions. Questions 147–218 were written to fill the gaps a coverage check against the Network+ study guide found, especially 1.2 and 2.4, which had none.
 
 ## Abbreviation behavior (requested by the owner)
 
@@ -45,13 +45,15 @@ Each question is one line in `Q`:
 - Answer choices are expanded only if `S.settings.expandChoices` is on (the default) **and** the question is not a terminology question.
 - `isTermQ(correctAnswer)`: if the correct answer contains an abbreviation, the question is testing that term. Its choices stay abbreviated until the user answers, then they are spelled out. This keeps the full name from giving the answer away. Apply the same rule anywhere answer choices are shown, including the mock exam.
 - When you add questions that use new abbreviations, add them to `GL`. Check that the question text doesn't reveal the answer once it's expanded.
+- `GL` maps each abbreviation to one meaning. PDU means protocol data unit, so power questions spell out "power distribution unit" instead of using PDU. A plural "IPs" is never expanded, because it means IP addresses.
 
 ## Review rules
 
 - A missed question goes into `S.review` and `S.missedEver`. It leaves the review queue only after `REVIEW_CLEAR` (2) correct answers in a row, in any mode.
 - All answer bookkeeping goes through `recordAnswer(id, ok)`. Use it for any new mode that asks bank questions.
 - The Review tab offers the review queue, everything ever missed, and a study plan. The study plan lists weak objectives, meaning those with questions in review or under 70% correct over at least 3 answers. For each it shows key facts from missed questions, links, and per-objective practice.
-- Study links are search URLs (YouTube search for "Professor Messer N10-009 <objective> <topic>", and a web search for the CompTIA objectives PDF) plus the two sites' home pages. The cloud environment could not reach professormesser.com or comptia.org, so deep links were never verified. Don't add guessed deep URLs. The objective titles in `OBJ` were also written from memory, so check them against the official PDF when it's available.
+- Study links are search URLs (YouTube search for "Professor Messer N10-009 <objective> <topic>", and a web search for the CompTIA objectives PDF) plus the two sites' home pages. The cloud environment could not reach professormesser.com or comptia.org, so deep links were never verified. Don't add guessed deep URLs. The objective titles in `OBJ` match the objective map in the Network+ study guide.
+- `GUIDE` maps each objective to the chapters that cover it in the owner's Network+ study guide, with each chapter's book page and PDF page. It comes from the book's objective map plus the chapter openings. The study plan lists those chapters, and the Quick Exams explanation line names them. Chapter links into the PDF (`#page=N`) appear only when the PDF is reachable: when the app is opened from a local checkout, or served from the repo with the LFS file present. Everywhere else, such as the Artifact preview, the chapters show as plain text.
 
 ## Outpost defense (`D` module)
 
@@ -86,5 +88,5 @@ Each question is one line in `Q`:
 
 ## Planned next
 
-- **Study guides:** the owner's PDFs are in `guides/`, stored with Git LFS (see `.gitattributes`): a CompTIA Network+ Study Guide (561 MB), a Security+ SY0-701 Study Guide, Ninth Edition (189 MB), and Security+ SY0-701 Practice Tests, Third Edition (48 MB). Fetch only the file you need with `git lfs pull --include "<path>"`, not all of them. A plain clone gives small pointer files, not PDFs. Use the guides to check the bank's coverage of the objectives, find weak spots, and link questions to chapters. They are copyrighted books: the repo must stay private, and the app's questions and explanations must be written fresh, never copied or closely paraphrased from the books or their practice tests.
+- **Study guides:** the Network+ guide is the Sybex *CompTIA Network+ Study Guide, Sixth Edition* (N10-009), a scanned 1,000-page PDF with searchable text, so `pdftotext -layout` works on it. Its PDF page numbers run about 41–50 pages ahead of the printed page numbers, and the gap grows in later chapters. The coverage check is done (see the bank note above). The owner's PDFs are in `guides/`, stored with Git LFS (see `.gitattributes`): a CompTIA Network+ Study Guide (561 MB), a Security+ SY0-701 Study Guide, Ninth Edition (189 MB), and Security+ SY0-701 Practice Tests, Third Edition (48 MB). Fetch only the file you need with `git lfs pull --include "<path>"`, not all of them. A plain clone gives small pointer files, not PDFs. Use the guides to check the bank's coverage of the objectives, find weak spots, and link questions to chapters. They are copyrighted books: the repo must stay private, and the app's questions and explanations must be written fresh, never copied or closely paraphrased from the books or their practice tests.
 - **Security+ track:** add Security+ (SY0-701) as a second exam with an exam picker, its own domains, weights, objectives, question bank and mock split. The outpost, armory, XP and review should carry across both exams. Propose the design to the owner before building it.
