@@ -277,6 +277,13 @@ body.exam-paused #app{filter:brightness(.35) saturate(.5);user-select:none;trans
 .dpause .bb{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 body.focus-mode .cable,body.focus-mode header.top,body.focus-mode nav.tabs,body.focus-mode footer{display:none}
 body.focus-mode #app{padding-top:16px}
+.mpause{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:rgba(5,10,14,.5)}
+.mpause .box{width:min(460px,100%);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:12px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.mpause h2{font-size:28px;letter-spacing:.08em}
+.mpause .mp-stats{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 16px;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.mpause .mp-stats b{color:var(--ink)}
+.mpause .bb{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.mpause .warn{color:var(--bad);font-weight:600}
 .rw{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
 .rw b{color:var(--orange);font-weight:600}
 
@@ -1531,7 +1538,14 @@ function route(){
   renderChrome(name);
   VIEWS[name]();
 }
-window.addEventListener("hashchange",route);
+// A view can set leaveGuard(to) to stop navigation; it returns true to allow leaving.
+let leaveGuard=null,skipRoute=false;
+window.addEventListener("hashchange",()=>{
+  if(skipRoute){skipRoute=false;return;}
+  const to=(location.hash||"").slice(1);
+  if(leaveGuard&&!leaveGuard(to)){skipRoute=true;location.replace("#mock");return;}
+  route();
+});
 document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest('a[href^="#"]');
   if(a&&a.getAttribute("href")===(location.hash||"#menu")){e.preventDefault();route();}
@@ -1827,7 +1841,7 @@ function buildMock(){
   return {ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1),flag:ids.map(()=>0),cur:0,ends:Date.now()+MOCK_MS,start:Date.now()};
 }
 function viewMock(){
-  if(P.mock){if(Date.now()>=P.mock.ends)return submitMock(true);return runMock();}
+  if(P.mock){if(!P.mock.pausedAt&&Date.now()>=P.mock.ends)return submitMock(true);return runMock();}
   if(P.mockLast)return mockResults();
   mockIntro();
 }
@@ -1836,25 +1850,30 @@ function mockIntro(){
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">90 questions. 90 minutes.</h2></div>
-      <p class="muted" style="margin:0;max-width:64ch">This runs like the real ${EX.code}. Questions are split across the five domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The clock keeps running if you leave this page, and your answers are saved. The pass mark is ${PASS} on the 100–900 scale.</p>
+      <p class="muted" style="margin:0;max-width:64ch">This runs like the real ${EX.code}. Questions are split across the five domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The exam opens full screen. You can pause it at any time, which stops the clock. Quitting or leaving the exam ends it and erases your answers. The pass mark is ${PASS} on the 100–900 scale.</p>
       <div class="domains">${Object.entries(DOMAINS).map(([k,d])=>`<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${MOCK_SPLIT[k]} Qs</span></div>`).join("")}</div>
-      <p class="muted small" style="margin:0">The real exam also has performance-based questions (simulations), which this mock doesn't include. Keys: 1–4 to answer, ← and → to move, F to flag.</p>
+      <p class="muted small" style="margin:0">The real exam also has performance-based questions (simulations), which this mock doesn't include. Keys: 1–4 to answer, ← and → to move, F to flag, P or Esc to pause.</p>
       <div><button class="btn primary" id="mstart">Start mock exam</button></div>
     </div>
     ${hist.length?`<div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Recent attempts</h3><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Result</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${esc(h.date)}</td><td class="p">${h.scaled}</td><td class="p">${h.correct}/${h.n}</td><td><span class="passchip ${h.pass?"pass":"fail"}">${h.pass?"PASS":"FAIL"}</span></td></tr>`).join("")}</tbody></table></div></div>`:""}
   </div>`;
-  document.getElementById("mstart").onclick=()=>{P.mock=buildMock();P.mockLast=null;save();runMock();};
+  document.getElementById("mstart").onclick=()=>{P.mock=buildMock();P.mockLast=null;save();enterFullscreen();runMock();};
 }
+// Real browser full screen is optional: some browsers and embedded views refuse it.
+function enterFullscreen(){try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)el.requestFullscreen().catch(()=>{});}catch(e){}}
+function exitFullscreen(){try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}}
 function runMock(){
   if(cleanup){cleanup();cleanup=null;}
-  const M=P.mock;let confirmOpen=false;
+  const M=P.mock;let confirmOpen=false,overlay=null,mode=null,quitBack=null,pendingTo=null;
+  document.body.classList.add("focus-mode");
   const go=i=>{M.cur=Math.max(0,Math.min(M.ids.length-1,i));confirmOpen=false;save();draw();window.scrollTo({top:0});};
+  const left=()=>M.ends-(M.pausedAt||Date.now());
   function draw(){
     const i=M.cur,id=M.ids[i],a=Q[id][2],hideC=isTermQ(a);
     const answered=M.ans.filter(x=>x>=0).length,flagged=M.flag.filter(Boolean).length,unans=M.ids.length-answered;
     $app.innerHTML=`<div class="stack">
       <div class="panel">
-        <div class="mock-top"><span class="label">Mock exam · Question ${i+1} of ${M.ids.length}</span><span class="mock-timer" id="mt" aria-label="Time remaining">${fmtTime(M.ends-Date.now())}</span></div>
+        <div class="mock-top"><span class="label">${esc(EX.code)} mock exam · Question ${i+1} of ${M.ids.length}</span><span class="row" style="gap:8px"><span class="mock-timer" id="mt" aria-label="Time remaining">${fmtTime(left())}</span><button class="btn" id="mpauseBtn">Pause</button></span></div>
         <div class="progress"><i style="width:${100*answered/M.ids.length}%"></i></div>
         <p class="qtext">${esc(expand(Q[id][1]))}</p>
         <div class="opts">${M.opts[i].map((o,k)=>`<button class="opt${M.ans[i]===k?" sel":""}" data-k="${k}" aria-pressed="${M.ans[i]===k}"><kbd>${k+1}</kbd><span>${esc(hideC?o:choice(o))}</span></button>`).join("")}</div>
@@ -1867,7 +1886,7 @@ function runMock(){
       <div class="panel">
         <div class="row" style="justify-content:space-between"><span class="label">Answered ${answered}/${M.ids.length} · Flagged ${flagged}</span><button class="btn" id="msubmit">Submit exam</button></div>
         <div class="mgrid">${M.ids.map((_,k)=>`<button class="mg${M.ans[k]>=0?" done":""}${M.flag[k]?" flag":""}${k===i?" cur":""}" data-g="${k}" aria-label="Question ${k+1}${M.ans[k]>=0?", answered":""}${M.flag[k]?", flagged":""}">${k+1}</button>`).join("")}</div>
-        ${confirmOpen?`<div class="confirm"><b>Submit your exam?</b><span class="muted">${unans?`${unans} question${unans>1?"s are":" is"} unanswered and will be marked wrong. `:""}${flagged?`${flagged} flagged question${flagged>1?"s":""} still marked for review. `:""}${fmtTime(M.ends-Date.now())} left on the clock.</span><div class="row"><button class="btn primary" id="myes">Submit and score</button><button class="btn" id="mno">Keep working</button><button class="btn" id="mquit" style="margin-left:auto">Abandon exam</button></div></div>`:""}
+        ${confirmOpen?`<div class="confirm"><b>Submit your exam?</b><span class="muted">${unans?`${unans} question${unans>1?"s are":" is"} unanswered and will be marked wrong. `:""}${flagged?`${flagged} flagged question${flagged>1?"s":""} still marked for review. `:""}${fmtTime(left())} left on the clock.</span><div class="row"><button class="btn primary" id="myes">Submit and score</button><button class="btn" id="mno">Keep working</button><button class="btn" id="mquit" style="margin-left:auto">Quit exam</button></div></div>`:""}
       </div>
     </div>`;
     $app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{M.ans[M.cur]=+b.dataset.k;save();draw();});
@@ -1876,29 +1895,92 @@ function runMock(){
     document.getElementById("mnext").onclick=()=>{if(M.cur<M.ids.length-1)go(M.cur+1);else{confirmOpen=true;draw();}};
     document.getElementById("mflag").onclick=()=>{M.flag[M.cur]=M.flag[M.cur]?0:1;save();draw();};
     document.getElementById("msubmit").onclick=()=>{confirmOpen=true;draw();};
+    document.getElementById("mpauseBtn").onclick=()=>pause();
     if(confirmOpen){
-      document.getElementById("myes").onclick=()=>submitMock(false);
+      document.getElementById("myes").onclick=()=>finish(()=>submitMock(false));
       document.getElementById("mno").onclick=()=>{confirmOpen=false;draw();};
-      document.getElementById("mquit").onclick=()=>{P.mock=null;save();if(cleanup){cleanup();cleanup=null;}mockIntro();};
+      document.getElementById("mquit").onclick=()=>askQuit(null);
     }
     tick();
   }
   function tick(){
-    const left=M.ends-Date.now(),el=document.getElementById("mt");
-    if(el){el.textContent=fmtTime(left);el.classList.toggle("low",left<10*60000);}
-    if(left<=0)submitMock(true);
+    const l=left(),el=document.getElementById("mt");
+    if(el){el.textContent=fmtTime(l);el.classList.toggle("low",l<10*60000);}
+    const ot=overlay&&overlay.querySelector("#mpTime");if(ot)ot.textContent=fmtTime(l);
+    if(!M.pausedAt&&l<=0)finish(()=>submitMock(true));
+  }
+  // ----- pause overlay -----
+  function showOverlay(m){
+    mode=m;
+    if(!overlay){overlay=document.createElement("div");overlay.className="mpause";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");document.body.appendChild(overlay);}
+    document.getElementById("app").inert=true;document.body.classList.add("exam-paused");
+    const answered=M.ans.filter(x=>x>=0).length,flagged=M.flag.filter(Boolean).length;
+    overlay.setAttribute("aria-label",m==="quit"?"Quit the mock exam?":"Exam paused");
+    overlay.innerHTML=m==="quit"
+      ?`<div class="box"><h2 style="font-size:24px;letter-spacing:.02em">Leave the mock exam?</h2>
+        <p class="warn" style="margin:0">Leaving ends this exam and erases all of its progress: your ${answered} answer${answered===1?"":"s"}, flags and remaining time. This can't be undone.</p>
+        <p class="muted small" style="margin:0">To keep your progress, pause instead and come back to it.</p>
+        <div class="bb"><button class="btn danger" data-m="erase">Quit and erase</button><button class="btn primary" data-m="back">${quitBack==="pause"?"Back to pause menu":"Keep going"}</button></div></div>`
+      :`<div class="box"><span class="label">${esc(EX.code)} mock exam</span><h2>PAUSED</h2>
+        <div class="mp-stats"><span>TIME LEFT <b id="mpTime">${fmtTime(left())}</b></span><span>ANSWERED <b>${answered}/${M.ids.length}</b></span><span>FLAGGED <b>${flagged}</b></span></div>
+        <p class="muted small" style="margin:0">The clock is stopped. Press P or Esc to resume.</p>
+        <div class="bb"><button class="btn primary" data-m="resume">Resume exam</button><button class="btn" data-m="quit">Quit exam</button></div></div>`;
+    overlay.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+      const k=b.dataset.m;
+      if(k==="resume")resume();
+      else if(k==="quit")askQuit("pause");
+      else if(k==="back"){pendingTo=null;if(quitBack==="pause")showOverlay("pause");else resume();}
+      else quitExam();
+    });
+    const f=overlay.querySelector(m==="quit"?'[data-m="back"]':'[data-m="resume"]');if(f)f.focus({preventScroll:true});
+  }
+  function hideOverlay(){
+    if(overlay){overlay.remove();overlay=null;}mode=null;
+    const app=document.getElementById("app");if(app)app.inert=false;document.body.classList.remove("exam-paused");
+  }
+  function pause(){if(!M.pausedAt){M.pausedAt=Date.now();save();}showOverlay("pause");}
+  function resume(){
+    if(M.pausedAt){const d=Date.now()-M.pausedAt;M.ends+=d;M.pausedTotal=(M.pausedTotal||0)+d;M.pausedAt=null;save();}
+    hideOverlay();enterFullscreen();tick();
+  }
+  function askQuit(from){
+    quitBack=from;
+    if(!M.pausedAt){M.pausedAt=Date.now();save();} // the clock stops while you decide
+    showOverlay("quit");
+  }
+  function quitExam(){
+    const to=pendingTo;
+    P.mock=null;save();
+    finish(()=>{if(to&&to!=="mock")location.hash=to;else mockIntro();});
+  }
+  // Ends this run: clears timers, overlay, guard, focus mode and browser full screen, then continues.
+  function finish(next){
+    if(cleanup){cleanup();cleanup=null;}
+    document.body.classList.remove("focus-mode");exitFullscreen();
+    next();
   }
   const iv=setInterval(tick,1000);
   const onKey=e=>{
     if(e.target.tagName==="INPUT"||e.metaKey||e.ctrlKey||e.altKey)return;
-    if(/^[1-4]$/.test(e.key)){M.ans[M.cur]=+e.key-1;save();draw();}
+    if(mode){
+      if(e.key==="Escape"||e.key==="p"||e.key==="P"){e.preventDefault();
+        if(mode==="pause")resume();else{pendingTo=null;if(quitBack==="pause")showOverlay("pause");else resume();}}
+      return;
+    }
+    if(e.key==="p"||e.key==="P"||e.key==="Escape"){e.preventDefault();pause();}
+    else if(/^[1-4]$/.test(e.key)){M.ans[M.cur]=+e.key-1;save();draw();}
     else if(e.key==="ArrowRight"&&M.cur<M.ids.length-1)go(M.cur+1);
     else if(e.key==="ArrowLeft"&&M.cur>0)go(M.cur-1);
     else if(e.key==="f"||e.key==="F"){M.flag[M.cur]=M.flag[M.cur]?0:1;save();draw();}
   };
+  // Closing or reloading the page pauses the exam, so it waits, paused, when you come back.
+  const onHide=()=>{if(P.mock===M&&!M.pausedAt){M.pausedAt=Date.now();save();}};
   document.addEventListener("keydown",onKey);
-  cleanup=()=>{clearInterval(iv);document.removeEventListener("keydown",onKey);};
+  window.addEventListener("pagehide",onHide);
+  leaveGuard=to=>{pendingTo=to;askQuit(mode==="pause"?"pause":null);return false;};
+  cleanup=()=>{clearInterval(iv);document.removeEventListener("keydown",onKey);window.removeEventListener("pagehide",onHide);hideOverlay();leaveGuard=null;};
   draw();
+  if(M.pausedAt)showOverlay("pause");
 }
 function submitMock(timedOut){
   if(cleanup){cleanup();cleanup=null;}
@@ -1910,12 +1992,13 @@ function submitMock(timedOut){
     recordAnswer(id,ok);
   });
   const n=M.ids.length,pct=correct/n,sc=scaled(pct),pass=sc>=PASS;
-  const used=Math.min(MOCK_MS,Date.now()-M.start);
+  const used=Math.min(MOCK_MS,Date.now()-M.start-(M.pausedTotal||0));
   P.mockLast={ids:M.ids,opts:M.opts,ans:M.ans,correct,n,scaled:sc,pass,dom,used,timedOut};
   P.mockHistory.push({date:new Date().toLocaleDateString(),scaled:sc,correct,n,pass});
   if(!P.best.mock||sc>P.best.mock.scaled)P.best.mock={scaled:sc,correct,n,pass,date:new Date().toLocaleDateString()};
   if(P.mockHistory.length>20)P.mockHistory.shift();
   P.mock=null;S.base.scrap+=3*correct;award(5*correct);
+  document.body.classList.remove("focus-mode");exitFullscreen();
   if(location.hash!=="#mock")location.hash="mock";else mockResults();
 }
 function mockResults(){

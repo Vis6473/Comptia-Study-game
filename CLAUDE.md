@@ -78,7 +78,12 @@ Each question is one line in `Q`:
 
 ## Mock exam
 
-90 questions, 90 minutes, split 21/18/17/13/21 by the domain weights, with no feedback until submitting. The user can flag questions, jump between them, and resume later (state lives in `S.mock` and the clock keeps running). It auto-submits when time runs out. The score is an estimate, `100 + 800 × percent`, with a pass mark of 720. CompTIA's real scaling isn't public, so keep calling the score an estimate. Unanswered questions count as wrong.
+90 questions, 90 minutes, split 21/18/17/13/21 by the domain weights (Security+: 11/20/16/25/18, pass 750), with no feedback until submitting. The user can flag questions and jump between them. The score is an estimate, `100 + 800 × percent`, with a pass mark of 720. CompTIA's real scaling isn't public, so keep calling the score an estimate. Unanswered questions count as wrong.
+
+- **Full screen:** `runMock` adds `body.focus-mode` and Start calls `enterFullscreen()` (the browser Fullscreen API, optional and allowed to fail). Submitting or quitting removes focus mode and calls `exitFullscreen()`.
+- **Pause:** `M.pausedAt` marks a paused exam. Resuming adds the paused time to `M.ends` and `M.pausedTotal`, so time used excludes pauses. A paused exam is never auto-submitted. The `.mpause` overlay sits outside `#app`, which is made `inert` and dimmed with `body.exam-paused`. P or Esc pauses and resumes.
+- **Leaving erases the exam:** quitting from the pause menu or the submit panel, or any hash change while the exam runs (caught by the router's `leaveGuard`), opens a confirmation that leaving erases the exam's progress. "Quit and erase" sets `P.mock = null` and continues to wherever the user was going. `leaveGuard` is cleared in the mock's `cleanup`.
+- **Closing or reloading:** a `pagehide` handler sets `pausedAt`, so the exam comes back paused rather than erased. The in-app warning can't run on page unload.
 
 ## Saved state
 
