@@ -92,6 +92,7 @@ Each question is one line in `Q`:
 - **Per exam** (`S.ex.net`, `S.ex.sec`, made by `exFresh()`; the current one is `P`): `qs`, `dom`, `review`, `reviewHits`, `missedEver`, `mock`, `mockLast`, `mockHistory`, `best` (`ports`, `osi`, `subnet`, `quick`, `control`, `attack`, `mock`), `missedPorts`, `answered`. Use `P.<field>` in exam code, never `S.<field>`.
 - **Shared:** `xp`, `streak`, `lastDay`, `exam` (last chosen exam), `settings`, and `base` (scrap, night, bestNight, xpSpent, stock, kills, bestKills). Upgrade levels are per exam in `S.base.up.net` and `S.base.up.sec`.
 - **Migration:** saves from before the exam split kept Network+ progress at the top level with flat `base.up`. `load()` moves them into `S.ex.net` and `S.base.up.net`, and fills `best.mock` from mock history.
+- `settings.playerName` is the optional name on the High Scores score card (`drawScoreCard`, `setupScoreCard`). Shared online high scores were discussed and put on hold; scores stay in localStorage.
 - Don't name a local variable `P`; it hides the current exam's progress. Subnet Sprint's problem variable is `pr` for this reason.
 
 ## Keeping things in sync

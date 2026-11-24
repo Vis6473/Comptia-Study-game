@@ -232,6 +232,13 @@ details.obj summary .chips{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
 .board div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .board b{font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums}
 .board small{color:var(--muted);font-size:12px}
+.sharecard{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
+.sharecard img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:#07090d;aspect-ratio:1200/630}
+.sharecard .btn[hidden]{display:none}
+.sharecard .acts{display:flex;flex-wrap:wrap;gap:8px}
+.sharecard label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.sharecard input{font:inherit;font-size:15px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+@media (max-width:720px){.sharecard{grid-template-columns:1fr}}
 /* Main menu: a deliberately dark title screen in the outpost's tech-punk look */
 body.menu-mode{background:#05080B}
 body.menu-mode .cable,body.menu-mode header.top,body.menu-mode nav.tabs,body.menu-mode footer{display:none}
@@ -822,7 +829,7 @@ const KEY = "netplus-patch-bay-v1";
 // except base upgrades and weapons, which each exam has its own set of (S.base.up.net / .sec).
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,mock:null},missedPorts:{},answered:0};}
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true},ex:{net:exFresh(),sec:exFresh()},
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ex:{net:exFresh(),sec:exFresh()},
   base:{scrap:0,up:{net:{},sec:{}},night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -1516,8 +1523,109 @@ function viewScores(){
         <div><small>Level</small><b>${level()}</b><small>${S.xp} XP earned</small></div>
       </div>
     </div>
+    <div class="panel stack">
+      <div><span class="label">Share</span><h3 style="font-size:22px;margin-top:2px">Score card</h3></div>
+      <div class="sharecard">
+        <img id="scImg" alt="Your Cyber Zombie Attack score card">
+        <div class="stack">
+          <label>Name on the card (optional)<input id="scName" maxlength="24" autocomplete="nickname" value="${esc(S.settings.playerName||"")}" placeholder="Survivor"></label>
+          <div class="acts">
+            <button class="btn primary" id="scSave">Save image</button>
+            <button class="btn" id="scShare" hidden>Share…</button>
+            <button class="btn" id="scCopy" hidden>Copy image</button>
+            <button class="btn" id="scX">Post on X</button>
+          </div>
+          <p class="muted" id="scMsg" style="font-size:13px" aria-live="polite">Save the image to your computer, then attach it to any post. On a phone, Share sends it straight to your apps.</p>
+        </div>
+      </div>
+    </div>
     ${exBoard("net")}${exBoard("sec")}
   </div>`;
+  setupScoreCard();
+}
+
+/* Score card: a 1200x630 image of the player's best scores, drawn on a canvas. */
+function scoreCardData(){
+  const B=S.base,ex=["net","sec"].map(id=>{const X=EXAMS[id],p=S.ex[id];
+    return {X,p,used:!!(p.answered||p.best.quick||p.best.mock||X.games.some(k=>GAMES[k].rec(p)))};});
+  let shown=ex.filter(e=>e.used);if(!shown.length)shown=ex;
+  return {B,shown,name:(S.settings.playerName||"").trim()};
+}
+function drawScoreCard(){
+  const W=1200,H=630,c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
+  const {B,shown,name}=scoreCardData();
+  const CY="#2ff3ff",MG="#ff3ea5",AM="#ffb020",INK="#e8f1ff",MU="#8a97ad",BG="#07090d";
+  const disp=(w,px)=>`${w} ${px}px "Chakra Petch", "IBM Plex Sans", sans-serif`,mono=px=>`500 ${px}px "IBM Plex Mono", monospace`;
+  g.fillStyle=BG;g.fillRect(0,0,W,H);
+  const glow=g.createRadialGradient(W*0.2,H*0.1,0,W*0.2,H*0.1,W*0.8);glow.addColorStop(0,"rgba(47,243,255,.12)");glow.addColorStop(1,"rgba(47,243,255,0)");g.fillStyle=glow;g.fillRect(0,0,W,H);
+  g.strokeStyle="rgba(47,243,255,.06)";g.lineWidth=1;for(let x=0;x<W;x+=40){g.beginPath();g.moveTo(x+.5,0);g.lineTo(x+.5,H);g.stroke();}for(let y=0;y<H;y+=40){g.beginPath();g.moveTo(0,y+.5);g.lineTo(W,y+.5);g.stroke();}
+  // hazard stripe
+  g.save();g.beginPath();g.rect(0,0,W,14);g.clip();g.fillStyle=AM;g.fillRect(0,0,W,14);g.fillStyle="#111";for(let x=-20;x<W+20;x+=36){g.beginPath();g.moveTo(x,14);g.lineTo(x+18,0);g.lineTo(x+32,0);g.lineTo(x+14,14);g.fill();}g.restore();
+  // horde silhouettes along the bottom
+  g.fillStyle="rgba(255,62,165,.16)";
+  for(let i=0;i<16;i++){const x=20+i*76+(i%3)*9,s=(i%4===1)?1.45:1,y=H-28;
+    g.beginPath();g.arc(x,y-62*s,11*s,0,7);g.fill();g.fillRect(x-12*s,y-50*s,24*s,34*s);
+    g.fillRect(x-11*s,y-16*s,9*s,16*s);g.fillRect(x+2*s,y-16*s,9*s,16*s);g.fillRect(x+10*s,y-46*s,22*s,7*s);}
+  g.fillStyle="rgba(47,243,255,.5)";g.fillRect(0,H-28,W,2);
+  // heading
+  g.textBaseline="alphabetic";g.fillStyle=CY;g.font=mono(18);g.fillText("OUTPOST REPORT · "+new Date().toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}).toUpperCase(),56,64);
+  g.font=disp(700,50);g.fillStyle=MG;g.fillText("CYBER ZOMBIE ATTACK",59,125);g.fillStyle=INK;g.fillText("CYBER ZOMBIE ATTACK",56,122);
+  if(name){g.font=disp(600,28);g.fillStyle=AM;g.fillText(fit(g,name.toUpperCase(),560),56,170);}
+  // outpost stats
+  const top=name?212:190;
+  g.fillStyle=MU;g.font=mono(16);g.fillText("HIGHEST NIGHT SURVIVED",56,top);
+  g.fillStyle=CY;g.font=disp(700,120);g.fillText(String(B.bestNight||0),52,top+112);
+  const stat=(x,y,lbl,v)=>{g.fillStyle=MU;g.font=mono(14);g.fillText(lbl,x,y);g.fillStyle=INK;g.font=disp(700,38);g.fillText(String(v),x,y+42);};
+  stat(56,top+168,"MOST IN ONE NIGHT",B.bestKills||0);stat(256,top+168,"UNDEAD DESTROYED",B.kills||0);stat(476,top+168,"LEVEL",level());
+  // exam boxes
+  const bx=640,bw=504,gap=18,bh=shown.length>1?(H-28-56-110-gap)/2:(H-28-56-110);
+  shown.forEach((e,i)=>{const {X,p}=e,y=110+i*(bh+gap),m=p.best.mock;
+    g.fillStyle="rgba(13,19,28,.92)";g.fillRect(bx,y,bw,bh);g.strokeStyle=i?MG:CY;g.lineWidth=2;g.strokeRect(bx+1,y+1,bw-2,bh-2);
+    g.fillStyle=i?MG:CY;g.fillRect(bx,y,6,bh);
+    g.fillStyle=MU;g.font=mono(14);g.fillText(X.code,bx+26,y+34);g.fillStyle=INK;g.font=disp(700,28);g.fillText(X.name,bx+26,y+66);
+    g.fillStyle=MU;g.font=mono(13);g.fillText("BEST MOCK (EST.)",bx+26,y+100);g.fillText("BEST QUICK EXAM",bx+270,y+100);
+    g.font=disp(700,44);g.fillStyle=m?INK:MU;g.fillText(m?String(m.scaled):"—",bx+26,y+146);
+    if(m){const tw=g.measureText(String(m.scaled)).width;g.font=mono(14);const lbl=m.pass?"PASS":"BELOW "+X.PASS,cw=g.measureText(lbl).width+16;
+      g.fillStyle=m.pass?"rgba(47,243,160,.18)":"rgba(255,176,32,.18)";g.fillRect(bx+36+tw,y+124,cw,24);g.fillStyle=m.pass?"#2ff3a0":AM;g.fillText(lbl,bx+44+tw,y+141);}
+    g.font=disp(700,44);g.fillStyle=p.best.quick?INK:MU;g.fillText(p.best.quick?p.best.quick+"/10":"—",bx+270,y+146);
+    if(bh>200){g.font=mono(14);g.fillStyle=MU;
+      const line=X.games.map(k=>{const v=GAMES[k].rec(p);return GAMES[k].n.toUpperCase()+" "+(v||"—");}).join("  ·  ");
+      g.fillText(fit(g,line,bw-52),bx+26,y+bh-26);}
+  });
+  return c;
+}
+function fit(g,t,max){if(g.measureText(t).width<=max)return t;while(t.length>1&&g.measureText(t+"…").width>max)t=t.slice(0,-1);return t+"…";}
+function scoreText(){
+  const {B,shown}=scoreCardData();
+  const bits=shown.filter(e=>e.p.best.mock).map(e=>`${e.X.name} mock ${e.p.best.mock.scaled} (est.)`);
+  return `I survived ${B.bestNight||0} night${B.bestNight===1?"":"s"} and destroyed ${B.kills||0} undead in Cyber Zombie Attack while studying for CompTIA${bits.length?". Best "+bits.join(", "):""}. #CompTIA`;
+}
+function setupScoreCard(){
+  const img=document.getElementById("scImg"),msg=document.getElementById("scMsg"),nm=document.getElementById("scName");
+  let blob=null,ver=0;
+  const file=()=>new File([blob],"cyber-zombie-attack-scores.png",{type:"image/png"});
+  const render=()=>{const v=++ver,c=drawScoreCard();img.src=c.toDataURL("image/png");
+    blob=null;if(c.toBlob)c.toBlob(b=>{if(v===ver)blob=b;},"image/png");};
+  const fonts=document.fonts&&document.fonts.load?Promise.all(['700 50px "Chakra Petch"','500 16px "IBM Plex Mono"'].map(f=>document.fonts.load(f).catch(()=>{}))):Promise.resolve();
+  render();fonts.then(()=>{if(document.body.contains(img))render();});
+  nm.addEventListener("input",()=>{S.settings.playerName=nm.value.slice(0,24);save();render();});
+  const say=t=>{msg.textContent=t;};
+  const withBlob=fn=>{if(blob)return fn();const c=drawScoreCard();c.toBlob(b=>{blob=b;fn();},"image/png");};
+  document.getElementById("scSave").onclick=()=>{
+    try{const a=document.createElement("a");a.href=img.src;a.download="cyber-zombie-attack-scores.png";document.body.appendChild(a);a.click();a.remove();
+      say("Saved as cyber-zombie-attack-scores.png. If nothing downloaded, right-click the card (or press and hold on a phone) and save the image.");}
+    catch(e){say("Your browser blocked the download. Right-click the card (or press and hold on a phone) and save the image.");}
+  };
+  const sh=document.getElementById("scShare");
+  try{if(navigator.canShare&&navigator.canShare({files:[new File([""],"x.png",{type:"image/png"})]}))sh.hidden=false;}catch(e){}
+  sh.onclick=()=>withBlob(()=>navigator.share({files:[file()],title:"Cyber Zombie Attack",text:scoreText()}).catch(e=>{if(e&&e.name!=="AbortError")say("Sharing didn't work here. Save the image and attach it to your post instead.");}));
+  const cp=document.getElementById("scCopy");
+  if(navigator.clipboard&&window.ClipboardItem)cp.hidden=false;
+  cp.onclick=()=>withBlob(()=>navigator.clipboard.write([new ClipboardItem({"image/png":blob})]).then(()=>say("Image copied. Paste it into a post or a chat."),()=>say("Your browser didn't allow copying the image. Save it instead.")));
+  document.getElementById("scX").onclick=()=>{
+    window.open("https://x.com/intent/post?text="+encodeURIComponent(scoreText()),"_blank","noopener");
+    say("X opened with your scores as text. Save or copy the image and attach it to the post.");
+  };
 }
 
 /* ---------------- Router ---------------- */
