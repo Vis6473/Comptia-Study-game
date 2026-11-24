@@ -1611,7 +1611,11 @@ function setupScoreCard(){
   nm.addEventListener("input",()=>{S.settings.playerName=nm.value.slice(0,24);save();render();});
   const say=t=>{msg.textContent=t;};
   const withBlob=fn=>{if(blob)return fn();const c=drawScoreCard();c.toBlob(b=>{blob=b;fn();},"image/png");};
+  // In the hosted preview, the page can't download directly; it asks the viewer through the downloads capability.
+  let dl=null;try{if(window.claude&&window.claude.use)window.claude.use("downloads").then(n=>{dl=n;},()=>{});}catch(e){}
   document.getElementById("scSave").onclick=()=>{
+    if(dl)return withBlob(()=>dl.save({filename:"cyber-zombie-attack-scores.png",data:blob}).then(()=>say("Saved as cyber-zombie-attack-scores.png."),
+      e=>say(e&&e.code==="declined"?"Save cancelled.":"Saving isn't available here. Right-click the card (or press and hold on a phone) and save the image.")));
     try{const a=document.createElement("a");a.href=img.src;a.download="cyber-zombie-attack-scores.png";document.body.appendChild(a);a.click();a.remove();
       say("Saved as cyber-zombie-attack-scores.png. If nothing downloaded, right-click the card (or press and hold on a phone) and save the image.");}
     catch(e){say("Your browser blocked the download. Right-click the card (or press and hold on a phone) and save the image.");}
