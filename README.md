@@ -20,7 +20,7 @@ A browser study game for **CompTIA Network+ (N10-009)** and **CompTIA Security+ 
 
 ## Security+ modes
 
-- **Quick Exams + Outpost Defense:** 10-question rounds from 264 original Security+ questions covering all 28 SY0-701 objectives, with at least 9 per objective. Security+ nights bring their own zombies (see below).
+- **Quick Exams + Outpost Defense:** 10-question rounds from 308 original Security+ questions covering all 28 SY0-701 objectives, with at least 9 per objective. Security+ nights bring their own zombies (see below).
 - **Mock Exam:** 90 questions in 90 minutes, split 11/20/16/25/18 across the five domains by their exam weights (12/22/18/28/20%). The pass mark is 750 on the 100–900 scale.
 - **Port Blitz:** the same port drill as Network+, with its own high score.
 - **Control Sort:** classify 10 security controls by category (technical, managerial, operational, physical) and by type (preventive, deterrent, detective, corrective, compensating, directive). Each correct pick is a point, out of 20, and a scavenging mission that brings back 4 scrap and 2 XP straight away.
@@ -54,6 +54,7 @@ A browser study game for **CompTIA Network+ (N10-009)** and **CompTIA Security+ 
 - **Scrap** is shared by both exams. It buys base upgrades (heavy caliber, autoloader, extra turret mounts, wall plating, ammo cache) and weapon upgrades. You also earn scrap from kills, survived nights and the mini-games.
 - **Ammo supplies:** buy ammo crates and pallets with scrap, or an airdrop of 200 rounds with XP. During a night the ammo goes straight to the guns. Otherwise it's stockpiled for your next night.
 - **XP is currency:** spend it in the Armory to attach new weapons to the base. Each exam has its own upgrades and weapons. Network+ has Flame bunker (150 XP), Tesla coil (300), Mortar pit (450) and Railgun (650). Security+ has the Sandbox trap, EDR pulse, Honeypot mine and Kill switch at the same prices, and its base upgrades are Patch level, Threat feed, Sensor node, Hardened firewall and Backup cache. Your level still counts all the XP you've ever earned.
+- **Focus mode:** while a quick exam (or review round) runs, only the exam and the outpost are on screen. The header, tabs and footer come back when you leave through the result screen or the pause menu.
 - **Pause:** the Pause button (or P) freezes the horde and puts the quick exam on hold: the exam dims and ignores clicks and keys, and a pause menu over the horde shows the question, hostiles, wall and ammo. From there you can resume (or press Esc), restart the quick exam from question 1 with a fresh night, open the armory, or quit to home. Answers already given stay recorded.
 - **Nights:** keep the wall standing until the bomber clears the field to advance to the next night, where the horde gets bigger and tougher.
 
