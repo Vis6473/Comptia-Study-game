@@ -20,7 +20,7 @@ A browser study game for **CompTIA Network+ (N10-009)** and **CompTIA Security+ 
 
 ## Security+ modes
 
-- **Quick Exams + Outpost Defense:** 10-question rounds from 174 original Security+ questions covering all 28 SY0-701 objectives, at least 5 per objective. Security+ nights bring their own zombies (see below).
+- **Quick Exams + Outpost Defense:** 10-question rounds from 218 original Security+ questions covering all 28 SY0-701 objectives, at least 5 per objective and at least 9 for each domain 3 and 5 objective. Security+ nights bring their own zombies (see below).
 - **Mock Exam:** 90 questions in 90 minutes, split 11/20/16/25/18 across the five domains by their exam weights (12/22/18/28/20%). The pass mark is 750 on the 100–900 scale.
 - **Port Blitz:** the same port drill as Network+, with its own high score.
 - **Control Sort:** classify 10 security controls by category (technical, managerial, operational, physical) and by type (preventive, deterrent, detective, corrective, compensating, directive). Each correct pick is a point, out of 20, and a scavenging mission that brings back 4 scrap and 2 XP straight away.
