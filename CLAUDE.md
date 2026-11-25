@@ -85,6 +85,7 @@ Each question is one line in `Q`:
   - Scrap buys `UPG` base upgrades and weapon upgrades.
   - **XP is spendable currency.** Available XP is `S.xp - S.base.xpSpent`; level still uses total `S.xp`. XP unlocks `WPN` weapons: flame bunker, tesla coil, mortar pit, railgun.
   - `SUPPLY` sells ammo: crate 40 rounds for 15 scrap, pallet 150 for 50 scrap, airdrop 200 for 60 XP. Ammo bought during a night goes straight to the guns; otherwise it goes to `S.base.stock` for the next night.
+- **Armory tab** (`#armory`, `viewArmory`): every exam has it, before Review. It shows the loadout from `D.info()` (a read-only view of `cfg()`, `VARIANTS`, `FOE`, `DPS` and `ZOMBIE_SPEED`), weapon levels, the shop (`shopHTML`/`bindShop`) and a horde guide built from `FOE_INFO` (a name and note for each variant), with health, time to the wall and wall damage for the current night. Add new zombie variants to `FOE_INFO`.
 - The dock is a deliberately single-theme dark "tech-punk" style (`.tp` tokens: cyan, magenta, amber, hazard stripes, scanlines). The rest of the app supports light and dark themes through `:root` tokens.
 
 ## Mock exam

@@ -250,6 +250,12 @@ details.obj summary .chips{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
 .board div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .board b{font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums}
 .board small{color:var(--muted);font-size:12px}
+.board.board-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:560px){.board.board-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.foes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.foe{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.foe-s{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);margin-top:4px}
+.foe-s b{color:var(--ink);font-variant-numeric:tabular-nums}
 .sharecard{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
 .sharecard img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:#07090d;aspect-ratio:1200/630}
 .sharecard .btn[hidden]{display:none}
@@ -1512,7 +1518,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -1524,7 +1530,7 @@ function gameCards(){
 }
 function renderChrome(view){
   document.getElementById("brandSub").textContent=EX?`${EX.full} · ${EX.code}`.toUpperCase():"CHOOSE AN EXAM";
-  const tabs=EX?[["menu","Menu"],["home","Home"],["quiz","Quick Exams"],["mock","Mock Exam"],...EX.games.map(k=>[k,GAMES[k].n]),["review","Review"]]:[];
+  const tabs=EX?[["menu","Menu"],["home","Home"],["quiz","Quick Exams"],["mock","Mock Exam"],...EX.games.map(k=>[k,GAMES[k].n]),["armory","Armory"],["review","Review"]]:[];
   document.getElementById("tabs").innerHTML=tabs.map(([h,n])=>`<a href="#${h}"${h===view?' aria-current="page"':""}>${n}</a>`).join("");
 }
 
@@ -1768,7 +1774,7 @@ function setupScoreCard(){
 
 /* ---------------- Router ---------------- */
 let cleanup = null;
-const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool,concept:viewConcept};
+const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool,concept:viewConcept,armory:viewArmory};
 const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
 function route(){
   if(cleanup){cleanup();cleanup=null;}
@@ -1842,6 +1848,51 @@ function viewHome(){
     </section>
   </div>`;
   bindShop(document.getElementById("outpost"),viewHome);
+}
+
+/* ---------------- Armory ---------------- */
+// Names and notes for every zombie variant, shown in the Armory's horde guide.
+const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and armored. Every wrong answer sends one in."],
+  bot:["Botnet zombie","The standard Security+ zombie."],worm:["Worm","Fast and fragile."],ransom:["Ransomware brute","Wipes 3 rounds of ammo a second while it's at the wall."],
+  spark:["Spark","The standard Core 1 zombie, crackling with static."],surge:["Power surge","Fast and fragile."],chassis:["Chassis brute","Armored, with 30% more health."],
+  phish:["Phisher","The standard Core 2 zombie."],rootkit:["Rootkit","Flickers half out of sight, with 25% more health."],trojan:["Trojan brute","Releases two phishers when it's destroyed."],
+  insider:["Insider","The standard CISSP zombie."],spy:["Spy","Fast and fragile."],apt:["APT brute","Heals 3% of its health every second unless you finish it off."]};
+function viewArmory(){
+  const I=D.info(),c=I.cfg,n=S.base.night,ramp=1+0.04*(n-1);
+  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${l?esc(w.d):w.xp+" XP to unlock"}</small></div>`;}).join("");
+  const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"]]
+    .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
+    .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*ramp*(f.sp||1)),dps=b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker),inf=FOE_INFO[v]||[v,""];
+      return `<div class="foe"><b>${esc(inf[0])}</b><span class="muted small">${esc(inf[1])} ${esc(when)}.</span>
+        <div class="foe-s"><span>Health <b>${+hp.toFixed(1)}</b></span><span>Reaches the wall in <b>~${Math.round(secs)} s</b></span><span>Wall damage <b>${dps}/s</b></span></div></div>`;}).join("");
+  $app.innerHTML=`<div class="stack">
+    <div class="panel stack">
+      <div><span class="label">${esc(EX.name)} armory</span><h2 style="font-size:28px;margin-top:4px">Armory</h2></div>
+      <p class="muted" style="margin:0;max-width:66ch">Your outpost's loadout for ${esc(EX.name)}, the weapons and upgrades you can buy, and the horde you're up against. Each exam has its own upgrades and weapons. Scrap, XP and the stockpile are shared.</p>
+      <span class="label">Loadout</span>
+      <div class="board board-3">
+        <div><small>Turrets</small><b>${c.turrets}</b><small>30 mm autocannons</small></div>
+        <div><small>Damage per round</small><b>${+c.dmg.toFixed(2)}</b><small>${esc((UPG.find(u=>u.k==="caliber")||{n:"Caliber"}).n)} adds 35% a level</small></div>
+        <div><small>Fire rate</small><b>${+c.rate.toFixed(2)}/s</b><small>per turret</small></div>
+        <div><small>Wall</small><b>${c.wallMax}</b><small>integrity</small></div>
+        <div><small>Starting ammo</small><b>${c.ammo0}</b><small>+${S.base.stock||0} stockpiled</small></div>
+        <div><small>Bonus ammo</small><b>+${c.bonusAmmo}</b><small>per correct answer, from ${esc((UPG.find(u=>u.k==="cache")||{n:"Ammo cache"}).n)}</small></div>
+      </div>
+      <span class="label">Weapons</span>
+      <div class="board">${wpn}</div>
+    </div>
+    <section class="tp outpost" id="outpost">
+      <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${n}</h3></div>
+        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
+      ${shopHTML()}
+    </section>
+    <div class="panel stack">
+      <div><span class="label">Horde guide</span><h3 style="font-size:22px;margin-top:2px">What's coming on night ${n}</h3></div>
+      <div class="foes">${foes}</div>
+      <p class="muted small" style="margin:0">Health and speed rise every night. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
+    </div>
+  </div>`;
+  bindShop(document.getElementById("outpost"),viewArmory);
 }
 
 /* ---------------- Quiz ---------------- */
