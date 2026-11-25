@@ -1839,7 +1839,7 @@ function viewQuizSetup(){
   $app.innerHTML = `<div class="panel stack">
     <div><span class="label">Quick Exams</span><h2 style="font-size:28px;margin-top:4px">Pick a domain</h2></div>
     <div class="row">${chips}</div>
-    <p class="muted" style="margin:0">Questions you missed and questions you haven't seen come first. Press 1–4 to answer and Enter to continue.</p>
+    <p class="muted" style="margin:0">Each round includes up to ${REVIEW_PER_ROUND} questions from your review queue, then questions you haven't seen. Use the Review tab to drill everything you've missed. Press 1–4 to answer and Enter to continue.</p>
     <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in the answer choices too. When a question tests what a term means, its choices stay abbreviated until you answer. Turn this off to test yourself on every abbreviation.</span></label>
     <div><button class="btn primary" id="go">Start 10 questions</button></div>
   </div>`;
@@ -1847,11 +1847,17 @@ function viewQuizSetup(){
   document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
   document.getElementById("go").onclick=startExam;
 }
+// A quick exam takes at most REVIEW_PER_ROUND questions from the review queue, then fills the rest with
+// questions you haven't seen, then the ones you've seen, weakest first. The Review tab drills the whole queue.
+const REVIEW_PER_ROUND=3;
 function buildPool(dom){
-  let ids = Q.map((_,i)=>i).filter(i=>dom==="all"||String(Q[i][0])===dom);
-  const prio = i => P.review.includes(i)?0:(!P.qs[i]?1:2+(pct(P.qs[i].c,P.qs[i].w)/100));
-  ids = shuffle(ids).sort((a,b)=>prio(a)-prio(b));
-  return shuffle(ids.slice(0,10));
+  const ids = Q.map((_,i)=>i).filter(i=>dom==="all"||String(Q[i][0])===dom);
+  const rev = shuffle(ids.filter(i=>P.review.includes(i))).slice(0,REVIEW_PER_ROUND);
+  const prio = i => !P.qs[i]?0:1+(pct(P.qs[i].c,P.qs[i].w)/100);
+  const rest = shuffle(ids.filter(i=>!P.review.includes(i))).sort((a,b)=>prio(a)-prio(b));
+  let pool = rev.concat(rest.slice(0,10-rev.length));
+  if(pool.length<10)pool=pool.concat(shuffle(ids.filter(i=>!pool.includes(i))).slice(0,10-pool.length)); // small banks: top up from the queue
+  return shuffle(pool);
 }
 /* ---------------- Exam objectives and study sources ---------------- */
 // N10-009 exam objectives, with a short topic used to search for study videos.

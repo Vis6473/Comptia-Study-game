@@ -18,6 +18,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Port Blitz:** 60 seconds of matching services and port numbers. Each wrong answer costs 3 seconds. Includes a port reference table.
 - **OSI Stack:** a scavenging mission. Put devices, protocols and PDUs on the correct OSI layer, 12 items per round. Each correct layer brings back 6 scrap and 4 XP straight away.
 - **Subnet Sprint:** endless random subnetting problems (network and broadcast address, host range, host count, mask) with a worked binary breakdown after each one.
+- **Question selection:** each quick exam includes up to 3 questions from your review queue, then questions you haven't seen yet, then the ones you've seen, weakest first.
 - **Review:** every question you miss goes into a review queue and stays there until you answer it correctly twice in a row. You can also practice every question you've ever missed. A study plan lists the exam objectives you're weakest on, with the key facts from the questions you missed, the chapters and page numbers that cover it in the Sybex CompTIA Network+ Study Guide, links to Professor Messer's videos and CompTIA's exam objectives, and a button to practice just that objective.
 
 ## Security+ modes

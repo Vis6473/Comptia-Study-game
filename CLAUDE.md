@@ -62,6 +62,7 @@ Each question is one line in `Q`:
 
 ## Review rules
 
+- Quick exams (`buildPool`) take at most `REVIEW_PER_ROUND` (3, the owner's choice) questions from the review queue, then fill the round with unseen questions, then seen ones weakest first, so rounds don't fill up with the same missed questions. The Review tab still drills the whole queue.
 - A missed question goes into `S.review` and `S.missedEver`. It leaves the review queue only after `REVIEW_CLEAR` (2) correct answers in a row, in any mode.
 - All answer bookkeeping goes through `recordAnswer(id, ok)`. Use it for any new mode that asks bank questions.
 - The Review tab offers the review queue, everything ever missed, and a study plan. The study plan lists weak objectives, meaning those with questions in review or under 70% correct over at least 3 answers. For each it shows key facts from missed questions, links, and per-objective practice.
