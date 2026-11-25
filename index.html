@@ -186,6 +186,24 @@ footer{margin-top:36px;font-size:13px;color:var(--muted)}
 .mg{position:relative;overflow:hidden;font-family:var(--f-mono);font-size:12px;padding:7px 0;border:1px dashed var(--line);border-radius:5px;background:var(--surface);color:var(--muted);font-variant-numeric:tabular-nums}
 .mg.done{border-style:solid;border-color:var(--muted);color:var(--ink);background:var(--surface-2)}
 .mg.cur{outline:2px solid var(--accent);outline-offset:1px}
+.mg.pb{color:var(--blue);font-weight:600}
+.pbq-tag{display:inline-block;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-top:14px}
+.pbq-t{font-size:22px;margin:4px 0 6px}
+.pbq{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pbq-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,280px);gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:15px}
+.pbq-row select{font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+@media (max-width:560px){.pbq-row{grid-template-columns:1fr}}
+td.ok-t{color:var(--ok)} td.bad-t{color:var(--bad)}
+.reward{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--ok);border-radius:10px;background:var(--ok-bg)}
+.rw-chips{display:flex;flex-wrap:wrap;gap:8px}
+.rw-chips span{font-family:var(--f-mono);font-size:13px;font-weight:600;padding:5px 10px;border-radius:6px;background:var(--surface);border:1px solid var(--line)}
+.achs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.ach{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.ach div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ach small{color:var(--muted);font-size:12px}
+.ach-i{font-size:20px;line-height:1;color:var(--muted)}
+.ach.on{border-color:var(--orange)} .ach.on .ach-i{color:var(--orange)}
+.ach:not(.on){opacity:.65}
 .mg.flag::after{content:"";position:absolute;top:0;right:0;border-top:10px solid var(--orange);border-left:10px solid transparent}
 .confirm{margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
 .passchip{display:inline-block;font-family:var(--f-mono);font-weight:600;letter-spacing:.12em;padding:4px 12px;border-radius:4px}
@@ -837,7 +855,7 @@ const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0};}
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ex:perExam(()=>exFresh()),
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ach:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -857,6 +875,9 @@ function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem
   const up=(r.base&&r.base.up)||{};
   const perEx=EXAM_IDS.some(id=>up[id]); // older saves kept Network+ upgrade levels flat in base.up
   d.base.up=perExam(id=>perEx?Object.assign({},up[id]):(id==="net"?Object.assign({},up):{}));
+  d.ach=Object.assign({},r.ach||{});
+  // Mocks passed before achievements existed unlock their achievement (without the bonus).
+  EXAM_IDS.forEach(id=>{const m=d.ex[id].best.mock;if(m&&m.pass&&!d.ach["pass_"+id])d.ach["pass_"+id]={date:m.date||"",retro:1};});
 }}catch(e){}return d;}
 let S = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -1548,6 +1569,12 @@ function resetPart(k){
 }
 
 /* ---------------- High scores ---------------- */
+function achPanel(){
+  const AL=achievementList(),got=AL.filter(a=>S.ach[a.id]).length;
+  return `<div class="panel stack"><div><span class="label">Achievements</span><h3 style="font-size:22px;margin-top:2px">${got} of ${AL.length} unlocked</h3></div>
+    <p class="muted small" style="margin:0">Earn them by passing mock exams. Each one also pays a one-time bonus of scrap and ammo.</p>
+    <div class="achs">${AL.map(a=>{const u=S.ach[a.id];return `<div class="ach${u?" on":""}"><span class="ach-i" aria-hidden="true">${u?"★":"☆"}</span><div><b>${esc(a.n)}</b><small>${esc(a.d)}</small><small>${u?"Unlocked"+(u.date?" "+esc(u.date):""):`Bonus: ${a.scrap} scrap, ${a.ammo} ammo`}</small></div></div>`;}).join("")}</div></div>`;
+}
 function viewScores(){
   const B=S.base;
   const exBoard=id=>{const X=EXAMS[id],p=S.ex[id],m=p.best.mock,hist=p.mockHistory.slice(-5).reverse();
@@ -1586,6 +1613,7 @@ function viewScores(){
         </div>
       </div>
     </div>
+    ${achPanel()}
     ${EXAM_IDS.filter(id=>EXAMS[id].ready).map(exBoard).join("")}
   </div>`;
   setupScoreCard();
@@ -1623,7 +1651,7 @@ function drawScoreCard(){
   g.fillStyle=MU;g.font=mono(16);g.fillText("HIGHEST NIGHT SURVIVED",56,top);
   g.fillStyle=CY;g.font=disp(700,120);g.fillText(String(B.bestNight||0),52,top+112);
   const stat=(x,y,lbl,v)=>{g.fillStyle=MU;g.font=mono(14);g.fillText(lbl,x,y);g.fillStyle=INK;g.font=disp(700,38);g.fillText(String(v),x,y+42);};
-  stat(56,top+168,"MOST IN ONE NIGHT",B.bestKills||0);stat(256,top+168,"UNDEAD DESTROYED",B.kills||0);stat(476,top+168,"LEVEL",level());
+  const AL=achievementList();stat(56,top+168,"MOST IN ONE NIGHT",B.bestKills||0);stat(232,top+168,"UNDEAD DESTROYED",B.kills||0);stat(400,top+168,"LEVEL",level());stat(470,top+168,"ACHIEVEMENTS",AL.filter(a=>S.ach[a.id]).length+"/"+AL.length);
   // exam boxes: one column for one or two exams, a 2x2 grid for three or four
   const n=shown.length,cols=n>2?2:1,rows=Math.ceil(n/cols),gap=18,x0=640,y0=110,TW=504,TH=H-28-56-110;
   const bw=(TW-gap*(cols-1))/cols,bh=(TH-gap*(rows-1))/rows,sm=cols>1;
@@ -1751,7 +1779,7 @@ function viewHome(){
       <div class="label" style="margin-bottom:10px">Training modes</div>
       <div class="modes">
         <a class="mode" href="#quiz" style="--c:var(--orange)"><span class="label">All domains</span><h3>Quick Exams</h3><p>Each quick exam is a night at the outpost. Correct answers resupply the wall's guns.</p><span class="best">${Q.length} questions in the bank</span></a>
-        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">${EX.MOCK_MIN||90} min</span><h3>Mock Exam</h3><p>A timed ${MOCK_N()}-question exam weighted like the real ${EX.code}.</p><span class="best">${P.mock?"In progress: "+fmtTime(P.mock.ends-Date.now())+" left":P.mockHistory.length?"Last score: "+P.mockHistory[P.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
+        <a class="mode" href="#mock" style="--c:var(--ink)"><span class="label">${EX.MOCK_MIN||90} min</span><h3>Mock Exam</h3><p>A timed ${mockCount()}-question exam ${EX.CAT?"that adapts like the real":(EX.PBQ?"with performance-based questions, weighted like the real":"weighted like the real")} ${EX.code}. Pass it for scrap, ammo and achievements.</p><span class="best">${P.mock?"In progress: "+fmtTime(P.mock.ends-Date.now())+" left":P.mockHistory.length?"Last score: "+P.mockHistory[P.mockHistory.length-1].scaled:"Not taken yet"}</span></a>
         ${gameCards()}
       </div>
     </section>
@@ -1996,12 +2024,70 @@ const passPct=()=>Math.round(100*(PASS-SCALE()[0])/(SCALE()[1]-SCALE()[0]));
 const NET_MOCK_SPLIT={1:21,2:18,3:17,4:13,5:21}; // N10-009 weights (23/20/19/14/24%) applied to 90 questions
 const fmtTime=ms=>{const t=Math.max(0,Math.ceil(ms/1000));return Math.floor(t/60)+":"+String(t%60).padStart(2,"0");};
 const scaled=pct=>Math.round(SCALE()[0]+(SCALE()[1]-SCALE()[0])*pct);
+// Performance-based questions (CompTIA): matching and ordering tasks that open the mock, as on the real exam.
+// Each is worth PBQ_W multiple-choice questions, with partial credit for each row.
+const PBQ_W=3;
+const NET_STEPS=["Identify the problem","Establish a theory of probable cause","Test the theory to determine the cause","Establish a plan of action to resolve the problem","Implement the solution or escalate as necessary","Verify full system functionality and implement preventive measures","Document findings, actions, outcomes and lessons learned"];
+const A1_STEPS=["Identify the problem","Establish a theory of probable cause","Test the theory to determine the cause","Establish a plan of action and implement the solution","Verify full system functionality and implement preventive measures","Document findings, actions and outcomes"];
+const MALWARE_STEPS=["Investigate and verify malware symptoms","Quarantine the infected system","Disable System Restore in Windows","Remediate the infected system","Schedule scans and run updates","Enable System Restore and create a restore point","Educate the end user"];
+const IR_STEPS=["Preparation","Detection","Analysis","Containment","Eradication","Recovery","Lessons learned"];
+function pbqMatch(t,p,pool,n,extra){
+  const L=shuffle(pool).slice(0,n),ans=[...new Set(L.map(x=>x[1]))];
+  const others=shuffle([...new Set(pool.map(x=>x[1]))].filter(v=>!ans.includes(v))).slice(0,extra);
+  return {t,p,rows:L.map(x=>[x[0],x[1]]),opts:shuffle(ans.concat(others))};
+}
+function pbqOrder(t,p,steps){return {t,p,rows:shuffle(steps.map((s,i)=>[s,String(i+1)])),opts:steps.map((_,i)=>String(i+1)),order:1};}
+const layerName=n=>"Layer "+n+" · "+LAYERS.find(l=>l[0]===n)[1];
+const PBQ_LIB={
+  ports:()=>pbqMatch("Match services to ports","Choose the default port for each service. Some ports aren't used.",portList().map(x=>[x[0],x[1]]),5,2),
+  osi:()=>{const L=shuffle(OSI_ITEMS).slice(0,6);return {t:"Place items on the OSI model",p:"Choose the OSI layer where each item belongs.",rows:L.map(x=>[x[0],layerName(x[1])]),opts:LAYERS.map(l=>layerName(l[0]))};},
+  netsteps:()=>pbqOrder("Order the troubleshooting steps","Number the steps of CompTIA's network troubleshooting methodology from first (1) to last.",NET_STEPS),
+  attacks:()=>pbqMatch("Identify the attacks","Choose the attack that matches each indicator. Some attacks aren't used.",ATTACKS,5,2),
+  controls:()=>{const L=shuffle(CONTROLS).slice(0,5);return {t:"Classify security controls",p:"Choose the control type for each control.",rows:L.map(x=>[x[0],x[2]]),opts:CTRL_TYPES.slice()};},
+  irsteps:()=>pbqOrder("Order the incident response process","Number the incident response phases from first (1) to last.",IR_STEPS),
+  hardware:()=>pbqMatch("Identify the hardware","Choose the part, connector or tool that each description matches. Some answers aren't used.",HARDWARE,5,2),
+  a1steps:()=>pbqOrder("Order the troubleshooting steps","Number the steps of CompTIA's troubleshooting methodology from first (1) to last.",A1_STEPS),
+  commands:()=>pbqMatch("Choose the right commands","Choose the command for each task. Some commands aren't used.",COMMANDS,5,2),
+  tools:()=>pbqMatch("Choose the right Windows tools","Choose the Windows tool for each task. Some tools aren't used.",WINTOOLS,5,2),
+  malware:()=>pbqOrder("Order the malware removal steps","Number CompTIA's malware removal steps from first (1) to last.",MALWARE_STEPS)
+};
+const pbqScore=x=>x.rows.filter((r,k)=>x.sel[k]>=0&&x.opts[x.sel[k]]===r[1]).length;
+
+// Picks questions per domain (skipping any in `skip`), fills any shortfall from other domains, and shuffles.
+function pickSplit(split,total,skip){
+  skip=skip||new Set();let ids=[];const used=new Set(skip);
+  Object.entries(split).forEach(([d,n])=>{const got=shuffle(Q.map((_,i)=>i).filter(i=>String(Q[i][0])===d&&!used.has(i))).slice(0,n);got.forEach(i=>used.add(i));ids=ids.concat(got);});
+  if(ids.length<total)ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>!used.has(i))).slice(0,total-ids.length));
+  return shuffle(ids).slice(0,total);
+}
+// Spreads n questions over the domains by weight (largest remainders first).
+function weightSplit(n){
+  const D=Object.entries(DOMAINS),tot=D.reduce((a,[,d])=>a+d.w,0),raw=D.map(([k,d])=>[k,n*d.w/tot]),out={};
+  raw.forEach(([k,v])=>out[k]=Math.floor(v));let left=n-Object.values(out).reduce((a,b)=>a+b,0);
+  raw.slice().sort((a,b)=>(b[1]%1)-(a[1]%1)).forEach(([k])=>{if(left>0){out[k]++;left--;}});return out;
+}
+const mcq=ids=>({ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1)});
 function buildMock(){
-  let ids=[];
-  Object.entries(MOCK_SPLIT).forEach(([d,n])=>{ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>String(Q[i][0])===d)).slice(0,n));});
-  if(ids.length<MOCK_N())ids=ids.concat(shuffle(Q.map((_,i)=>i).filter(i=>!ids.includes(i))).slice(0,MOCK_N()-ids.length));
-  ids=shuffle(ids);
-  return {ids,opts:ids.map(i=>shuffle([Q[i][2],...Q[i][3]])),ans:ids.map(()=>-1),flag:ids.map(()=>0),cur:0,ends:Date.now()+MOCK_MS(),start:Date.now()};
+  const base={cur:0,ends:Date.now()+MOCK_MS(),start:Date.now()};
+  if(EX.CAT){ // adaptive-style: the first CAT.min follow the mock split, the rest follow the domain weights
+    const a=pickSplit(MOCK_SPLIT,EX.CAT.min),extra=EX.CAT.max-EX.CAT.min,b=pickSplit(weightSplit(extra),extra,new Set(a));
+    const m=mcq(a.concat(b));return Object.assign(base,m,{cat:1,done:0,flag:m.ids.map(()=>0)});
+  }
+  const pbq=(EX.PBQ||[]).map(k=>{const x=PBQ_LIB[k]();x.sel=x.rows.map(()=>-1);return x;});
+  const split=Object.assign({},MOCK_SPLIT),big=Object.keys(split).sort((a,b)=>split[b]-split[a]);
+  pbq.forEach((_,k)=>split[big[k%big.length]]--); // the PBQs take the place of multiple-choice questions
+  const m=mcq(pickSplit(split,MOCK_N()-pbq.length));
+  return Object.assign(base,m,{pbq,flag:Array(pbq.length+m.ids.length).fill(0)});
+}
+const mockCount=()=>EX.CAT?`${EX.CAT.min}–${EX.CAT.max}`:String(MOCK_N());
+// Adaptive stop rule: after the minimum, end once a 95% confidence interval on the percent correct
+// lies wholly above or below the pass percentage; at the maximum, decide on the percent correct.
+function catDecision(M){
+  const n=M.done,max=Math.min(EX.CAT.max,M.ids.length);if(n<EX.CAT.min&&n<max)return null;
+  let c=0;for(let i=0;i<n;i++)if(M.ans[i]>=0&&M.opts[i][M.ans[i]]===Q[M.ids[i]][2])c++;
+  const p=c/n,cut=passPct()/100,hw=1.96*Math.sqrt(Math.max(p*(1-p),0.01)/n);
+  if(p-hw>cut)return {pass:true,why:"clear"};if(p+hw<cut)return {pass:false,why:"clear"};
+  if(n>=max)return {pass:p>=cut,why:"max"};return null;
 }
 function viewMock(){
   if(P.mock){if(!P.mock.pausedAt&&Date.now()>=P.mock.ends)return submitMock(true);return runMock();}
@@ -2009,13 +2095,17 @@ function viewMock(){
   mockIntro();
 }
 function mockIntro(){
-  const hist=P.mockHistory.slice(-5).reverse();
+  const hist=P.mockHistory.slice(-5).reverse(),np=(EX.PBQ||[]).length,mins=EX.MOCK_MIN||90;
+  const rules=EX.CAT
+    ?`${EX.mockNote} Like the real exam, you can't go back, skip or flag questions: answer each one to move on. The exam ends on its own once your result is clear, between ${EX.CAT.min} and ${EX.CAT.max} questions. If time runs out before question ${EX.CAT.min}, you fail. You can pause, which stops the clock, though the real exam has no pause.`
+    :`Like the real ${EX.code}, it opens with ${np} performance-based questions: matching and ordering tasks, each worth ${PBQ_W} multiple-choice questions, with partial credit. The other ${MOCK_N()-np} are multiple choice, split across the ${Object.keys(DOMAINS).length} domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. You can pause, which stops the clock, though the real exam has no pause.`;
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
-      <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">${MOCK_N()} questions. ${(EX.MOCK_MIN||90)} minutes.</h2></div>
-      <p class="muted" style="margin:0;max-width:64ch">${EX.mockNote||`This runs like the real ${EX.code}.`} Questions are split across the ${Object.keys(DOMAINS).length} domains by their exam weight. You get no feedback until you submit, and you can flag questions and come back to them. The exam opens full screen. You can pause it at any time, which stops the clock. Quitting or leaving the exam ends it and erases your answers. The pass mark is ${PASS} on the ${scaleTxt()} scale.</p>
-      <div class="domains">${Object.entries(DOMAINS).map(([k,d])=>`<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${MOCK_SPLIT[k]} Qs</span></div>`).join("")}</div>
-      <p class="muted small" style="margin:0">The real exam also has performance-based questions (simulations), which this mock doesn't include. Keys: 1–4 to answer, ← and → to move, F to flag, P or Esc to pause.</p>
+      <div><span class="label">Mock exam</span><h2 style="font-size:28px;margin-top:4px">${mockCount()} questions. ${mins>=120&&mins%60===0?mins/60+" hours":mins+" minutes"}.</h2></div>
+      <p class="muted" style="margin:0;max-width:66ch">${rules} The exam opens full screen. Quitting or leaving the exam ends it and erases your answers. The pass mark is ${PASS} on the ${scaleTxt()} scale.</p>
+      <div class="domains">${Object.entries(DOMAINS).map(([k,d])=>`<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${EX.CAT?"":MOCK_SPLIT[k]+" Qs"}</span></div>`).join("")}</div>
+      <p class="small" style="margin:0"><b>Pass to earn ${MOCK_REWARD.scrap} scrap and ${MOCK_REWARD.ammo} rounds of ammo</b> for your next night, plus achievement bonuses the first time you pass and when you score 85% or better.</p>
+      <p class="muted small" style="margin:0">Keys: 1–4 to answer, ${EX.CAT?"Enter to submit each answer":"← and → to move, F to flag"}, P or Esc to pause.</p>
       <div><button class="btn primary" id="mstart">Start mock exam</button></div>
     </div>
     ${hist.length?`<div class="panel"><h3 style="font-size:18px;margin-bottom:10px">Recent attempts</h3><div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Score</th><th>Correct</th><th>Result</th></tr></thead><tbody>${hist.map(h=>`<tr><td>${esc(h.date)}</td><td class="p">${h.scaled}</td><td class="p">${h.correct}/${h.n}</td><td><span class="passchip ${h.pass?"pass":"fail"}">${h.pass?"PASS":"FAIL"}</span></td></tr>`).join("")}</tbody></table></div></div>`:""}
@@ -2027,44 +2117,69 @@ function enterFullscreen(){try{const el=document.documentElement;if(!document.fu
 function exitFullscreen(){try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}}
 function runMock(){
   if(cleanup){cleanup();cleanup=null;}
-  const M=P.mock;let confirmOpen=false,overlay=null,mode=null,quitBack=null,pendingTo=null;
+  const M=P.mock,CAT=!!M.cat,NP=(M.pbq||[]).length,N=NP+M.ids.length;
+  if(!M.flag||M.flag.length<N)M.flag=Array.from({length:N},(_,k)=>(M.flag&&M.flag[k])||0);
+  let confirmOpen=false,overlay=null,mode=null,quitBack=null,pendingTo=null;
   document.body.classList.add("focus-mode");
-  const go=i=>{M.cur=Math.max(0,Math.min(M.ids.length-1,i));confirmOpen=false;save();draw();window.scrollTo({top:0});};
+  const isDone=k=>k<NP?M.pbq[k].sel.every(x=>x>=0):M.ans[k-NP]>=0;
+  const doneCount=()=>{if(CAT)return M.done;let c=0;for(let k=0;k<N;k++)if(isDone(k))c++;return c;};
+  const go=k=>{if(CAT)return;M.cur=Math.max(0,Math.min(N-1,k));confirmOpen=false;save();draw();window.scrollTo({top:0});};
   const left=()=>M.ends-(M.pausedAt||Date.now());
-  function draw(){
-    const i=M.cur,id=M.ids[i],a=Q[id][2],hideC=isTermQ(a);
-    const answered=M.ans.filter(x=>x>=0).length,flagged=M.flag.filter(Boolean).length,unans=M.ids.length-answered;
+  function mcqHtml(j){
+    const id=M.ids[j],hideC=isTermQ(Q[id][2]);
+    return `<p class="qtext">${esc(expand(Q[id][1]))}</p>
+      <div class="opts">${M.opts[j].map((o,k)=>`<button class="opt${M.ans[j]===k?" sel":""}" data-k="${k}" aria-pressed="${M.ans[j]===k}"><kbd>${k+1}</kbd><span>${esc(hideC?o:choice(o))}</span></button>`).join("")}</div>`;
+  }
+  function pbqHtml(x){
+    return `<span class="pbq-tag">Performance-based · worth ${PBQ_W} questions</span><h3 class="pbq-t">${esc(x.t)}</h3><p class="muted" style="margin:0">${esc(x.p)}</p>
+      <div class="pbq">${x.rows.map((r,k)=>`<label class="pbq-row"><span>${esc(expand(r[0]))}</span><select data-r="${k}" aria-label="${esc(r[0])}"><option value="-1">Choose…</option>${x.opts.map((o,m)=>`<option value="${m}"${x.sel[k]===m?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`).join("")}</div>`;
+  }
+  function draw(focusRow){
+    const i=M.cur,isP=i<NP,answered=doneCount(),flagged=M.flag.filter(Boolean).length,unans=N-answered;
+    const title=CAT?`Question ${i+1} · ${EX.CAT.min}–${EX.CAT.max}`:isP?`Performance-based question ${i+1} of ${NP} · item ${i+1} of ${N}`:`Question ${i+1} of ${N}`;
+    const prog=CAT?Math.min(100,100*M.done/EX.CAT.min):100*answered/N;
     $app.innerHTML=`<div class="stack">
       <div class="panel">
-        <div class="mock-top"><span class="label">${esc(EX.code)} mock exam · Question ${i+1} of ${M.ids.length}</span><span class="row" style="gap:8px"><span class="mock-timer" id="mt" aria-label="Time remaining">${fmtTime(left())}</span><button class="btn" id="mpauseBtn">Pause</button></span></div>
-        <div class="progress"><i style="width:${100*answered/M.ids.length}%"></i></div>
-        <p class="qtext">${esc(expand(Q[id][1]))}</p>
-        <div class="opts">${M.opts[i].map((o,k)=>`<button class="opt${M.ans[i]===k?" sel":""}" data-k="${k}" aria-pressed="${M.ans[i]===k}"><kbd>${k+1}</kbd><span>${esc(hideC?o:choice(o))}</span></button>`).join("")}</div>
-        <div class="mock-nav">
+        <div class="mock-top"><span class="label">${esc(EX.code)} mock exam · ${title}</span><span class="row" style="gap:8px"><span class="mock-timer" id="mt" aria-label="Time remaining">${fmtTime(left())}</span><button class="btn" id="mpauseBtn">Pause</button></span></div>
+        <div class="progress"><i style="width:${prog}%"></i></div>
+        ${isP?pbqHtml(M.pbq[i]):mcqHtml(i-NP)}
+        ${CAT?`<div class="mock-nav"><span class="muted small">You can't go back or skip on this exam.</span><span></span><button class="btn primary" id="mnext"${M.ans[i]<0?" disabled":""}>Submit answer</button></div>`
+          :`<div class="mock-nav">
           <button class="btn" id="mprev"${i===0?" disabled":""}>Previous</button>
           <button class="btn flagbtn" id="mflag" aria-pressed="${!!M.flag[i]}">${M.flag[i]?"Flagged":"Flag for review"}</button>
-          <button class="btn primary" id="mnext">${i<M.ids.length-1?"Next":"Finish"}</button>
-        </div>
+          <button class="btn primary" id="mnext">${i<N-1?"Next":"Finish"}</button>
+        </div>`}
       </div>
-      <div class="panel">
-        <div class="row" style="justify-content:space-between"><span class="label">Answered ${answered}/${M.ids.length} · Flagged ${flagged}</span><button class="btn" id="msubmit">Submit exam</button></div>
-        <div class="mgrid">${M.ids.map((_,k)=>`<button class="mg${M.ans[k]>=0?" done":""}${M.flag[k]?" flag":""}${k===i?" cur":""}" data-g="${k}" aria-label="Question ${k+1}${M.ans[k]>=0?", answered":""}${M.flag[k]?", flagged":""}">${k+1}</button>`).join("")}</div>
-        ${confirmOpen?`<div class="confirm"><b>Submit your exam?</b><span class="muted">${unans?`${unans} question${unans>1?"s are":" is"} unanswered and will be marked wrong. `:""}${flagged?`${flagged} flagged question${flagged>1?"s":""} still marked for review. `:""}${fmtTime(left())} left on the clock.</span><div class="row"><button class="btn primary" id="myes">Submit and score</button><button class="btn" id="mno">Keep working</button><button class="btn" id="mquit" style="margin-left:auto">Quit exam</button></div></div>`:""}
-      </div>
+      ${CAT?`<div class="panel"><span class="label">Answered ${M.done} · the exam ends between question ${EX.CAT.min} and ${EX.CAT.max}</span><p class="muted small" style="margin:6px 0 0">Once you pass question ${EX.CAT.min}, the exam stops as soon as your result is clear.</p></div>`
+      :`<div class="panel">
+        <div class="row" style="justify-content:space-between"><span class="label">Answered ${answered}/${N} · Flagged ${flagged}</span><button class="btn" id="msubmit">Submit exam</button></div>
+        <div class="mgrid">${Array.from({length:N},(_,k)=>`<button class="mg${isDone(k)?" done":""}${M.flag[k]?" flag":""}${k===i?" cur":""}${k<NP?" pb":""}" data-g="${k}" aria-label="${k<NP?"Performance-based question":"Question"} ${k+1}${isDone(k)?", answered":""}${M.flag[k]?", flagged":""}">${k<NP?"P"+(k+1):k+1}</button>`).join("")}</div>
+        ${confirmOpen?`<div class="confirm"><b>Submit your exam?</b><span class="muted">${unans?`${unans} item${unans>1?"s are":" is"} not fully answered and will lose those points. `:""}${flagged?`${flagged} flagged item${flagged>1?"s":""} still marked for review. `:""}${fmtTime(left())} left on the clock.</span><div class="row"><button class="btn primary" id="myes">Submit and score</button><button class="btn" id="mno">Keep working</button><button class="btn" id="mquit" style="margin-left:auto">Quit exam</button></div></div>`:""}
+      </div>`}
     </div>`;
-    $app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{M.ans[M.cur]=+b.dataset.k;save();draw();});
+    $app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{M.ans[M.cur-NP]=+b.dataset.k;save();draw();});
+    $app.querySelectorAll(".pbq select").forEach(s=>s.onchange=()=>{M.pbq[M.cur].sel[+s.dataset.r]=+s.value;save();draw(+s.dataset.r);});
+    if(focusRow!==undefined){const s=$app.querySelector(`.pbq select[data-r="${focusRow}"]`);if(s)s.focus({preventScroll:true});}
+    document.getElementById("mpauseBtn").onclick=()=>pause();
+    if(CAT){document.getElementById("mnext").onclick=catNext;tick();return;}
     $app.querySelectorAll(".mg").forEach(b=>b.onclick=()=>go(+b.dataset.g));
     document.getElementById("mprev").onclick=()=>go(M.cur-1);
-    document.getElementById("mnext").onclick=()=>{if(M.cur<M.ids.length-1)go(M.cur+1);else{confirmOpen=true;draw();}};
+    document.getElementById("mnext").onclick=()=>{if(M.cur<N-1)go(M.cur+1);else{confirmOpen=true;draw();}};
     document.getElementById("mflag").onclick=()=>{M.flag[M.cur]=M.flag[M.cur]?0:1;save();draw();};
     document.getElementById("msubmit").onclick=()=>{confirmOpen=true;draw();};
-    document.getElementById("mpauseBtn").onclick=()=>pause();
     if(confirmOpen){
       document.getElementById("myes").onclick=()=>finish(()=>submitMock(false));
       document.getElementById("mno").onclick=()=>{confirmOpen=false;draw();};
       document.getElementById("mquit").onclick=()=>askQuit(null);
     }
     tick();
+  }
+  // Adaptive exams lock each answer in, then either end or move on.
+  function catNext(){
+    if(M.ans[M.cur]<0)return;
+    M.done=M.cur+1;
+    if(catDecision(M)||M.done>=M.ids.length){save();return finish(()=>submitMock(false));}
+    M.cur++;save();draw();window.scrollTo({top:0});
   }
   function tick(){
     const l=left(),el=document.getElementById("mt");
@@ -2077,15 +2192,15 @@ function runMock(){
     mode=m;
     if(!overlay){overlay=document.createElement("div");overlay.className="mpause";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");document.body.appendChild(overlay);}
     document.getElementById("app").inert=true;document.body.classList.add("exam-paused");
-    const answered=M.ans.filter(x=>x>=0).length,flagged=M.flag.filter(Boolean).length;
+    const answered=doneCount(),flagged=M.flag.filter(Boolean).length;
     overlay.setAttribute("aria-label",m==="quit"?"Quit the mock exam?":"Exam paused");
     overlay.innerHTML=m==="quit"
       ?`<div class="box"><h2 style="font-size:24px;letter-spacing:.02em">Leave the mock exam?</h2>
-        <p class="warn" style="margin:0">Leaving ends this exam and erases all of its progress: your ${answered} answer${answered===1?"":"s"}, flags and remaining time. This can't be undone.</p>
+        <p class="warn" style="margin:0">Leaving ends this exam and erases all of its progress: your ${answered} answer${answered===1?"":"s"}${CAT?"":", flags"} and remaining time. This can't be undone.</p>
         <p class="muted small" style="margin:0">To keep your progress, pause instead and come back to it.</p>
         <div class="bb"><button class="btn danger" data-m="erase">Quit and erase</button><button class="btn primary" data-m="back">${quitBack==="pause"?"Back to pause menu":"Keep going"}</button></div></div>`
       :`<div class="box"><span class="label">${esc(EX.code)} mock exam</span><h2>PAUSED</h2>
-        <div class="mp-stats"><span>TIME LEFT <b id="mpTime">${fmtTime(left())}</b></span><span>ANSWERED <b>${answered}/${M.ids.length}</b></span><span>FLAGGED <b>${flagged}</b></span></div>
+        <div class="mp-stats"><span>TIME LEFT <b id="mpTime">${fmtTime(left())}</b></span><span>ANSWERED <b>${CAT?answered:answered+"/"+N}</b></span>${CAT?"":`<span>FLAGGED <b>${flagged}</b></span>`}</div>
         <p class="muted small" style="margin:0">The clock is stopped. Press P or Esc to resume.</p>
         <div class="bb"><button class="btn primary" data-m="resume">Resume exam</button><button class="btn" data-m="quit">Quit exam</button></div></div>`;
     overlay.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
@@ -2124,15 +2239,17 @@ function runMock(){
   }
   const iv=setInterval(tick,1000);
   const onKey=e=>{
-    if(e.target.tagName==="INPUT"||e.metaKey||e.ctrlKey||e.altKey)return;
+    if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.metaKey||e.ctrlKey||e.altKey)return;
     if(mode){
       if(e.key==="Escape"||e.key==="p"||e.key==="P"){e.preventDefault();
         if(mode==="pause")resume();else{pendingTo=null;if(quitBack==="pause")showOverlay("pause");else resume();}}
       return;
     }
+    const isP=M.cur<NP;
     if(e.key==="p"||e.key==="P"||e.key==="Escape"){e.preventDefault();pause();}
-    else if(/^[1-4]$/.test(e.key)){M.ans[M.cur]=+e.key-1;save();draw();}
-    else if(e.key==="ArrowRight"&&M.cur<M.ids.length-1)go(M.cur+1);
+    else if(/^[1-4]$/.test(e.key)&&!isP){M.ans[M.cur-NP]=+e.key-1;save();draw();}
+    else if(CAT){if(e.key==="Enter"&&M.ans[M.cur]>=0){e.preventDefault();catNext();}}
+    else if(e.key==="ArrowRight"&&M.cur<N-1)go(M.cur+1);
     else if(e.key==="ArrowLeft"&&M.cur>0)go(M.cur-1);
     else if(e.key==="f"||e.key==="F"){M.flag[M.cur]=M.flag[M.cur]?0:1;save();draw();}
   };
@@ -2145,18 +2262,51 @@ function runMock(){
   draw();
   if(M.pausedAt)showOverlay("pause");
 }
+
+/* Mock exam rewards and achievements. Every pass pays MOCK_REWARD; each achievement pays a one-time bonus.
+   Ammo goes to the stockpile (S.base.stock) for the next night. */
+const MOCK_REWARD={scrap:150,ammo:200};
+function achievementList(){
+  const L=[];
+  EXAM_IDS.filter(id=>EXAMS[id].ready).forEach(id=>{const n=EXAMS[id].name;
+    L.push({id:"pass_"+id,n:`${n} mock passed`,d:`Pass a ${n} mock exam.`,scrap:250,ammo:300},
+           {id:"dist_"+id,n:`${n} with distinction`,d:`Score 85% or better on a ${n} mock exam.`,scrap:150,ammo:150});});
+  L.push({id:"sweep",n:"Clean sweep",d:"Pass a mock exam for every exam in the game.",scrap:500,ammo:500});
+  return L;
+}
+function mockRewards(pass,pct){
+  if(!pass)return null;
+  let scrap=MOCK_REWARD.scrap,ammo=MOCK_REWARD.ammo;const got=[],AL=achievementList();
+  const unlock=id=>{if(S.ach[id])return;const a=AL.find(x=>x.id===id);if(!a)return;S.ach[id]={date:new Date().toLocaleDateString()};got.push({n:a.n,d:a.d});scrap+=a.scrap;ammo+=a.ammo;};
+  unlock("pass_"+EX.id);
+  if(pct>=0.85)unlock("dist_"+EX.id);
+  if(EXAM_IDS.filter(id=>EXAMS[id].ready).every(id=>S.ach["pass_"+id]))unlock("sweep");
+  S.base.scrap+=scrap;S.base.stock=(S.base.stock||0)+ammo;
+  return {scrap,ammo,ach:got};
+}
 function submitMock(timedOut){
   if(cleanup){cleanup();cleanup=null;}
   const M=P.mock;if(!M)return mockIntro();
+  const n=M.cat?M.done:M.ids.length;
   let correct=0;const dom={};
-  M.ids.forEach((id,i)=>{
+  for(let i=0;i<n;i++){const id=M.ids[i];
     const ok=M.ans[i]>=0&&M.opts[i][M.ans[i]]===Q[id][2];if(ok)correct++;
     const d=Q[id][0];dom[d]=dom[d]||{c:0,t:0};dom[d].t++;if(ok)dom[d].c++;
     recordAnswer(id,ok);
-  });
-  const n=M.ids.length,pct=correct/n,sc=scaled(pct),pass=sc>=PASS;
+  }
+  const pbq=(M.pbq||[]).map(x=>({t:x.t,rows:x.rows,opts:x.opts,sel:x.sel,right:pbqScore(x),of:x.rows.length}));
+  const pbqPts=pbq.reduce((a,x)=>a+PBQ_W*x.right/x.of,0);
+  const pct=n+pbq.length?(correct+pbqPts)/(n+PBQ_W*pbq.length):0;
+  let sc=scaled(pct),pass=sc>=PASS,catNote="";
+  if(M.cat){
+    const d=catDecision(M);
+    if(n<EX.CAT.min){pass=false;catNote=`Time ran out after ${n} questions, before the minimum of ${EX.CAT.min}. On the real exam that's an automatic fail.`;}
+    else if(d&&d.why==="clear"){pass=d.pass;catNote=`The exam ended after ${n} questions because your result was clear with 95% confidence.`;}
+    else{pass=correct/n>=passPct()/100;catNote=timedOut?`Time ran out after ${n} questions, so the result is based on the questions you answered.`:`You reached the maximum of ${n} questions, so the result is based on all of them.`;}
+  }
+  const rewards=mockRewards(pass,pct);
   const used=Math.min(MOCK_MS(),Date.now()-M.start-(M.pausedTotal||0));
-  P.mockLast={ids:M.ids,opts:M.opts,ans:M.ans,correct,n,scaled:sc,pass,dom,used,timedOut};
+  P.mockLast={ids:M.ids.slice(0,n),opts:M.opts.slice(0,n),ans:M.ans.slice(0,n),correct,n,scaled:sc,pass,dom,used,timedOut,pbq,pct,catNote,rewards};
   P.mockHistory.push({date:new Date().toLocaleDateString(),scaled:sc,correct,n,pass});
   if(!P.best.mock||sc>P.best.mock.scaled)P.best.mock={scaled:sc,correct,n,pass,date:new Date().toLocaleDateString()};
   if(P.mockHistory.length>20)P.mockHistory.shift();
@@ -2165,15 +2315,22 @@ function submitMock(timedOut){
   if(location.hash!=="#mock")location.hash="mock";else mockResults();
 }
 function mockResults(){
-  const L=P.mockLast,pct=Math.round(100*L.correct/L.n);
+  const L=P.mockLast,pct=Math.round(100*(L.pct!==undefined?L.pct:L.correct/L.n)),pbq=L.pbq||[],R=L.rewards;
   const missed=L.ids.map((id,i)=>({id,i})).filter(x=>!(L.ans[x.i]>=0&&L.opts[x.i][L.ans[x.i]]===Q[x.id][2]));
+  const pr=pbq.reduce((a,x)=>a+x.right,0),po=pbq.reduce((a,x)=>a+x.of,0);
   $app.innerHTML=`<div class="stack">
     <div class="panel stack">
       <div class="row" style="justify-content:space-between"><span class="label">Mock exam result${L.timedOut?" · time ran out":""}</span><span class="passchip ${L.pass?"pass":"fail"}">${L.pass?"PASS":"FAIL"}</span></div>
       <div class="result" style="padding:0"><div class="big">${L.scaled}<span class="muted" style="font-size:28px"> / ${SCALE()[1]}</span></div></div>
-      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. ${EX.ORG||"CompTIA"} doesn't publish how it scales scores, so this maps your percentage straight onto the ${scaleTxt()} scale, where ${PASS} is about ${passPct()}%. Aim for 85% or better on mocks before booking the real exam.</p>
+      ${L.catNote?`<p class="small" style="margin:0 auto;max-width:60ch;text-align:center">${esc(L.catNote)}</p>`:""}
+      <p class="muted small" style="margin:0 auto;max-width:60ch;text-align:center">Estimated score. ${EX.ORG||"CompTIA"} doesn't publish how it scales scores, so this maps your percentage straight onto the ${scaleTxt()} scale, where ${PASS} is about ${passPct()}%.${pbq.length?` Performance-based questions count ${PBQ_W} times as much as multiple choice.`:""} Aim for 85% or better on mocks before booking the real exam.</p>
+      ${R?`<div class="reward"><span class="label">Exam passed · rewards</span>
+        <div class="rw-chips"><span>+${R.scrap} scrap</span><span>+${R.ammo} rounds stockpiled for your next night</span></div>
+        ${R.ach.length?`<div class="achs">${R.ach.map(a=>`<div class="ach on"><span class="ach-i" aria-hidden="true">★</span><div><b>Achievement unlocked: ${esc(a.n)}</b><small>${esc(a.d)}</small></div></div>`).join("")}</div>`:""}</div>`
+      :!L.pass?`<p class="small" style="margin:0;text-align:center">Pass a mock exam to earn ${MOCK_REWARD.scrap} scrap and ${MOCK_REWARD.ammo} rounds of ammo, plus achievement bonuses.</p>`:""}
       <div class="mstats">
-        <div><span class="label">Correct</span><b>${L.correct}/${L.n}</b></div>
+        <div><span class="label">${pbq.length?"Multiple choice":"Correct"}</span><b>${L.correct}/${L.n}</b></div>
+        ${pbq.length?`<div><span class="label">Performance-based</span><b>${pr}/${po}</b></div>`:""}
         <div><span class="label">Percent</span><b>${pct}%</b></div>
         <div><span class="label">Time used</span><b>${fmtTime(L.used)}</b></div>
         <div><span class="label">Earned</span><b>${5*L.correct} XP</b></div>
@@ -2182,6 +2339,9 @@ function mockResults(){
         return `<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${r.c}/${r.t}</span><span class="acc">${r.t?a+"%":"—"}</span><span class="meter" style="grid-column:2/3"><i style="width:${a}%;background:${d.c}"></i></span></div>`;}).join("")}</div>
       <div class="row"><button class="btn primary" id="mnew">Start a new mock exam</button>${missed.length?`<a class="btn" href="#review">Go to review</a>`:""}</div>
     </div>
+    ${pbq.length?`<div class="panel"><h3 style="font-size:18px">Performance-based questions · ${pr}/${po}</h3><p class="muted small" style="margin:4px 0 6px">Each is worth ${PBQ_W} multiple-choice questions, with partial credit for each row.</p>
+      ${pbq.map(x=>`<details class="miss"${x.right<x.of?" open":""}><summary><span>${x.right}/${x.of}</span>${esc(x.t)}</summary><div class="body"><div class="tbl-wrap"><table><thead><tr><th>Item</th><th>Your answer</th><th>Correct</th></tr></thead><tbody>${x.rows.map((r,k)=>{const y=x.sel[k]>=0?x.opts[x.sel[k]]:null,ok=y===r[1];
+        return `<tr><td>${esc(expand(r[0]))}</td><td class="${ok?"ok-t":"bad-t"}">${y===null?"—":esc(y)}</td><td><b>${esc(r[1])}</b></td></tr>`;}).join("")}</tbody></table></div></div></details>`).join("")}</div>`:""}
     ${missed.length?`<div class="panel"><h3 style="font-size:18px">Missed questions · ${missed.length}</h3><p class="muted small" style="margin:4px 0 6px">These are now in your review queue.</p>
       ${missed.map(({id,i})=>{const [d,q,a,,ex]=Q[id],your=L.ans[i]>=0?L.opts[i][L.ans[i]]:null;
         return `<details class="miss"><summary><span>Q${i+1} · ${d}.0</span>${esc(expand(q))}</summary><div class="body">
@@ -2189,7 +2349,7 @@ function mockResults(){
           <div><span class="label">Correct answer</span><br><b>${esc(expand(a))}</b></div>
           <div class="muted">${esc(expand(ex))}</div></div></details>`;}).join("")}</div>`:""}
   </div>`;
-  document.getElementById("mnew").onclick=()=>{P.mockLast=null;P.mock=buildMock();save();runMock();};
+  document.getElementById("mnew").onclick=()=>{P.mockLast=null;P.mock=buildMock();save();enterFullscreen();runMock();};
 }
 
 /* ---------------- Port Blitz ---------------- */
@@ -4008,33 +4168,33 @@ const EXAMS={
     tagline:"Networking concepts, implementation, operations, security and troubleshooting.",
     blurb:"Answer practice questions across all five N10-009 domains, memorize ports against the clock, sort the OSI stack and work subnets by hand.",
     DOMAINS:NET_DOMAINS,Q:NET_Q,OBJ:NET_OBJ,GUIDE:NET_GUIDE,TIER:NET_TIER,MOCK_SPLIT:NET_MOCK_SPLIT,PASS:720,UPG:NET_UPG,WPN:NET_WPN,
-    games:["ports","osi","subnet"]},
+    games:["ports","osi","subnet"],PBQ:["ports","osi","netsteps"]},
   sec:{id:"sec",name:"Security+",full:"CompTIA Security+",code:"SY0-701",ready:true,color:"#FF2BD6",
     foes:"Security+ nights bring botnet zombies, fast worms and ransomware brutes that encrypt your ammo while they're at the wall.",
     tagline:"Threats, architecture, security operations and governance.",
     blurb:"Answer practice questions across all five SY0-701 domains, sort security controls by category and type, and name attacks from their indicators against the clock.",
     DOMAINS:SEC_DOMAINS,Q:SEC_Q,OBJ:SEC_OBJ,GUIDE:SEC_GUIDE,TIER:{1:1,2:2,3:1,4:3,5:2},MOCK_SPLIT:{1:11,2:20,3:16,4:25,5:18},PASS:750,UPG:SEC_UPG,WPN:SEC_WPN,
-    games:["ports","control","attack"]},
+    games:["ports","control","attack"],PBQ:["attacks","controls","irsteps"]},
   a1:{id:"a1",name:"A+ Core 1",full:"CompTIA A+ Core 1",code:"220-1201",ready:true,color:"#FFB020",
     foes:"A+ Core 1 nights bring static-charged sparks, fast power surges and armored chassis brutes that soak up extra rounds.",
     tagline:"Mobile devices, networking, hardware, virtualization and cloud, and troubleshooting.",
     blurb:"Answer practice questions across all five 220-1201 domains, drill the A+ ports against the clock, and name connectors, parts and tools from their descriptions.",
     DOMAINS:A1_DOMAINS,Q:A1_Q,OBJ:A1_OBJ,GUIDE:null,TIER:{1:1,2:2,3:2,4:1,5:3},MOCK_SPLIT:{1:12,2:21,3:22,4:10,5:25},PASS:675,UPG:A1_UPG,WPN:A1_WPN,
-    games:["ports","hardware"],
+    games:["ports","hardware"],PBQ:["ports","hardware","a1steps"],
     ports:["FTP","SSH / SFTP / SCP","Telnet","SMTP","DNS","DHCP","HTTP","POP3","NetBIOS","IMAP","SNMP","LDAP","HTTPS","SMB","RDP"]},
   a2:{id:"a2",name:"A+ Core 2",full:"CompTIA A+ Core 2",code:"220-1202",ready:true,color:"#9CFF57",
     foes:"A+ Core 2 nights bring phishing zombies, rootkits that flicker out of sight, and trojan brutes that release two more zombies when they fall.",
     tagline:"Operating systems, security, software troubleshooting and operational procedures.",
     blurb:"Answer practice questions across all four 220-1202 domains, and match commands and Windows tools to the job against the clock.",
     DOMAINS:A2_DOMAINS,Q:A2_Q,OBJ:A2_OBJ,GUIDE:null,TIER:{1:2,2:2,3:3,4:1},MOCK_SPLIT:{1:25,2:25,3:21,4:19},PASS:700,UPG:A2_UPG,WPN:A2_WPN,
-    games:["command","wintool"]},
+    games:["command","wintool"],PBQ:["commands","tools","malware"]},
   cissp:{id:"cissp",name:"CISSP",full:"ISC2",code:"CISSP",badge:"ISC2 · CISSP",ready:true,color:"#B388FF",ORG:"ISC2",
     foes:"CISSP nights bring insiders in suits, fast spies, and APT brutes that slowly heal themselves unless you finish them off.",
     tagline:"Security leadership across eight domains, from risk management to software security.",
     blurb:"Answer practice questions across all eight CISSP domains, name security models, risk terms and access control concepts against the clock, and match attacks to their indicators.",
     DOMAINS:CISSP_DOMAINS,Q:CISSP_Q,OBJ:CISSP_OBJ,GUIDE:null,TIER:{1:2,2:1,3:3,4:2,5:1,6:1,7:2,8:2},
-    MOCK_SPLIT:{1:16,2:10,3:13,4:13,5:13,6:12,7:13,8:10},MOCK_N:100,MOCK_MIN:120,SCALE:[0,1000],PASS:700,
-    mockNote:"The real CISSP is adaptive: it gives 100 to 150 questions in up to 3 hours and adjusts to your answers. This mock is a fixed 100-question version at a similar pace.",
+    MOCK_SPLIT:{1:16,2:10,3:13,4:13,5:13,6:12,7:13,8:10},MOCK_N:150,MOCK_MIN:180,CAT:{min:100,max:150},SCALE:[0,1000],PASS:700,
+    mockNote:"The real CISSP is a computerized adaptive test: 100 to 150 questions in up to 3 hours. This mock follows its rules. It can't pick questions by difficulty the way the real exam does, so it decides your result with a statistical stopping rule instead.",
     UPG:CISSP_UPG,WPN:CISSP_WPN,games:["concept","attack"]}
 };
 // The current exam's content and progress. setExam() points these at one exam.

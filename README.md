@@ -13,7 +13,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## Network+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds drawn from 365 practice questions across all five exam domains, with an explanation after every answer. Every question is tagged with its N10-009 objective. Each quick exam is also a night of defense in the bottom half of the screen. The undead spawn without end until you answer the last question, and correct answers resupply the guns. Then a bomber flies over, clears the field, and the next night begins. Press 1–4 to answer and Enter to continue.
-- **Mock Exam:** a timed 90-question, 90-minute exam split by the N10-009 domain weights (21/18/17/13/21 questions). It opens full screen, with only the exam on screen, and also asks the browser for real full screen where that's allowed. You get no feedback until you submit. You can flag questions and jump around with the question grid. **Pause** (or P / Esc) stops the clock and covers the exam with a pause menu: resume, or quit. Quitting, or trying to leave the exam any other way, warns you first that leaving erases all of that exam's progress. Closing or reloading the page pauses the exam, so it's waiting for you, paused, when you come back. Results show an estimated 100–900 score (pass at 720), a breakdown by domain, and every missed question with its explanation. Misses go into your review queue.
+- **Mock Exam:** a timed 90-question, 90-minute exam that runs like the real N10-009. It opens with 3 performance-based questions (matching ports, placing items on the OSI model, and ordering the troubleshooting steps), each worth 3 multiple-choice questions with partial credit, followed by 87 multiple-choice questions split by the domain weights. It opens full screen, with only the exam on screen, and also asks the browser for real full screen where that's allowed. You get no feedback until you submit. You can flag questions and jump around with the question grid. **Pause** (or P / Esc) stops the clock and covers the exam with a pause menu: resume, or quit. Quitting, or trying to leave the exam any other way, warns you first that leaving erases all of that exam's progress. Closing or reloading the page pauses the exam, so it's waiting for you, paused, when you come back. Results show an estimated 100–900 score (pass at 720), a breakdown by domain, your performance-based answers next to the correct ones, and every missed question with its explanation. Misses go into your review queue. Passing pays rewards and achievements (see below).
 - **Port Blitz:** 60 seconds of matching services and port numbers. Each wrong answer costs 3 seconds. Includes a port reference table.
 - **OSI Stack:** a scavenging mission. Put devices, protocols and PDUs on the correct OSI layer, 12 items per round. Each correct layer brings back 6 scrap and 4 XP straight away.
 - **Subnet Sprint:** endless random subnetting problems (network and broadcast address, host range, host count, mask) with a worked binary breakdown after each one.
@@ -22,7 +22,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## Security+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds from 338 original Security+ questions covering all 28 SY0-701 objectives, with at least 9 per objective. Security+ nights bring their own zombies (see below).
-- **Mock Exam:** 90 questions in 90 minutes, split 11/20/16/25/18 across the five domains by their exam weights (12/22/18/28/20%). The pass mark is 750 on the 100–900 scale.
+- **Mock Exam:** 90 questions in 90 minutes: 3 performance-based questions (identifying attacks, classifying control types, and ordering the incident response phases), then 87 multiple-choice questions split by the domain weights (12/22/18/28/20%). The pass mark is 750 on the 100–900 scale.
 - **Port Blitz:** the same port drill as Network+, with its own high score.
 - **Control Sort:** classify 10 security controls by category (technical, managerial, operational, physical) and by type (preventive, deterrent, detective, corrective, compensating, directive). Each correct pick is a point, out of 20, and a scavenging mission that brings back 4 scrap and 2 XP straight away.
 - **Attack Match:** 60 seconds to name the attack behind each indicator or scenario, such as password spraying, an evil twin or a logic bomb. A wrong answer costs 3 seconds, and the attacks you missed are listed at the end.
@@ -31,7 +31,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## CISSP modes (ISC2)
 
 - **Quick Exams + Outpost Defense:** 10-question rounds from 313 original questions covering all 62 objectives in the eight CISSP domains (2024 outline), with at least 5 per objective.
-- **Mock Exam:** 100 questions in 120 minutes, split 16/10/13/13/13/12/13/10 by the domain weights. The real CISSP is adaptive, with 100 to 150 questions in up to 3 hours, so this is a fixed-length approximation. Scores are estimated on ISC2's 0–1000 scale, with a pass mark of 700.
+- **Mock Exam:** follows the real CISSP's adaptive rules: 100 to 150 questions in up to 3 hours, and you can't go back, skip or flag. After question 100 the exam ends as soon as your result is clear with 95% confidence; otherwise it runs to 150. Running out of time before question 100 is a fail. It can't pick questions by difficulty like the real exam, so it uses this statistical stopping rule instead. Scores are estimated on ISC2's 0–1000 scale, with a pass mark of 700.
 - **Concept Match:** 60 seconds to name CISSP concepts from their descriptions: security models such as Bell-LaPadula and Biba, risk terms, access control models, federation, recovery sites, crypto attacks and more.
 - **Attack Match:** the same attack drill as Security+, with its own high score.
 - **Review:** the review queue and study plan, with a CISSP video search for each weak objective and a link to find ISC2's exam outline.
@@ -39,7 +39,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## A+ Core 1 modes (220-1201)
 
 - **Quick Exams + Outpost Defense:** 10-question rounds from 216 original questions covering all 27 Core 1 objectives, with at least 8 per objective across mobile devices, networking, hardware, virtualization and cloud, and hardware and network troubleshooting.
-- **Mock Exam:** 90 questions in 90 minutes, split 12/21/22/10/25 by the domain weights (13/23/25/11/28%). The pass mark is 675 on the 100–900 scale.
+- **Mock Exam:** 90 questions in 90 minutes: 3 performance-based questions (ports, hardware, and ordering the troubleshooting steps), then 87 multiple-choice questions split by the domain weights (13/23/25/11/28%). The pass mark is 675 on the 100–900 scale.
 - **Port Blitz:** the port drill, limited to the 15 ports the A+ objectives list (including NetBIOS 137–139), with its own high score.
 - **Hardware Match:** 60 seconds to name connectors, cables, components, printer parts and tools from their descriptions.
 - **Review:** the same review queue and study plan, with Professor Messer and CompTIA objective links for each weak objective. There's no A+ study guide mapped yet, so no chapter references.
@@ -47,10 +47,16 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## A+ Core 2 modes (220-1202)
 
 - **Quick Exams + Outpost Defense:** 10-question rounds from 246 original questions covering all 36 Core 2 objectives, with at least 6 per objective across operating systems, security, software troubleshooting and operational procedures.
-- **Mock Exam:** 90 questions in 90 minutes, split 25/25/21/19 by the domain weights (28/28/23/21%). The pass mark is 700.
+- **Mock Exam:** 90 questions in 90 minutes: 3 performance-based questions (commands, Windows tools, and ordering the malware removal steps), then 87 multiple-choice questions split by the domain weights (28/28/23/21%). The pass mark is 700.
 - **Command Match:** 60 seconds to pick the Windows or Linux command for each job, from ipconfig /flushdns to chmod.
 - **Tool Match:** 60 seconds to pick the Windows tool or settings page for each job, such as Event Viewer, Disk Management or msconfig.
 - **Review:** the same review queue and study plan as Core 1.
+
+## Mock exam rewards and achievements
+
+- **Every pass** pays 150 scrap and 200 rounds of ammo, stockpiled for your next night.
+- **Achievements** pay a one-time bonus: passing each exam's mock (250 scrap, 300 ammo), passing with distinction at 85% or better (150 scrap, 150 ammo), and Clean sweep for passing every exam's mock (500 scrap, 500 ammo).
+- High Scores lists every achievement, and the score card shows how many you've unlocked. Mocks you passed before achievements existed unlock their achievement without the bonus.
 
 ## Outpost Defense
 
