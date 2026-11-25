@@ -6,6 +6,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 
 - **Main menu:** the title screen where you pick the exam to study. Each exam card shows your accuracy, questions seen, review queue and best mock score. Use **Menu** in the tabs, or the logo, to switch exams.
 - **Settings:** turn spelled-out abbreviations in answer choices on or off, and reset any one exam's progress, the outpost, or everything. Each reset asks you to confirm first.
+- **Admin:** two switches in Settings for testing the game, **Infinite XP** and **Infinite scrap**. While one is on, that balance shows ∞ and purchases don't use it up. Turning it off returns your real balance, including anything earned meanwhile. Your level always counts only the XP you've actually earned.
 - **High scores:** the outpost's records (highest night, most undead in one night, total kills, level) and, for each exam, the best mock score, best quick exam, mini-game records and recent mock attempts.
 - **Score card:** High Scores draws a 1200×630 image of your records, with an optional name. Save it as a PNG, copy it, share it from a phone through the share sheet, or open a post on X with your scores as text and attach the image. Scores stay on your device; there is no online leaderboard yet.
 - **Progress:** each exam keeps its own stats, review queue, mock exams and high scores. XP, your level, your streak and the outpost are shared, but each exam has its own base upgrades and weapons.

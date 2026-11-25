@@ -996,7 +996,7 @@ function renderHud(){
   const into = S.xp%250;
   document.getElementById("hud").innerHTML =
     `<div><span>LVL</span> <b>${level()}</b><span class="xpbar" title="${into}/250 XP to next level"><i style="width:${into/2.5}%"></i></span></div>
-     <div><b>${xpAvail()}</b> <span>XP to spend</span></div>
+     <div><b>${xpTxt()}</b> <span>XP to spend</span></div>
      <div><b>${S.streak}</b> <span>day streak</span></div>`;
 }
 
@@ -1005,7 +1005,13 @@ function renderHud(){
 const NET_TIER={1:1,2:2,3:1,4:2,5:3};
 const TIERS={1:{n:"Standard",ammo:20,scrap:0},2:{n:"Hard",ammo:25,scrap:10},3:{n:"Elite",ammo:30,scrap:15}};
 const reward=d=>TIERS[TIER[d]];
-function xpAvail(){return Math.max(0,S.xp-(S.base.xpSpent||0));}
+// Admin switches (Settings > Admin): infinite XP or scrap. While on, balances show ∞ and purchases don't deduct.
+const infXP=()=>!!(S.settings.admin&&S.settings.admin.xp), infScrap=()=>!!(S.settings.admin&&S.settings.admin.scrap);
+function xpAvail(){return infXP()?Infinity:Math.max(0,S.xp-(S.base.xpSpent||0));}
+const xpTxt=()=>infXP()?"∞":xpAvail(), scrapTxt=()=>infScrap()?"∞":S.base.scrap;
+const hasScrap=c=>infScrap()||S.base.scrap>=c;
+function spendScrap(c){if(!infScrap())S.base.scrap-=c;}
+function spendXP(c){if(!infXP())S.base.xpSpent=(S.base.xpSpent||0)+c;}
 const NET_UPG=[ // bought with scrap
  {k:"caliber",n:"Heavy caliber",d:"+35% turret damage",max:5,cost:l=>40+40*l},
  {k:"autoload",n:"Autoloader",d:"+20% turret fire rate",max:5,cost:l=>40+35*l},
@@ -1026,8 +1032,8 @@ const SUPPLY=[ // ammo: straight to the guns during a night, otherwise stockpile
 ];
 function buySupply(k){
   const it=SUPPLY.find(x=>x.k===k);if(!it)return false;
-  if(it.xp){if(xpAvail()<it.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+it.xp;}
-  else{if(S.base.scrap<it.scrap)return false;S.base.scrap-=it.scrap;}
+  if(it.xp){if(xpAvail()<it.xp)return false;spendXP(it.xp);}
+  else{if(!hasScrap(it.scrap))return false;spendScrap(it.scrap);}
   if(!D.addAmmo(it.amt))S.base.stock=(S.base.stock||0)+it.amt;
   save();renderHud();return true;
 }
@@ -1035,26 +1041,26 @@ const upSet=()=>S.base.up[S.exam]||(S.base.up[S.exam]={});
 const upL=k=>upSet()[k]||0;
 function buy(k){
   const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);
-  if(w&&l===0){if(xpAvail()<w.xp)return false;S.base.xpSpent=(S.base.xpSpent||0)+w.xp;upSet()[k]=1;save();renderHud();return true;}
+  if(w&&l===0){if(xpAvail()<w.xp)return false;spendXP(w.xp);upSet()[k]=1;save();renderHud();return true;}
   const it=u||w;if(!it||l>=it.max)return false;
-  const c=it.cost(l);if(S.base.scrap<c)return false;
-  S.base.scrap-=c;upSet()[k]=l+1;save();return true;
+  const c=it.cost(l);if(!hasScrap(c))return false;
+  spendScrap(c);upSet()[k]=l+1;save();return true;
 }
 function pips(l,m){let s="";for(let i=0;i<m;i++)s+=`<i class="${i<l?"on":""}"></i>`;return `<span class="up-p" aria-label="Level ${l} of ${m}">${s}</span>`;}
 function shopHTML(){
   const wp=WPN.map(w=>{const l=upL(w.k);let price,dis;
     if(l===0){price=`UNLOCK · ${w.xp} XP`;dis=xpAvail()<w.xp;}
     else if(l>=w.max){price="MAXED";dis=true;}
-    else{const c=w.cost(l);price=`UPGRADE · ${c} SCRAP`;dis=S.base.scrap<c;}
+    else{const c=w.cost(l);price=`UPGRADE · ${c} SCRAP`;dis=!hasScrap(c);}
     return `<button class="up${l?" owned":""}" data-k="${w.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${w.n}</span>${l?pips(l,w.max):`<span class="up-lock">LOCKED</span>`}</span><span class="up-d">${w.d}</span><span class="up-c${l===0?" xp":""}">${price}</span></button>`;}).join("");
   const up=UPG.map(u=>{const l=upL(u.k),mx=l>=u.max,c=u.cost(l);
-    return `<button class="up" data-k="${u.k}"${mx||S.base.scrap<c?" disabled":""}><span class="up-top"><span class="up-n">${u.n}</span>${pips(l,u.max)}</span><span class="up-d">${u.d}</span><span class="up-c">${mx?"MAXED":c+" SCRAP"}</span></button>`;}).join("");
+    return `<button class="up" data-k="${u.k}"${mx||!hasScrap(c)?" disabled":""}><span class="up-top"><span class="up-n">${u.n}</span>${pips(l,u.max)}</span><span class="up-d">${u.d}</span><span class="up-c">${mx?"MAXED":c+" SCRAP"}</span></button>`;}).join("");
   const live=D.live();
-  const sp=SUPPLY.map(it=>{const dis=it.xp?xpAvail()<it.xp:S.base.scrap<it.scrap;
+  const sp=SUPPLY.map(it=>{const dis=it.xp?xpAvail()<it.xp:!hasScrap(it.scrap);
     return `<button class="up supply" data-s="${it.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${it.n}</span><span class="up-c ok">+${it.amt}</span></span><span class="up-d">${it.d}</span><span class="up-c${it.xp?" xp":""}">${it.xp?it.xp+" XP":it.scrap+" SCRAP"}</span></button>`;}).join("");
   return `<div class="shop-sec"><div class="shop-h"><span>SUPPLIES · AMMO</span><span>${live?"Delivered to the guns now":"Stockpiled for your next night"} · stockpile <b>${S.base.stock||0}</b></span></div><div class="shop">${sp}</div></div>
-    <div class="shop-sec"><div class="shop-h"><span>WEAPONS · ATTACH TO BASE</span><span>Unlock with XP · <b class="x">${xpAvail()} XP</b></span></div><div class="shop">${wp}</div></div>
-    <div class="shop-sec"><div class="shop-h"><span>BASE UPGRADES</span><span>Paid with scrap · <b>${S.base.scrap} SCRAP</b></span></div><div class="shop">${up}</div></div>`;
+    <div class="shop-sec"><div class="shop-h"><span>WEAPONS · ATTACH TO BASE</span><span>Unlock with XP · <b class="x">${xpTxt()} XP</b></span></div><div class="shop">${wp}</div></div>
+    <div class="shop-sec"><div class="shop-h"><span>BASE UPGRADES</span><span>Paid with scrap · <b>${scrapTxt()} SCRAP</b></span></div><div class="shop">${up}</div></div>`;
 }
 function bindShop(root,after){root.querySelectorAll(".up").forEach(b=>b.onclick=()=>{if(b.dataset.s?buySupply(b.dataset.s):buy(b.dataset.k))after();});}
 
@@ -1214,7 +1220,7 @@ const D=(function(){
     $("dNight").textContent=G.night;
     const p=Math.max(0,G.wall/G.c.wallMax),bar=$("dWallBar");
     bar.style.width=(p*100)+"%";bar.className=p<0.3?"low":p<0.6?"mid":"";
-    $("dWall").textContent=Math.ceil(G.wall);$("dAmmo").textContent=G.ammo;$("dScrap").textContent=S.base.scrap;
+    $("dWall").textContent=Math.ceil(G.wall);$("dAmmo").textContent=G.ammo;$("dScrap").textContent=scrapTxt();
     const st=$("dStatus");let txt="",alert=false;const dry=G.ammo<=0&&G.enemies.length>0;
     if(G.status==="live"){txt=G.wave?`QUESTION ${G.wave}/${G.waves} · ${G.enemies.length} HOSTILES · HORDE INCOMING`:"STAND BY";if(dry){txt="NO AMMO · ANSWER CORRECTLY TO RESUPPLY";alert=true;}}
     else if(G.status==="air"){txt=`AIR STRIKE · ${G.enemies.length} HOSTILES LEFT`;}
@@ -1501,7 +1507,7 @@ function viewMenu(){
   $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
     <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
       <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
-    <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
+    <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
     <div class="ocards">${EXAM_IDS.map(card).join("")}</div>
     <div class="mrow" style="justify-content:center"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
   </div></section>`;
@@ -1550,6 +1556,12 @@ function viewSettings(){
         <div class="row" style="justify-content:space-between"><div><span class="label">Settings</span><h2 style="font-size:28px;margin-top:4px">Settings</h2></div><a class="btn" href="#menu">Main menu</a></div>
         <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in answer choices. When a question tests what a term means, its choices stay abbreviated until you answer. Questions and explanations always spell abbreviations out.</span></label>
       </div>
+      <div class="panel stack">
+        <div><span class="label">Admin</span><h3 style="font-size:20px;margin:4px 0 0">Admin</h3></div>
+        <p class="muted small" style="margin:0">For testing the game. While a switch is on, that balance shows ∞ and buying things doesn't use it up. Turn it off to go back to your real balance, including anything you earned meanwhile.</p>
+        <label class="toggle" for="admXP"><input type="checkbox" id="admXP"${infXP()?" checked":""}><span><b>Infinite XP</b> for weapons and airdrops. Your level still counts only the XP you've earned.</span></label>
+        <label class="toggle" for="admScrap"><input type="checkbox" id="admScrap"${infScrap()?" checked":""}><span><b>Infinite scrap</b> for upgrades and ammo.</span></label>
+      </div>
       <div class="panel">
         <span class="label">Reset</span><h3 style="font-size:20px;margin:4px 0 6px">Start fresh</h3>
         ${done?`<p class="set-done" role="status">${esc(done)}</p>`:""}
@@ -1557,6 +1569,7 @@ function viewSettings(){
           ${armed===k?`<div class="confirm"><b>Reset ${c}?</b><span class="muted">This can't be undone.</span><div class="row"><button class="btn danger" id="yes">Reset ${c}</button><button class="btn" id="no">Cancel</button></div></div>`:""}</div>`).join("")}
       </div></div>`;
     document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
+    [["admXP","xp"],["admScrap","scrap"]].forEach(([el,k])=>document.getElementById(el).onchange=e=>{S.settings.admin=Object.assign({},S.settings.admin,{[k]:e.target.checked});save();renderHud();});
     $app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{armed=b.dataset.r;done="";draw();});
     if(armed){document.getElementById("no").onclick=()=>{armed=null;draw();};document.getElementById("yes").onclick=()=>{done=resetPart(armed);armed=null;draw();};}
   }
@@ -1785,7 +1798,7 @@ function viewHome(){
     </section>
     <section class="tp outpost" id="outpost">
       <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
-        <div class="op-stats"><span>XP <b class="x">${xpAvail()}</b></span><span>SCRAP <b>${S.base.scrap}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
+        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
       <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base. ${EX.foes} Each exam has its own upgrades and weapons.</p>
       <div class="tiers">${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
