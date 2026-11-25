@@ -30,7 +30,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 
 ## CISSP modes (ISC2)
 
-- **Quick Exams + Outpost Defense:** 10-question rounds from 185 original questions covering all 62 objectives in the eight CISSP domains (2024 outline).
+- **Quick Exams + Outpost Defense:** 10-question rounds from 313 original questions covering all 62 objectives in the eight CISSP domains (2024 outline), with at least 5 per objective.
 - **Mock Exam:** 100 questions in 120 minutes, split 16/10/13/13/13/12/13/10 by the domain weights. The real CISSP is adaptive, with 100 to 150 questions in up to 3 hours, so this is a fixed-length approximation. Scores are estimated on ISC2's 0–1000 scale, with a pass mark of 700.
 - **Concept Match:** 60 seconds to name CISSP concepts from their descriptions: security models such as Bell-LaPadula and Biba, risk terms, access control models, federation, recovery sites, crypto attacks and more.
 - **Attack Match:** the same attack drill as Security+, with its own high score.
