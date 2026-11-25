@@ -106,6 +106,7 @@ Each question is one line in `Q`:
 
 - **README.md** describes every mode and the economy. Update it with every feature change.
 - **Artifact copy:** a hosted preview lives at https://claude.ai/artifact/QwEmVjoMpUWVVaMmCt8Nsb (private to the owner). It is built from `index.html` by removing the `<!doctype>`, `<html>`, `<head>` and `<body>` wrapper and the charset and viewport meta tags, then adding `<meta name="claude:viewport-fit-sides" content="cover">` after the `<title>`. Republish it after changes if the session has the Artifact tool. It declares the `downloads` capability so the score card's Save button works there (`claude.use("downloads")`); omit `capabilities` on republish to keep it.
+- **Game changes need the owner's approval first.** The owner is playtesting the game side. Before changing anything strictly about the game, such as the outpost defense, zombies, the armory, weapons and upgrades, the economy and rewards, nights and difficulty, or the mini-games' mechanics, describe the proposed change and wait for the owner to approve it. Study content (questions, objectives, study links, mock exam rules) doesn't need this. When unsure which side a change falls on, ask.
 - Commits go to `main`. The owner has given standing permission to push working builds to `main` without asking: push once a change passes the syntax check and the relevant browser tests. Don't push builds that fail tests, and still ask before anything destructive, such as force-pushing or rewriting history.
 
 ## Testing
