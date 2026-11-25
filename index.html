@@ -320,6 +320,15 @@ body.focus-mode #app{padding-top:16px}
 .tp{--tp-tox:#9CFF57;--tp-bg:#06090D;--tp-panel:#0C131A;--tp-line:#1C2E3B;--tp-cyan:#19F0FF;--tp-mag:#FF2BD6;--tp-amb:#FFB020;--tp-ink:#D6F4FF;--tp-dim:#7A93A2;color:var(--tp-ink);color-scheme:dark}
 .tp :focus-visible{outline:2px solid var(--tp-amb);outline-offset:2px}
 body.has-dock{padding-bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px) + 24px)}
+/* After answering a quick exam question, the feedback fills the space above the outpost and Next stays in view. */
+.panel.answered .opts{display:none}
+.panel.answered .qtext{font-size:16px;color:var(--muted);margin-bottom:0}
+.panel.answered .explain{font-size:17px;line-height:1.6}
+.panel.answered .explain .yours{display:block;font-weight:400;font-size:15px;color:var(--muted);margin-top:2px}
+body.has-dock .panel.answered{display:flex;flex-direction:column;height:calc(100vh - var(--dock-h) - env(safe-area-inset-bottom,0px) - 40px);height:calc(100dvh - var(--dock-h) - env(safe-area-inset-bottom,0px) - 40px);min-height:220px;overflow:hidden}
+body.has-dock .panel.answered #fb{flex:1;min-height:0;display:flex;flex-direction:column}
+body.has-dock .panel.answered .explain{flex:1;min-height:0;overflow-y:auto}
+body.has-dock .panel.answered .fb-next{flex:none;margin-top:12px!important}
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:20;height:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--tp-bg);border-top:1px solid var(--tp-cyan);box-shadow:0 -10px 40px rgba(25,240,255,.15)}
 .dock::before{content:"";position:absolute;left:0;right:0;top:-7px;height:6px;background:repeating-linear-gradient(-45deg,var(--tp-amb) 0 9px,#0B0B0B 9px 18px)}
 .dock-in{position:relative;height:100%;overflow:hidden}
@@ -2040,8 +2049,9 @@ function showQ(st){
     const note=recordAnswer(id,ok);
     if(ok){st.correct++;st.streak++;S.base.scrap+=rw.scrap+(st.streak>=3?5:0);D.correct(rw,st.streak);award(10);}
     else{st.streak=0;D.wrong();award(2);}
-    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct":"Not quite. The answer is: "+esc(expand(a))}</b>${esc(expand(ex))}<div class="small muted" style="margin-top:6px">Objective ${Q[id][5]}: ${esc(OBJ[Q[id][5]][0])}${GUIDE?" · Study guide "+guideShort(Q[id][5]):""}</div>${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
-      <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
+    document.getElementById("fb").innerHTML=`<div class="explain ${ok?"verdict-ok":"verdict-bad"}"><b>${ok?"Correct: "+esc(expand(a)):"Not quite. The answer is: "+esc(expand(a))}${ok?"":`<span class="yours">You chose: ${esc(expand(b.dataset.v))}</span>`}</b>${esc(expand(ex))}<div class="small muted" style="margin-top:6px">Objective ${Q[id][5]}: ${esc(OBJ[Q[id][5]][0])}${GUIDE?" · Study guide "+guideShort(Q[id][5]):""}</div>${note?`<div class="small muted" style="margin-top:6px">${esc(note)}</div>`:""}</div>
+      <div class="row fb-next" style="margin-top:16px;justify-content:flex-end"><button class="btn primary" id="next">${st.i+1<st.pool.length?"Next question":"See results"}</button></div>`;
+    $app.querySelector(".panel").classList.add("answered");window.scrollTo({top:0});
     document.getElementById("next").onclick=()=>{st.i++;showQ(st);};
     document.getElementById("next").focus({preventScroll:true});
   });
