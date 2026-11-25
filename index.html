@@ -1178,9 +1178,9 @@ const D=(function(){
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
-    else b.innerHTML=`<div class="bt">OUTPOST OVERRUN</div><div class="bs">${G.quizDone?`The wall fell on night ${G.night}. Spend scrap and XP in the armory, then try again.`:"The wall is down. Keep answering: correct answers still earn scrap and XP for the armory."}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${G.quizDone&&nextFn?`<button class="tpbtn hot" data-b="next">Retry night ${G.night}</button>`:""}</div>`;
+    else b.innerHTML=`<div class="bt">OUTPOST OVERRUN</div><div class="bs">${G.quizDone?`The wall fell on night ${G.night}. Spend scrap and XP in the armory, then try again.`:`The wall is down. You can keep answering, and correct answers still earn scrap and XP, but you'll stay on night ${G.night}. Or restart the exam with a fresh night.`}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${G.quizDone?(nextFn?`<button class="tpbtn hot" data-b="next">Retry night ${G.night}</button>`:""):`<button class="tpbtn" data-b="pause">Pause</button>${restartFn?`<button class="tpbtn hot" data-b="restart">Restart exam</button>`:""}`}</div>`;
     b.hidden=false;
-    b.querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{if(x.dataset.b==="shop")toggleShop(true);else if(nextFn)nextFn();});
+    b.querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const k=x.dataset.b;if(k==="shop")toggleShop(true);else if(k==="pause")setPause(true);else if(k==="restart"){if(restartFn)restartFn();}else if(nextFn)nextFn();});
   }
   function hideBanner(){const b=$("dBanner");if(b)b.hidden=true;}
   function toggleShop(open){shopOpen=open;const p=$("dShopP");if(!p)return;p.hidden=!open;if(open)renderShop();}
@@ -1192,8 +1192,10 @@ const D=(function(){
     });
   }
   // Pausing freezes the horde, shows a pause menu over the dock, and darkens and locks the quick exam above.
+  // The outpost can be paused while live, during the air strike, or while overrun with the quick exam still running.
+  const canPause=()=>live()||!!(G&&G.status==="lost"&&!G.quizDone);
   function setPause(v){
-    if(v&&!live())v=false;
+    if(v&&!canPause())v=false;
     paused=v;
     const app=document.getElementById("app");if(app)app.inert=v;
     document.body.classList.toggle("exam-paused",v);
@@ -1203,7 +1205,7 @@ const D=(function(){
     const m=$("dPauseMenu");m.hidden=!v;
     if(!v)return;
     m.innerHTML=`<div class="pt">PAUSED</div>
-      <div class="ps">The horde is frozen and your quick exam is on hold.</div>
+      <div class="ps">${G.status==="lost"?`The outpost is overrun, and your quick exam is on hold. Finishing it keeps you on night ${G.night}.`:"The horde is frozen and your quick exam is on hold."}</div>
       <div class="pst"><span>QUESTION <b>${G.wave||1}/${G.waves||"—"}</b></span><span>HOSTILES <b>${G.enemies.length}</b></span><span>WALL <b>${Math.ceil(G.wall)}</b></span><span>AMMO <b>${G.ammo}</b></span></div>
       <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button></div>
       <div class="ps">Press P or Esc to resume. Restart begins this quick exam again from question 1 with a fresh night. Quitting ends the night. Answers so far are saved either way.</div>`;
@@ -1225,7 +1227,8 @@ const D=(function(){
     const st=$("dStatus");let txt="",alert=false;const dry=G.ammo<=0&&G.enemies.length>0;
     if(G.status==="live"){txt=G.wave?`QUESTION ${G.wave}/${G.waves} · ${G.enemies.length} HOSTILES · HORDE INCOMING`:"STAND BY";if(dry){txt="NO AMMO · ANSWER CORRECTLY TO RESUPPLY";alert=true;}}
     else if(G.status==="air"){txt=`AIR STRIKE · ${G.enemies.length} HOSTILES LEFT`;}
-    if(paused&&(G.status==="live"||G.status==="air")){txt="PAUSED";alert=false;}
+    else if(G.status==="lost"){txt=`OUTPOST OVERRUN · NIGHT ${G.night} WILL BE RETRIED`;alert=true;}
+    if(paused&&canPause()){txt="PAUSED";alert=false;}
     st.textContent=txt;st.classList.toggle("alert",alert);
   }
 
@@ -1476,7 +1479,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -2024,7 +2027,7 @@ function quizResult(st){
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
     <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
-    <p class="small" style="margin:0 auto;max-width:48ch">A bomber is clearing the field below. Once it passes, the next night begins.</p>
+    <p class="small" style="margin:0 auto;max-width:48ch">${D.lost()?`The outpost fell, so you stay on night ${D.night()}. Your next quick exam retries it. Your answers, XP and scrap still count.`:"A bomber is clearing the field below. Once it passes, the next night begins."}</p>
     <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${P.review.length?`<a class="btn" href="#review">Review ${P.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
   document.getElementById("again").onclick=()=>st.again();
