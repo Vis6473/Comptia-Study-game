@@ -83,7 +83,13 @@ Each question is one line in `Q`:
 - Economy:
   - Ammo per correct answer depends on the domain tier: Standard (domains 1 and 3) +20; Hard (domains 2 and 4) +25 and 10 scrap; Elite (domain 5) +30 and 15 scrap. Three correct in a row adds 5 bonus scrap.
   - Scrap buys `UPG` base upgrades and weapon upgrades.
-  - **XP is spendable currency.** Available XP is `S.xp - S.base.xpSpent`; level still uses total `S.xp`. XP unlocks `WPN` weapons: flame bunker, tesla coil, mortar pit, railgun.
+  - **XP is spendable currency.** Available XP is `S.xp - S.base.xpSpent`; level still uses total `S.xp`. XP unlocks `WPN` weapons: flame bunker, tesla coil, mortar pit, railgun. Each weapon's stats come from `WSTAT[k](level)`, and the Armory text from `wDesc(k,L,mine)`. The behaviors:
+    - Flame: bursts plus a burn (`e.burn`).
+    - Tesla: charge, then chain lightning plus a stun (`e.stun`; stunned zombies don't move or hit the wall).
+    - Mortar: knockback plus `G.craters`.
+    - Rail: aims at the busiest lane (`G.railBy`), charges (`G.rcharge`), then fires.
+    - A `WPN` entry with `mine:true` (Honeypot mine for Security+, Cryptographic mine for CISSP) replaces the mortar with a potato-mine-style minefield. `WSTAT.mine` sets the stats, and `G.mines` holds each mine, with `rearm` counting down while it arms, buried in a zombie's lane. The owner asked for a very slow recharge.
+  - The yard behind the wall (`yard()`, `drawYardStatic`, `drawBase`) draws the buildings and weapon structures. `WCOL`/`wcol()` give each exam's weapon color.
   - `SUPPLY` sells ammo: crate 40 rounds for 15 scrap, pallet 150 for 50 scrap, airdrop 200 for 60 XP. Ammo bought during a night goes straight to the guns; otherwise it goes to `S.base.stock` for the next night.
 - **Armory tab** (`#armory`, `viewArmory`): every exam has it, before Review. It shows the loadout from `D.info()` (a read-only view of `cfg()`, `VARIANTS`, `FOE`, `DPS` and `ZOMBIE_SPEED`), weapon levels, the shop (`shopHTML`/`bindShop`) and a horde guide built from `FOE_INFO` (a name and note for each variant), with health, time to the wall and wall damage for the current night. Add new zombie variants to `FOE_INFO`.
 - The dock is a deliberately single-theme dark "tech-punk" style (`.tp` tokens: cyan, magenta, amber, hazard stripes, scanlines). The rest of the app supports light and dark themes through `:root` tokens.
