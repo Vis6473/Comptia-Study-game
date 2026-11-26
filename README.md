@@ -105,6 +105,18 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
   - **Weapons start weak:** every weapon starts much weaker and slower at level 1 (for example a railgun hits for 7 every 9 s), and only reaches full strength at level 3 (21 every 3.1 s).
   - The Armory describes each weapon's exact damage, range and recharge at your level.
   - **Recharge bars:** every weapon except the wall turrets has a small bar under it that fills as it reloads and glows when it's ready. For minefields, the bar shows how many mines are armed.
+- **Special zombies:** from night 3, about 1 in 8 zombies (rising each night, up to 3 in 10) is a special with its own ability. Every exam has five shared types plus one of its own:
+  - **Spitter:** stops about 40 m out, or as soon as a team in its lane is in reach, and spits acid at the wall or the team.
+  - **Shield bearer:** a riot shield soaks up turret rounds, team rifles and railgun hits until it breaks. Flame, tesla, mines and bombs go around it.
+  - **Burrower:** tunnels underground, where nothing can hit it, and surfaces about 18 m from the wall.
+  - **Screamer:** zombies near it move 30% faster while it's alive.
+  - **Bloater:** slow and swollen. It bursts when killed, hurting nearby teams, and the wall if it's close.
+  - **Packet storm** (Network+): splits into three fast, fragile packets when destroyed.
+  - **Social engineer** (Security+): looks harmless. Weapons won't target it until it's within 30 m of the wall or gets caught in splash damage.
+  - **Overclocker** (A+ Core 1): speeds up as it takes damage, up to 2.5 times as fast.
+  - **Keylogger** (A+ Core 2): steals a scrap every second while it's at the wall.
+  - **Zero-day** (CISSP): shrugs off the first hit from each weapon type.
+  - The Armory's horde guide lists the current exam's specials with their health, speed and wall damage.
 - **The horde gets stronger every night:** zombies gain health, move 4% faster, spawn more often and deal 6% more wall damage each night. A callout marks the start of each new night, and the Armory's horde guide shows the current night's numbers.
 - **The base:** behind the wall is a command post, ammo depot, barracks and generator, plus props for each exam. The field has craters, tank traps and barbed wire. Upgrades show up too: the wall gets armor plates as you buy plating, and the turret barrels change with caliber and autoloader upgrades.
 - **Focus mode:** while a quick exam (or review round) runs, only the exam and the outpost are on screen. The header, tabs and footer come back when you leave through the result screen or the pause menu.
