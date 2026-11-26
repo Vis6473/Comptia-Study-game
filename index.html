@@ -1306,6 +1306,10 @@ const D=(function(){
     if(G.bomber&&!G.bomber.done){
       // Slow pass (about 7 s across) with precise drops: one bomb per zombie, released so it lands where that zombie will be.
       const B=G.bomber;B.x+=(W+180*u0())/7*dt;B.tg=B.tg||new Set();
+      // CMYK carpet bomb: rows of large toner bombs across the whole field as it flies over
+      if(B.cd==null){B.cd=wallX()+20*u0();B.ci=0;}
+      while(B.x>=B.cd&&B.cd<W){for(let k=0;k<3;k++){const y=fTop()+(fBot()-fTop())*(k+0.5)/3+rnd(-8,8)*u0();
+        G.bombs.push({x:B.cd+rnd(-6,6)*u0(),y0:fTop()-6*u0(),y1:y,t:0,T:0.5,c:TONER[(B.ci+k)%4]});}B.ci++;B.cd+=40*u0();}
       for(const e of G.enemies){if(B.tg.has(e)||e.x>W-4)continue;
         if(B.x>=e.x-e.spd*0.45){B.tg.add(e);G.bombs.push({x:B.x,y0:fTop()-6*u0(),y1:e.y,t:0,T:0.45,e});}}
       if(B.x>W+90*u0()){B.done=true;
@@ -1313,9 +1317,11 @@ const D=(function(){
     }
     for(let i=G.bombs.length-1;i>=0;i--){
       const bm=G.bombs[i];bm.t+=dt;
-      if(bm.t>=bm.T){const r=(bm.e?22:44)*u0();if(bm.e)bm.e.hp=0;
+      if(bm.t>=bm.T){const r=(bm.e?22:bm.c?52:44)*u0();if(bm.e)bm.e.hp=0;
         for(const e of G.enemies)if(Math.hypot(e.x-bm.x,e.y-bm.y1)<r){e.hp=0;}
-        G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
+        if(bm.c){for(let k=0;k<12;k++)G.fx.push({k:"ton",x:bm.x+rnd(-0.45,0.45)*r,y:bm.y1+rnd(-0.25,0.25)*r,vx:rnd(-40,40)*u0(),vy:rnd(-28,-8)*u0(),c:bm.c,life:rnd(0.7,1.3),m:1.3});
+          G.craters.push({x:bm.x,y:bm.y1,r:r*0.3,c:bm.c});if(G.craters.length>24)G.craters.shift();}
+        else G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
     }
     const u=U(),wx=wallX(),line=wx+8*u;
     for(const e of G.enemies){e.hit-=dt;if(e.v==="apt"&&e.hp>0&&e.hp<e.max)e.hp=Math.min(e.max,e.hp+e.max*0.03*dt);
@@ -1801,7 +1807,7 @@ const D=(function(){
       else if(f.k==="r"){const a=f.life/f.m;ctx.fillStyle=`rgba(${wcol()},${0.5*a})`;ctx.fillRect(wx,f.y-4*u*a,W-wx,8*u*a);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fillRect(wx,f.y-1,W-wx,2);}
     }
     ctx.globalCompositeOperation="source-over";
-    for(const bm of G.bombs){if(bm.t<0)continue;const k=Math.min(1,bm.t/bm.T);ctx.fillStyle="#2A2F33";ctx.beginPath();ctx.ellipse(bm.x,bm.y0+(bm.y1-bm.y0)*k*k,2*u,3.5*u,0,0,7);ctx.fill();ctx.fillStyle="#FFB020";ctx.fillRect(bm.x-2*u,bm.y0+(bm.y1-bm.y0)*k*k-5*u,4*u,1.5*u);}
+    for(const bm of G.bombs){if(bm.t<0)continue;const k=Math.min(1,bm.t/bm.T),z=bm.c?1.5:1;ctx.fillStyle=bm.c?`rgb(${bm.c})`:"#2A2F33";ctx.beginPath();ctx.ellipse(bm.x,bm.y0+(bm.y1-bm.y0)*k*k,2*u*z,3.5*u*z,0,0,7);ctx.fill();ctx.fillStyle="#FFB020";ctx.fillRect(bm.x-2*u,bm.y0+(bm.y1-bm.y0)*k*k-5*u,4*u,1.5*u);}
     if(G.bomber&&!G.bomber.done)drawBomber(G.bomber.x,fTop()-2*u,u);
     ctx.textAlign="center";ctx.font=`600 ${Math.round(12*Math.min(1.3,u))}px "IBM Plex Mono", monospace`;
     for(const f of G.fx)if(f.k==="t"){ctx.globalAlpha=Math.min(1,f.life);ctx.fillStyle=f.c;ctx.fillText(f.s,f.x,f.y);}
