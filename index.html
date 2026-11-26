@@ -1054,6 +1054,9 @@ const WSTAT={
   tesla:L=>({dmg:3+2*L,targets:1+L,reload:Math.max(1.4,4.5-0.9*L),stun:0.5}),
   mortar:L=>({dmg:3+2.5*L,radius:30+8*L,reload:Math.max(2,5.5-L),kb:16+4*L}),
   rail:L=>({dmg:6+5*L,reload:Math.max(2.5,7-1.3*L),charge:1,slide:28+6*L}), // slide: how fast it moves along the wall (U px a second)
+  // Field squads (WPN entry with squad:true, CISSP's Incident response team): teams dropped between 0 and 75 m build a
+  // temporary bunker and shoot from it. Zombies that touch a team attack it; a team out of supplies is airlifted out.
+  squad:L=>({reload:Math.max(6,13-2*L),size:2+L,dmg:0.8+0.5*L,rate:1.2,range:44+6*L,supply:18+8*L,hp:16+10*L,build:2.5,max:5}),
   // Stun-only tesla (WPN entry with stunOnly:true, Security+'s EDR pulse): no damage, a much longer stun.
   pulse:L=>({targets:1+L,reload:Math.max(1.4,4.5-0.9*L),stun:1.2+0.4*L}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
@@ -1066,13 +1069,14 @@ const WSTAT={
 };
 // Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
 const WEAPON_RANGE=0.6;
-const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":null);
+const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":w.squad?"squad":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
   toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Bursts of flame deal ${f(s.dmg)} damage a second to zombies within ${fieldM(s.range)} m of the wall, every ${s.reload} s. Sets them on fire: ${f(s.burn)} damage a second for ${s.burnT} s.`,
+  squad:()=>`Every ${f(s.reload)} s a ${s.size}-person team drops in by helicopter or orbital drop pod, somewhere between 0 and 75 m, and builds a temporary bunker. It fires at zombies within ${fieldM(s.range)} m for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombies and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombies for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
@@ -1176,7 +1180,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,mines:[],jets:[],tbombs:[]};
+    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,mines:[],jets:[],tbombs:[],squads:[],sqcd:2};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     if(G.night>1)text(W/2,fTop()+36*U(),`NIGHT ${G.night} · THE HORDE GROWS STRONGER`,"#FF2BD6");
@@ -1231,10 +1235,10 @@ const D=(function(){
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
-    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
     S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);S.base.night=G.night+1;save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
@@ -1317,6 +1321,8 @@ const D=(function(){
     for(const e of G.enemies){e.hit-=dt;if(e.v==="apt"&&e.hp>0&&e.hp<e.max)e.hp=Math.min(e.max,e.hp+e.max*0.03*dt);
       if(e.burn>0){e.burn-=dt;e.hp-=(e.bd||1)*dt;}
       if(e.stun>0){e.stun-=dt;continue;} // stunned zombies neither move nor damage the wall
+      if(G.squads.length){const q=G.squads.find(q=>q.state!=="inbound"&&q.state!=="gone"&&e.x>q.x-4*U()&&e.x-q.x<12*U()&&Math.abs(e.y-q.y)<14*U()*depth(q.y));
+        if(q){q.hp-=e.dps*dt;q.hit=0.1;e.ph+=dt*9;continue;}} // a zombie touching a field team attacks it instead of walking on
       if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
     const rangeX=line+WEAPON_RANGE*(W-line),vis=G.enemies.filter(e=>e.x<rangeX).sort((a,b)=>a.x-b.x);
@@ -1335,8 +1341,33 @@ const D=(function(){
       if(d<=step){if(r.e){r.e.hp-=r.dmg;r.e.hit=0.08;G.fx.push({k:"hit",x:r.tx,y:r.ty,life:0.12,m:0.12});}G.rounds.splice(i,1);}
       else{r.x+=dx/d*step;r.y+=dy/d*step;r.a=Math.atan2(dy,dx);}
     }
+    // Field squads (squad weapons): deploy, dig in, shoot, get overrun or airlifted out when supplies run out.
+    const sqW=wMode(WPN.find(w=>w.k==="flame"))==="squad";
+    if(G.c.flame&&sqW){
+      const st=WSTAT.squad(G.c.flame),act=G.squads.filter(q=>q.state!=="gone");G.sqcd-=dt;
+      if(G.sqcd<=0&&act.length<st.max&&G.enemies.some(e=>e.x<W-6)){
+        const lo=line+20*u,hi=Math.min(W-30*u,wx+288*u),z=G.enemies[Math.floor(Math.random()*G.enemies.length)];
+        const y=Math.min(fBot()-8*u,Math.max(fTop()+18*u,z?z.y+rnd(-10,10)*u:rnd(fTop()+18*u,fBot()-8*u)));
+        G.squads.push({x:rnd(lo,Math.max(lo,hi)),y,hp:st.hp,max:st.hp,supply:st.supply,maxSup:st.supply,n:st.size,state:"inbound",t:0,via:Math.random()<0.5?"heli":"pod",cd:rnd(0.2,0.6),hit:0});
+        G.sqcd=st.reload;
+      }
+      for(const q of G.squads){q.t+=dt;q.hit-=dt;
+        if(q.state==="gone")continue;
+        if(q.hp<=0){q.state="gone";for(let k=0;k<q.n;k++)G.splats.push({x:q.x+rnd(-8,8)*u,y:q.y+rnd(-3,3)*u,r:3*u*depth(q.y),life:8});text(q.x,q.y-30*u,"TEAM LOST","#FF2BD6");continue;}
+        if(q.state==="inbound"){if(q.t>=(q.via==="heli"?2.2:0.9)){q.state="build";q.t=0;if(q.via==="pod")G.fx.push({k:"b",x:q.x,y:q.y,r:14*u,life:0.3,m:0.3});}continue;}
+        if(q.state==="build"){if(q.t>=st.build){q.state="hold";q.t=0;}continue;}
+        if(q.state==="evac"){if(q.t>=3.4){q.state="gone";text(q.x,q.y-30*u,"TEAM EXTRACTED","#19F0FF");}continue;}
+        const alive=Math.max(1,Math.ceil(q.n*q.hp/q.max));q.cd-=dt;
+        if(q.cd<=0){let tg=null,bd=st.range*u;for(const e of G.enemies){const d=Math.hypot(e.x-q.x,e.y-q.y);if(d<bd){bd=d;tg=e;}}
+          if(tg){tg.hp-=st.dmg;tg.hit=0.08;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
+            G.fx.push({k:"tr",x1:sx,y1:sy,x2:tg.x,y2:tg.y-12*u*depth(tg.y),life:0.09});G.fx.push({k:"hit",x:tg.x,y:tg.y-12*u*depth(tg.y),life:0.12,m:0.12});}
+          q.cd=1/(st.rate*alive);
+          if(q.supply<=0){q.state="evac";q.t=0;text(q.x,q.y-30*u,"OUT OF SUPPLIES","#FFB020");}}
+      }
+      G.squads=G.squads.filter(q=>q.state!=="gone"||q.t<0);
+    }
     // Flame bunker: bursts of flame at zombies near the wall, which keep burning afterwards.
-    if(G.c.flame){
+    if(G.c.flame&&!sqW){
       const st=WSTAT.flame(G.c.flame),reach=line+st.range*u;
       if(G.fburst>0){G.fburst-=dt;
         for(const e of G.enemies)if(e.x<reach){e.hp-=st.dmg*dt;e.burn=st.burnT;e.bd=st.burn;
@@ -1546,7 +1577,8 @@ const D=(function(){
     if(fr>=1){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(${c},${0.25+0.2*Math.sin(G.time*6)})`;ctx.fillRect(x-1,y-1,w+2,h+2);ctx.restore();}}
   const clamp01=v=>Math.max(0,Math.min(1,v));
   function drawCooldowns(L){const s=L.ys,bw=Math.max(14,26*s),bh=Math.max(2.5,2.6*s);
-    if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fburst>0?1:1-clamp01(G.fcd/st.reload));}
+    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;cdBar(x+4*s,y+25*s,bw,bh,1-clamp01(G.sqcd/WSTAT.squad(G.c.flame).reload));}
+    else if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fburst>0?1:1-clamp01(G.fcd/st.reload));}
     if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
     if(G.c.mortar){const [x,y]=mortarPos(),m=wMode(WPN.find(w=>w.k==="mortar"))||"mortar";
       const fr=m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
@@ -1568,7 +1600,11 @@ const D=(function(){
     const nC=Math.min(10,Math.ceil(G.ammo/25));for(let k=0;k<nC;k++){const cx=L.depot[0]+(48+(k%5)*7)*s,cy=L.depot[1]+(18-Math.floor(k/5)*6)*s;
       ctx.fillStyle="#5A4325";ctx.fillRect(cx,cy,6*s,5*s);ctx.strokeStyle="#2A1F12";ctx.lineWidth=0.8;ctx.strokeRect(cx,cy,6*s,5*s);}
     // flame bunker: a concrete dome whose firing slit glows during a burst
-    if(G.c.flame){const [x,y]=L.flame;ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(x+17*s,y+18*s,17*s,13*s,0,Math.PI,0);ctx.fill();
+    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
+      ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=Math.max(1,1.2*s);ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,13*s,6*s,0,0,7);ctx.stroke();
+      ctx.fillStyle=`rgba(${c},.9)`;ctx.fillRect(x+13*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+19.4*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+13*s,y+13.2*s,8*s,1.4*s);
+      const n=G.squads.filter(q=>q.state!=="gone").length;ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+WSTAT.squad(G.c.flame).max,x+36*s,y+17*s);}
+    else if(G.c.flame){const [x,y]=L.flame;ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(x+17*s,y+18*s,17*s,13*s,0,Math.PI,0);ctx.fill();
       ctx.fillStyle=G.fburst>0?"#FF8A1A":"#120D08";ctx.fillRect(x+9*s,y+11*s,16*s,2.5*s);
       ctx.fillStyle="#3B3527";for(let k=0;k<4;k++){ctx.beginPath();ctx.ellipse(x+(5+k*8)*s,y+20*s,4.5*s,2.2*s,0,0,7);ctx.fill();}}
     // tesla tower: a lattice mast whose orb brightens as it charges
@@ -1630,6 +1666,39 @@ const D=(function(){
   const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"],PUR=["rgba(179,136,255,.45)","#D9C7FF"];
   const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU,insider:PUR,spy:PUR,apt:PUR};
   const TRC={sec:"120,240,255",a2:"156,255,87",cissp:"179,136,255"}; // tracer colors; others amber
+  // Field team: arrives by helicopter (flies in from the base and hovers) or drop pod (falls with a fiery trail),
+  // builds a sandbag bunker, and shows its health and supplies; a helicopter returns to lift it out.
+  function drawHeli(x,y,u,c){ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,y+40*u,12*u,2.2*u,0,0,7);ctx.fill();
+    ctx.fillStyle="#3E464E";ctx.fillRect(x-18*u,y-1.2*u,14*u,2.4*u);ctx.fillRect(x-19*u,y-4*u,2*u,6*u);
+    ctx.fillStyle="#55606A";ctx.beginPath();ctx.ellipse(x,y,9*u,4.5*u,0,0,7);ctx.fill();ctx.fillStyle="#BFE9FF";ctx.beginPath();ctx.ellipse(x+5*u,y-0.5*u,3*u,2.4*u,0,0,7);ctx.fill();
+    ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-3*u,y+1*u,5*u,1.4*u);
+    const r=Math.abs(Math.cos(G.time*30))*18*u;ctx.strokeStyle="rgba(200,210,220,.6)";ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x-r,y-6*u);ctx.lineTo(x+r,y-6*u);ctx.stroke();}
+  function drawSquad(q,u){const d=depth(q.y),c=wcol(),x=q.x,y=q.y,k=u*d;
+    if(q.state==="inbound"){
+      if(q.via==="heli"){const p=Math.min(1,q.t/1.6),hx=-30*u+(x+30*u)*(1-Math.pow(1-p,2)),hy=y-44*k;drawHeli(hx,hy,u,c);
+        if(q.t>1.6){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,hy+4*u);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
+      else{const p=Math.min(1,q.t/0.9),py=fTop()-20*u+(y-fTop()+20*u)*p*p;
+        ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle="rgba(255,150,40,.7)";ctx.beginPath();ctx.moveTo(x-3*k,py-6*k);ctx.lineTo(x+3*k,py-6*k);ctx.lineTo(x,py-26*k);ctx.closePath();ctx.fill();ctx.restore();
+        ctx.fillStyle="#6B7480";ctx.beginPath();ctx.ellipse(x,py-3*k,4*k,7*k,0,0,7);ctx.fill();ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-4*k,py-4*k,8*k,1.5*k);}
+      return;}
+    // soldiers stand behind a sandbag arc facing the horde; the arc fills in while they build it
+    const alive=q.state==="evac"&&q.t>2.2?0:Math.max(1,Math.ceil(q.n*q.hp/q.max)),m=1.4*k;
+    if(q.via==="pod"){ctx.fillStyle="#4A525C";ctx.beginPath();ctx.ellipse(x-12*k,y-2*k,3.4*k,6*k,0.4,0,7);ctx.fill();ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-15*k,y-3*k,6*k,1.2*k);}
+    for(let i=0;i<alive;i++){const sx=x-4*k+(i%2?3:-3)*k,sy=y+(i-(alive-1)/2)*3.2*k,fire=q.state==="hold"&&q.cd<0.08;
+      ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(sx,sy,2.6*m,0.9*m,0,0,7);ctx.fill();
+      ctx.fillStyle="#2E3A2E";ctx.fillRect(sx-1.3*m,sy-6.5*m,2.6*m,6*m);ctx.fillStyle="#C9B48A";ctx.beginPath();ctx.arc(sx,sy-7.8*m,1.5*m,0,7);ctx.fill();
+      ctx.fillStyle=`rgb(${c})`;ctx.fillRect(sx-1.6*m,sy-9.4*m,3.2*m,1*m);ctx.fillStyle="#1A1F22";ctx.fillRect(sx,sy-5*m,4.6*m,1*m);
+      if(fire){ctx.fillStyle="rgba(255,220,120,.9)";ctx.beginPath();ctx.arc(sx+5*m,sy-4.5*m,1.3*m,0,7);ctx.fill();}}
+    const built=q.state==="build"?Math.min(1,q.t/WSTAT.squad(G.c.flame||1).build):1,bags=Math.round(8*built);
+    for(let i=0;i<bags;i++){const a=-1.25+2.5*i/7,bx=x+3*k+Math.cos(a)*9*k,by=y+Math.sin(a)*7*k;
+      ctx.fillStyle=q.hit>0?"#C9A27A":(i%2?"#6B5A3C":"#7A6744");ctx.beginPath();ctx.ellipse(bx,by,2.6*k,3.4*k,a,0,7);ctx.fill();}
+    if(q.state==="build"){ctx.fillStyle="rgba(232,253,255,.7)";ctx.font=`600 ${Math.max(8,Math.round(8*k))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText("DIGGING IN",x,y+14*k);}
+    // health (red) and supplies (amber)
+    const bw=22*k,bx=x-bw/2,by=y-22*k;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-1,by-1,bw+2,6*k+2);
+    ctx.fillStyle="#FF3B5C";ctx.fillRect(bx,by,bw*Math.max(0,q.hp/q.max),2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(bx,by+3.4*k,bw*Math.max(0,q.supply/q.maxSup),2.4*k);
+    if(q.state==="evac"){const p=Math.min(1,q.t/1.8),hx=q.t<1.8?-30*u+(x+30*u)*(1-Math.pow(1-p,2)):q.t<2.4?x:x+(q.t-2.4)*260*u;drawHeli(hx,y-44*k,u,c);
+      if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
+  }
   // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
   function drawJet(j,u){const x=j.x,y=j.alt,c=wcol();
     ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,j.lane,9*u,1.6*u,0,0,7);ctx.fill();
@@ -1708,6 +1777,7 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
+    for(const q of G.squads)drawSquad(q,u);
     for(const f of G.fx)if(f.k==="smk"){const a=f.life/f.m;ctx.fillStyle=`rgba(170,170,160,${0.35*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(3+6*(1-a))*u,0,7);ctx.fill();}
     // 30 mm rounds: a brass slug with a short glowing tracer tail in the exam's tracer color
     for(const r of G.rounds||[]){
@@ -4150,7 +4220,7 @@ const CISSP_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Defense in depth",d:"+35% turret damage"},{n:"Continuous monitoring",d:"+20% turret fire rate"},{n:"Security architecture",d:"Adds another turret to the wall"},
   {n:"Hardened perimeter",d:"+40 wall integrity"},{n:"Risk reserve",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const CISSP_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
-  {n:"Incident response team",d:"Contains hostiles that reach the wall. Uses no ammo."},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
+  {n:"Incident response team",d:"Teams drop into the field, dig in and hold the line until their supplies run out.",squad:true},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
   {n:"Cryptographic mine",d:"Mines laid in the field shatter the horde with splash damage, then slowly re-lay.",mine:true},{n:"Zero Trust lance",d:"A beam that verifies, then destroys, every hostile in its lane."}][i]));
 // Concept Match (CISSP): [description, concept]
 const CONCEPTS=[
