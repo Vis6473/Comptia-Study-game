@@ -1408,7 +1408,7 @@ const D=(function(){
         if(add.length){G.squads.push(...add);G.ship={x:-90*u,spd:st.ship*u};}
       }
       if(G.ship){G.ship.x+=G.ship.spd*dt;if(G.ship.x>W+110*u){G.ship=null;for(const q of G.squads)if(q.state==="ship"){q.state="inbound";q.t=0;}}}
-      for(const q of G.squads){q.t+=dt;q.hit-=dt;
+      for(const q of G.squads){q.t+=dt;q.hit-=dt;q.fl=(q.fl||0)-dt;
         if(q.state==="gone")continue;
         if(q.state==="ship"){if(G.ship&&G.ship.x>=q.x){q.state="inbound";q.t=0;}continue;} // still aboard: drops when the ship is overhead
         if(q.hp<=0){q.state="gone";for(let k=0;k<q.n;k++)G.splats.push({x:q.x+rnd(-8,8)*u,y:q.y+rnd(-3,3)*u,r:3*u*depth(q.y),life:8});text(q.x,q.y-30*u,"TEAM LOST","#FF2BD6");continue;}
@@ -1422,7 +1422,7 @@ const D=(function(){
         if(q.state==="evac"){if(q.t>=3.4){q.state="gone";text(q.x,q.y-30*u,"TEAM EXTRACTED","#19F0FF");}continue;}
         const alive=Math.max(1,Math.ceil(q.n*q.hp/q.max));q.cd-=dt;
         if(q.cd<=0){let tg=null,bd=st.range*u;for(const e of G.enemies){if(e.x<q.x-14*u||e.x>W-4||!tgt(e))continue;const d=Math.hypot(e.x-q.x,e.y-q.y);if(d<bd){bd=d;tg=e;}} // shoots ahead of the team, out to its range
-          if(tg){hurt(tg,st.dmg,"squad");tg.hit=0.08;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
+          if(tg){hurt(tg,st.dmg,"squad");tg.hit=0.08;q.fl=0.08;q.shot=(q.shot||0)+1;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
             G.fx.push({k:"tr",x1:sx,y1:sy,x2:tg.x,y2:tg.y-12*u*depth(tg.y),life:0.09});G.fx.push({k:"hit",x:tg.x,y:tg.y-12*u*depth(tg.y),life:0.12,m:0.12});}
           q.cd=1/(st.rate*alive);
           if(q.supply<=0){q.state="evac";q.t=0;text(q.x,q.y-30*u,"OUT OF SUPPLIES","#FFB020");}}
@@ -1786,7 +1786,7 @@ const D=(function(){
     // soldiers stand behind a sandbag arc facing the horde; the arc fills in while they build it
     const alive=q.state==="evac"&&q.t>2.2?0:Math.max(1,Math.ceil(q.n*q.hp/q.max)),m=1.4*k;
     if(q.via==="pod"){ctx.fillStyle="#4A525C";ctx.beginPath();ctx.ellipse(x-12*k,y-2*k,3.4*k,6*k,0.4,0,7);ctx.fill();ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-15*k,y-3*k,6*k,1.2*k);}
-    for(let i=0;i<alive;i++){const sx=x-4*k+(i%2?3:-3)*k,sy=y+(i-(alive-1)/2)*3.2*k,fire=q.state==="hold"&&q.cd<0.08;
+    for(let i=0;i<alive;i++){const sx=x-4*k+(i%2?3:-3)*k,sy=y+(i-(alive-1)/2)*3.2*k,fire=q.fl>0&&i===(q.shot||0)%alive;
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(sx,sy,2.6*m,0.9*m,0,0,7);ctx.fill();
       ctx.fillStyle="#1E2328";ctx.fillRect(sx-1.2*m,sy-3*m,1*m,3*m);ctx.fillRect(sx+0.2*m,sy-3*m,1*m,3*m); // legs
       ctx.fillStyle="#2C333B";ctx.beginPath();ctx.moveTo(sx-1.8*m,sy-3*m);ctx.lineTo(sx+1.8*m,sy-3*m);ctx.lineTo(sx+1.5*m,sy-7.2*m);ctx.lineTo(sx-1.5*m,sy-7.2*m);ctx.closePath();ctx.fill(); // armored torso
