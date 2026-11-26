@@ -78,6 +78,8 @@ nav.tabs a:hover{color:var(--ink)}
 .stats div{background:var(--surface);padding:14px 16px}
 .stats b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums}
 .domains{display:flex;flex-direction:column;gap:12px}
+.dsum{display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;color:var(--muted);margin:-6px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.dsum b{color:var(--ink);font-weight:600}
 .dom{display:grid;grid-template-columns:2.2em 1fr 3.2em 4.4em;gap:12px;align-items:center;font-size:14px}
 .dom .num{font-family:var(--f-mono);color:var(--muted)}
 .dom .name{min-width:0}
@@ -85,6 +87,9 @@ nav.tabs a:hover{color:var(--ink)}
 .dom .meter i{display:block;height:100%}
 .dom .w,.dom .acc{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
 .dom .w{color:var(--muted)}
+.dom .dstat{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin-top:-4px}
+.dom .dstat b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.dom .dstat a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 .modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .mode{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
 .mode::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--c)}
@@ -1058,7 +1063,7 @@ const WSTAT={
   wipe:L=>({dmg:2+1.5*L,radius:30+8*L,reload:Math.max(2.5,6-L),stun:1+0.5*L})
 };
 // Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
-const WEAPON_RANGE=0.7;
+const WEAPON_RANGE=0.6;
 const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
@@ -1365,10 +1370,11 @@ const D=(function(){
     // Toner jets: a jet crosses the field along the busiest pack's lane and drops toner bombs as it passes over.
     if(G.c.mortar&&w3==="toner"){
       const st=WSTAT.toner(G.c.mortar);G.mcd-=dt;
-      if(G.mcd<=0&&vis.length){
-        let best=vis[0],bn=-1;
-        for(const e of vis){let n=0;for(const o of vis)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
-        const spd=480*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.radius*u*0.9,drops=[];
+      const seenAll=G.enemies.filter(e=>e.x<W-6); // the jets fly over the whole field, past the max range line
+      if(G.mcd<=0&&seenAll.length){
+        let best=seenAll[0],bn=-1;
+        for(const e of seenAll){let n=0;for(const o of seenAll)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
+        const spd=130*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.radius*u*0.9,drops=[];
         for(let k=0;k<st.bombs;k++)drops.push(tx+(k-(st.bombs-1)/2)*gap);
         G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0});G.mcd=st.reload;
       }
@@ -2010,11 +2016,26 @@ document.addEventListener("click",e=>{
 });
 
 /* ---------------- Home ---------------- */
+// Per-domain detail for the home page: answers, bank coverage, review queue, questions never missed, weakest objective.
+function domStats(k){
+  const ids=[];Q.forEach((q,i)=>{if(String(q[0])===String(k))ids.push(i);});
+  let seen=0,clean=0;const ob={};
+  for(const i of ids){const r=P.qs[i];if(!r||!(r.c+r.w))continue;seen++;if(!r.w)clean++;
+    const o=Q[i][5],x=ob[o]||(ob[o]={c:0,w:0});x.c+=r.c;x.w+=r.w;}
+  let weak=null;for(const [o,x] of Object.entries(ob)){const n=x.c+x.w;if(n<3)continue;const a=x.c/n;if(!weak||a<weak.a)weak={o,a};}
+  return {total:ids.length,seen,clean,review:P.review.filter(i=>Q[i]&&String(Q[i][0])===String(k)).length,weak};
+}
 function viewHome(){
   const doms = Object.entries(DOMAINS).map(([k,d])=>{
-    const r=P.dom[k]||{c:0,w:0};const a=pct(r.c,r.w);
+    const r=P.dom[k]||{c:0,w:0};const a=pct(r.c,r.w),st=domStats(k),cov=Math.round(100*st.seen/Math.max(1,st.total));
+    const bits=[r.c+r.w?`<span><b>${r.c+r.w}</b> answered: <b>${r.c}</b> right, <b>${r.w}</b> wrong</span>`:`<span>No answers yet</span>`,
+      `<span>Seen <b>${st.seen}</b> of ${st.total} (${cov}%)</span>`,
+      st.seen?`<span>Never missed <b>${st.clean}</b></span>`:"",
+      st.review?`<a href="#review">${st.review} in review</a>`:"",
+      st.weak&&st.weak.a<1?`<span title="${esc(OBJ[st.weak.o]?OBJ[st.weak.o][0]:"")}">Weakest objective <b>${st.weak.o}</b> (${Math.round(100*st.weak.a)}%)</span>`:""].filter(Boolean).join("");
     return `<div class="dom"><span class="num">${k}.0</span><span class="name">${d.name}</span><span class="w">${d.w}%</span><span class="acc">${a===null?"—":a+"%"}</span>
-      <span class="meter" style="grid-column:2/3"><i style="width:${a||0}%;background:${d.c}"></i></span></div>`;}).join("");
+      <span class="meter" style="grid-column:2/3"><i style="width:${a||0}%;background:${d.c}"></i></span>
+      <span class="dstat" style="grid-column:2/5">${bits}</span></div>`;}).join("");
   let wsum=0,wacc=0;Object.entries(DOMAINS).forEach(([k,d])=>{const r=P.dom[k];if(r&&(r.c+r.w)){wsum+=d.w;wacc+=d.w*r.c/(r.c+r.w);}});
   const ready = wsum?Math.round(100*wacc/wsum)+"%":"—";
   const seen = Object.keys(P.qs).length;
@@ -2035,6 +2056,8 @@ function viewHome(){
     </section>
     <section class="panel">
       <div class="row" style="justify-content:space-between;margin-bottom:14px"><h3 style="font-size:18px">Exam domains</h3><span class="label">Exam weight · your accuracy</span></div>
+      ${(()=>{let c=0,w=0;Object.values(P.dom).forEach(r=>{c+=r.c||0;w+=r.w||0;});const best=P.mockHistory.length?Math.max(...P.mockHistory.map(m=>m.scaled||0)):null;
+        return `<div class="dsum"><span>Overall <b>${c+w?Math.round(100*c/(c+w))+"%":"—"}</b> (${c} right, ${w} wrong)</span><span>Bank covered <b>${Math.round(100*seen/Math.max(1,Q.length))}%</b></span><span>Missed at least once <b>${P.missedEver.length}</b></span><span>Mock exams <b>${P.mockHistory.length}</b>${best!==null?`, best <b>${best}</b>`:""}</span></div>`;})()}
       <div class="domains">${doms}</div>
     </section>
     <section>

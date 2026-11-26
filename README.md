@@ -5,6 +5,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 ## Main menu, settings and high scores
 
 - **Main menu:** the title screen where you pick the exam to study. Each exam card shows your accuracy, questions seen, review queue and best mock score. Use **Menu** in the tabs, or the logo, to switch exams.
+- **Exam home page:** the Exam domains card shows your overall accuracy, how much of the question bank you've covered, how many questions you've ever missed, and your mock exam count and best score. Under each domain's bar are its answers (right and wrong), questions seen out of the bank, questions never missed, a link to any of its questions in review, and its weakest objective.
 - **Settings:** turn spelled-out abbreviations in answer choices on or off, and reset any one exam's progress, the outpost, or everything. Each reset asks you to confirm first.
 - **High scores:** the outpost's records (highest night, most undead in one night, total kills, level) and, for each exam, the best mock score, best quick exam, mini-game records and recent mock attempts.
 - **Score card:** High Scores draws a 1200×630 image of your records, with an optional name. Save it as a PNG, copy it, share it from a phone through the share sheet, or open a post on X with your scores as text and attach the image. Scores stay on your device; there is no online leaderboard yet.
@@ -95,9 +96,9 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
   - **Mortar weapons** shell the densest pack. The blast knocks zombies back and leaves a crater.
   - **Railguns** swing to the busiest lane, charge, then fire a beam that hits every zombie in that lane.
   - **Minefields:** Security+'s Honeypot mine and CISSP's Cryptographic mine are mines instead of a mortar, like a potato mine. They're buried in the zombies' lanes. Once armed, each blows up under the first zombie to reach it with splash damage, then a new one is buried in another lane and slowly arms (20 s at level 1, down to 12 s).
-  - **Toner jets:** A+ Core 1's Toner bomb sends a small jet over the busiest pack every few seconds. It drops a string of cyan, magenta, yellow and black toner bombs that splash the zombies and stain the ground.
+  - **Toner jets:** A+ Core 1's Toner bomb sends a slow little jet over the busiest pack every few seconds. It drops a string of cyan, magenta, yellow and black toner bombs that splash the zombies and stain the ground.
   - **Stun mortar:** A+ Core 2's Disk wipe charge doesn't knock zombies back. It freezes every zombie in the blast for a second or more.
-  - **Max range:** turrets and the long-range weapons only fire at zombies inside the first 70% of the field, marked with a dashed MAX RANGE line, so you see the horde before it's hit.
+  - **Max range:** turrets and the long-range weapons only fire at zombies inside the first 60% of the field, marked with a dashed MAX RANGE line, so you see the horde before it's hit. The toner jets are the exception: they fly slowly over the whole field.
   - The Armory describes each weapon's exact damage, range and recharge at your level.
 - **The base:** behind the wall is a command post, ammo depot, barracks and generator, plus props for each exam. The field has craters, tank traps and barbed wire. Upgrades show up too: the wall gets armor plates as you buy plating, and the turret barrels change with caliber and autoloader upgrades.
 - **Focus mode:** while a quick exam (or review round) runs, only the exam and the outpost are on screen. The header, tabs and footer come back when you leave through the result screen or the pause menu.
