@@ -1179,6 +1179,7 @@ const D=(function(){
     G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,mines:[],jets:[],tbombs:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
+    if(G.night>1)text(W/2,fTop()+36*U(),`NIGHT ${G.night} · THE HORDE GROWS STRONGER`,"#FF2BD6");
   }
   // Variants per exam (e.t, w or b, still sets size, health bar and scrap):
   // Network+: walkers and brutes. Security+: botnet zombies, fast fragile worms, and ransomware brutes that
@@ -1190,10 +1191,12 @@ const D=(function(){
   const DPS={fast:2.25,walker:4.5,brute:9};
   const VARIANTS={net:["walker","walker","brute"],sec:["bot","worm","ransom"],a1:["spark","surge","chassis"],a2:["phish","rootkit","trojan"],cissp:["insider","spy","apt"]};
   const ZOMBIE_SPEED=0.8; // overall pace: at 1, walkers cross the field in 30–40 s and brutes in 60 s on night 1
+  // Each night the horde gets stronger: more health (above), 4% faster, spawning more often, and NIGHT_DMG more wall damage.
+  const NIGHT_DMG=0.06;
   function mkFoe(t,v,x,y){
     const n=G.night,b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
-    return {t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:b?DPS.brute:(f.fast?DPS.fast:DPS.walker),ph:rnd(0,6),hit:0,lk:0};
+    return {t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
   }
   function spawn(t){
     const V=VARIANTS[S.exam]||VARIANTS.net,v=t==="b"?V[2]:(Math.random()<0.3?V[1]:V[0]);
@@ -1537,6 +1540,18 @@ const D=(function(){
     }
   }
   // Live parts of the base: radar, antenna light, searchlight, generator glow, ammo crates and the weapons you own.
+  // Recharge bar under a weapon structure: fills as it reloads and brightens when ready.
+  function cdBar(x,y,w,h,fr){fr=Math.max(0,Math.min(1,fr));const c=wcol();
+    ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(x-1,y-1,w+2,h+2);ctx.fillStyle=`rgba(${c},${fr>=1?0.95:0.45})`;ctx.fillRect(x,y,w*fr,h);
+    if(fr>=1){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(${c},${0.25+0.2*Math.sin(G.time*6)})`;ctx.fillRect(x-1,y-1,w+2,h+2);ctx.restore();}}
+  const clamp01=v=>Math.max(0,Math.min(1,v));
+  function drawCooldowns(L){const s=L.ys,bw=Math.max(14,26*s),bh=Math.max(2.5,2.6*s);
+    if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fburst>0?1:1-clamp01(G.fcd/st.reload));}
+    if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
+    if(G.c.mortar){const [x,y]=mortarPos(),m=wMode(WPN.find(w=>w.k==="mortar"))||"mortar";
+      const fr=m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
+      cdBar(x-bw/2,y+(m==="toner"?16:15)*s,bw,bh,fr);}
+  }
   function drawBase(L){
     const s=L.ys,t=G.time,c=wcol();
     // searchlight sweeping the field from the command post
@@ -1651,7 +1666,7 @@ const D=(function(){
           ctx.strokeStyle=`rgba(${mc},.55)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(m.x,m.y,7*u*d,-Math.PI/2,-Math.PI/2+2*Math.PI*pr);ctx.stroke();continue;}
         ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(m.x,m.y,5*u*d,2.4*u*d,0,0,7);ctx.fill();ctx.fillStyle="#454D55";ctx.beginPath();ctx.ellipse(m.x,m.y-0.8*u*d,3*u*d,1.4*u*d,0,0,7);ctx.fill();
         if(Math.sin(G.time*5+m.x)>0){ctx.fillStyle=`rgba(${mc},.95)`;ctx.beginPath();ctx.arc(m.x,m.y-1.2*u*d,1*u*d,0,7);ctx.fill();}}}
-    drawBase(yard());
+    {const Ly=yard();drawBase(Ly);drawCooldowns(Ly);}
     // wall: wider and armored with each Wall plating level
     const pl=upL("plating"),top=ft-14*u,w=(10+1.6*pl)*u,p=G.wall/G.c.wallMax;
     ctx.fillStyle="#1A242C";ctx.fillRect(wx-w/2,top,w,H-top);
@@ -1667,7 +1682,8 @@ const D=(function(){
     if(G.c.rail){const ry=G.railY||mid,rc=G.rcharge||0,cc=wcol();ctx.fillStyle="#2A2033";ctx.fillRect(wx-12*u,ry-4.5*u,30*u,9*u);
       ctx.fillStyle=`rgba(${cc},${0.5+0.5*rc})`;ctx.fillRect(wx+2*u,ry-3*u,16*u,1.5*u);ctx.fillRect(wx+2*u,ry+1.5*u,16*u,1.5*u);
       if(rc>0){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(${cc},${0.35*rc})`;ctx.beginPath();ctx.arc(wx+18*u,ry,(3+6*rc)*u,0,7);ctx.fill();
-        ctx.fillStyle=`rgba(${cc},${0.08*rc})`;ctx.fillRect(wx+18*u,ry-1*u,W,2*u);ctx.restore();}}
+        ctx.fillStyle=`rgba(${cc},${0.08*rc})`;ctx.fillRect(wx+18*u,ry-1*u,W,2*u);ctx.restore();}
+      cdBar(wx-11*u,ry+6*u,24*u,2.2*u,1-clamp01(G.rcd/WSTAT.rail(G.c.rail).reload));}
     G.enemies.slice().sort((a,b)=>a.y-b.y).forEach(drawZ);
     // status effects: burning zombies flicker with flame, stunned ones crackle
     for(const e of G.enemies){const sd=depth(e.y)*(e.t==="b"?1.9:1)*u;
@@ -1735,7 +1751,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -2096,7 +2112,7 @@ function viewArmory(){
   const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"]]
     .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
-    .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*ramp*(f.sp||1)),dps=b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker),inf=FOE_INFO[v]||[v,""];
+    .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*ramp*(f.sp||1)),dps=+((b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker))*(1+I.nightDmg*(n-1))).toFixed(2),inf=FOE_INFO[v]||[v,""];
       return `<div class="foe"><b>${esc(inf[0])}</b><span class="muted small">${esc(inf[1])} ${esc(when)}.</span>
         <div class="foe-s"><span>Health <b>${+hp.toFixed(1)}</b></span><span>Reaches the wall in <b>~${Math.round(secs)} s</b></span><span>Wall damage <b>${dps}/s</b></span></div></div>`;}).join("");
   $app.innerHTML=`<div class="stack">
@@ -2123,7 +2139,7 @@ function viewArmory(){
     <div class="panel stack">
       <div><span class="label">Horde guide</span><h3 style="font-size:22px;margin-top:2px">What's coming on night ${n}</h3></div>
       <div class="foes">${foes}</div>
-      <p class="muted small" style="margin:0">Health and speed rise every night. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
+      <p class="muted small" style="margin:0">The horde gets stronger every night: walkers gain a quarter of their first-night health and brutes 5 health, they move 4% faster, spawn more often and deal ${Math.round(I.nightDmg*100)}% more wall damage. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
     </div>
   </div>`;
   bindShop(document.getElementById("outpost"),viewArmory);
