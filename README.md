@@ -96,7 +96,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
   - **Mortar weapons** shell the densest pack. The blast knocks zombies back and leaves a crater.
   - **Railguns** swing to the busiest lane, charge, then fire a beam that hits every zombie in that lane.
   - **Minefields:** Security+'s Honeypot mine and CISSP's Cryptographic mine are mines instead of a mortar, like a potato mine. They're buried in the zombies' lanes. Once armed, each blows up under the first zombie to reach it with splash damage, then a new one is buried in another lane and slowly arms (20 s at level 1, down to 12 s).
-  - **Toner jets:** A+ Core 1's Toner bomb sends a slow little jet over the busiest pack every few seconds. It drops cyan, magenta, yellow and black toner bombs right on the zombies in that lane as it passes over them that splash the zombies and stain the ground.
+  - **Toner jets:** A+ Core 1's Toner bomb sends a slow little jet over the busiest pack every few seconds. It flies anywhere on the field, past the max range line, aims toner bombs right at the zombies in its lane, and carpet-bombs the pack with a line of small cyan, magenta, yellow and black bomblets that splash the zombies and stain the ground.
   - **Stun mortar:** A+ Core 2's Disk wipe charge doesn't knock zombies back. It freezes every zombie in the blast for a second or more.
   - **Max range:** turrets and the long-range weapons only fire at zombies inside the first 60% of the field, marked with a dashed MAX RANGE line, so you see the horde before it's hit. The toner jets are the exception: they fly slowly over the whole field.
   - The Armory describes each weapon's exact damage, range and recharge at your level.

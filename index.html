@@ -1058,7 +1058,7 @@ const WSTAT={
   // under the first zombie to step on one, then take a long time to re-lay.
   mine:L=>({dmg:6+3*L,radius:34+8*L,reload:Math.max(12,24-4*L),count:2+L,trigger:9}),
   // Toner jets (WPN entry with jets:true, A+ Core 1): a small jet flies over the busiest pack and drops a string of toner bombs.
-  toner:L=>({dmg:2+1.6*L,radius:22+5*L,reload:Math.max(3.5,7.5-L),bombs:2+L}),
+  toner:L=>({dmg:2+1.6*L,radius:22+5*L,reload:Math.max(3.5,7.5-L),bombs:2+L,carpet:4+2*L,cdmg:1+0.8*L,cr:16+3*L}), // aimed bombs plus a CMYK carpet of bomblets
   // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
   wipe:L=>({dmg:2+1.5*L,radius:30+8*L,reload:Math.max(2.5,6-L),stun:1+0.5*L})
 };
@@ -1068,7 +1068,7 @@ const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
-  toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack and drops ${s.bombs} toner bombs, each dealing ${f(s.dmg)} damage across ${fieldM(s.radius)} m.`,
+  toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Bursts of flame deal ${f(s.dmg)} damage a second to zombies within ${fieldM(s.range)} m of the wall, every ${s.reload} s. Sets them on fire: ${f(s.burn)} damage a second for ${s.burnT} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombies for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
@@ -1373,20 +1373,21 @@ const D=(function(){
       if(G.mcd<=0&&seenAll.length){
         let best=seenAll[0],bn=-1;
         for(const e of seenAll){let n=0;for(const o of seenAll)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
-        const spd=130*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.radius*u*0.9,drops=[];
-        for(let k=0;k<st.bombs;k++)drops.push(tx+(k-(st.bombs-1)/2)*gap);
-        G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0});G.mcd=st.reload;
+        const spd=130*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.cr*u*1.5,drops=[];
+        for(let k=0;k<st.carpet;k++)drops.push(tx+(k-(st.carpet-1)/2)*gap); // carpet bomb: evenly spaced across the pack
+        G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0,cn:0,aim:st.bombs});G.mcd=st.reload;
       }
     }
     for(let i=G.jets.length-1;i>=0;i--){const j=G.jets[i];j.x+=j.spd*dt;
       j.tg=j.tg||new Set();const band=16*u*depth(j.lane);
-      for(const e of G.enemies){if(j.n>=j.drops.length)break;if(j.tg.has(e)||Math.abs(e.y-j.lane)>band||e.x>W-4)continue;
+      while(j.cn<j.drops.length&&j.x>=j.drops[j.cn]){G.tbombs.push({x:j.x,y0:j.alt,y1:j.lane+rnd(-6,6)*u,t:0,T:0.45,c:TONER[j.cn%4],L:G.c.mortar,small:true});j.cn++;}
+      for(const e of G.enemies){if(j.n>=j.aim)break;if(j.tg.has(e)||Math.abs(e.y-j.lane)>band||e.x>W-4)continue;
         if(j.x>=e.x-e.spd*0.45){j.tg.add(e);G.tbombs.push({x:j.x,y0:j.alt,y1:e.y,t:0,T:0.45,c:TONER[(j.n+i)%4],L:G.c.mortar});j.n++;}}
       if(j.x>W+40*u)G.jets.splice(i,1);}
     for(let i=G.tbombs.length-1;i>=0;i--){const b=G.tbombs[i];b.t+=dt;
-      if(b.t>=b.T){const st=WSTAT.toner(b.L),r=st.radius*u;
-        for(const e of G.enemies){const d=Math.hypot(e.x-b.x,e.y-b.y1);if(d<r){e.hp-=st.dmg;e.hit=0.12;}}
-        for(let k=0;k<9;k++)G.fx.push({k:"ton",x:b.x+rnd(-0.4,0.4)*r,y:b.y1+rnd(-0.25,0.25)*r,vx:rnd(-30,30)*u,vy:rnd(-22,-6)*u,c:b.c,life:rnd(0.6,1.1),m:1.1});
+      if(b.t>=b.T){const st=WSTAT.toner(b.L),r=(b.small?st.cr:st.radius)*u,dm=b.small?st.cdmg:st.dmg;
+        for(const e of G.enemies){const d=Math.hypot(e.x-b.x,e.y-b.y1);if(d<r){e.hp-=dm;e.hit=0.12;}}
+        for(let k=0;k<(b.small?5:9);k++)G.fx.push({k:"ton",x:b.x+rnd(-0.4,0.4)*r,y:b.y1+rnd(-0.25,0.25)*r,vx:rnd(-30,30)*u,vy:rnd(-22,-6)*u,c:b.c,life:rnd(0.6,1.1),m:1.1});
         G.craters.push({x:b.x,y:b.y1,r:r*0.28,c:b.c});if(G.craters.length>14)G.craters.shift();
         G.tbombs.splice(i,1);}}
     // Mortar pit (and the stun mortar): lobs a shell at the densest pack.
@@ -1686,7 +1687,7 @@ const D=(function(){
     for(const f of G.fx)if(f.k==="ton"){const a=f.life/f.m;ctx.fillStyle=`rgba(${f.c},${0.55*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(3+7*(1-a))*u,0,7);ctx.fill();}
     for(const b of G.tbombs){const k=Math.min(1,b.t/b.T),y=b.y0+(b.y1-b.y0)*k*k;
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
-      ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u,3.2*u,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u,y-4.2*u,3.6*u,1.2*u);}
+      const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
     for(const f of G.fx)if(f.k==="smk"){const a=f.life/f.m;ctx.fillStyle=`rgba(170,170,160,${0.35*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(3+6*(1-a))*u,0,7);ctx.fill();}
     // 30 mm rounds: a brass slug with a short glowing tracer tail in the exam's tracer color

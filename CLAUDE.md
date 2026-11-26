@@ -90,7 +90,7 @@ Each question is one line in `Q`:
     - Mortar: knockback plus `G.craters`.
     - Rail: aims at the busiest lane (`G.railBy`), charges (`G.rcharge`), then fires.
     - A `WPN` entry with `mine:true` (Honeypot mine for Security+, Cryptographic mine for CISSP) replaces the mortar with a potato-mine-style minefield. `WSTAT.mine` sets the stats, and `G.mines` holds each mine, with `rearm` counting down while it arms, buried in a zombie's lane. The owner asked for a very slow recharge.
-    - `jets:true` (A+ Core 1's Toner bomb) replaces the mortar with toner jets: `G.jets` fly along the busiest lane and drop `G.tbombs` in the `TONER` colors (`WSTAT.toner`).
+    - `jets:true` (A+ Core 1's Toner bomb) replaces the mortar with toner jets: `G.jets` fly along the busiest lane and drop `G.tbombs` in the `TONER` colors (`WSTAT.toner`): `bombs` aimed at zombies in the lane plus a CMYK carpet of `carpet` bomblets (`small:true`, `cdmg`, `cr`) spaced across the pack. The owner wants the jets and the bomber free to attack past the max range.
     - `stun:true` (A+ Core 2's Disk wipe charge) makes the mortar a stun mortar (`WSTAT.wipe`; shells carry `wipe`, with no knockback).
     - `wMode(w)` returns the mode, and `wDesc(k,L,w)` takes the weapon.
     - `WEAPON_RANGE` (0.6, set by the owner) limits turrets, tesla, mortar and rail to zombies inside that share of the field. The toner jets ignore it and fly slowly (130 × U px a second), as the owner asked, drawn as a dashed MAX RANGE line, so zombies are visible before they're hit.
