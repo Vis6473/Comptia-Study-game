@@ -93,7 +93,7 @@ Each question is one line in `Q`:
   - Ammo per correct answer depends on the domain tier: Standard (domains 1 and 3) +20; Hard (domains 2 and 4) +25 and 10 scrap; Elite (domain 5) +30 and 15 scrap. Three correct in a row adds 5 bonus scrap.
   - Scrap buys `UPG` base upgrades and weapon upgrades.
   - **XP is spendable currency.** Available XP is `S.xp - S.base.xpSpent`; level still uses total `S.xp`. XP unlocks `WPN` weapons: flame bunker, tesla coil, mortar pit, railgun. Each weapon's stats come from `WSTAT[k](level)`, which uses `WR`/`WRI` to run from a much weaker, slower level 1 value to the full value at level 3 (the owner asked for weapons to start weak and reach full strength only when fully upgraded), and the Armory text from `wDesc(k,L,mine)`. The behaviors:
-    - Flame: bursts plus a burn (`e.burn`).
+    - Flame: burns continuously while zombies are in reach, plus a burn (`e.burn`). `G.fuel` holds 10/15/20 s by level (set by the owner) and drains only while firing (`G.fburst` marks firing). Empty, it cools for `cool` s (`G.fcool`) and refuels. The bar shows fuel, or cooldown progress.
     - Tesla: charge, then chain lightning plus a stun (`e.stun`; stunned zombies don't move or hit the wall).
     - Mortar: knockback plus `G.craters`.
     - Rail: picks the busiest lane (`G.railBy`), slides slowly along the wall toward it (`G.railAt`, `WSTAT.rail().slide`, as the owner asked), charges (`G.rcharge`), and fires only once lined up.
