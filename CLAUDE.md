@@ -89,6 +89,10 @@ Each question is one line in `Q`:
     - Mortar: knockback plus `G.craters`.
     - Rail: aims at the busiest lane (`G.railBy`), charges (`G.rcharge`), then fires.
     - A `WPN` entry with `mine:true` (Honeypot mine for Security+, Cryptographic mine for CISSP) replaces the mortar with a potato-mine-style minefield. `WSTAT.mine` sets the stats, and `G.mines` holds each mine, with `rearm` counting down while it arms, buried in a zombie's lane. The owner asked for a very slow recharge.
+    - `jets:true` (A+ Core 1's Toner bomb) replaces the mortar with toner jets: `G.jets` fly along the busiest lane and drop `G.tbombs` in the `TONER` colors (`WSTAT.toner`).
+    - `stun:true` (A+ Core 2's Disk wipe charge) makes the mortar a stun mortar (`WSTAT.wipe`; shells carry `wipe`, with no knockback).
+    - `wMode(w)` returns the mode, and `wDesc(k,L,w)` takes the weapon.
+    - `WEAPON_RANGE` (0.7, set by the owner) limits turrets, tesla, mortar and rail to zombies inside that share of the field, drawn as a dashed MAX RANGE line, so zombies are visible before they're hit.
   - The yard behind the wall (`yard()`, `drawYardStatic`, `drawBase`) draws the buildings and weapon structures. `WCOL`/`wcol()` give each exam's weapon color.
   - `SUPPLY` sells ammo: crate 40 rounds for 15 scrap, pallet 150 for 50 scrap, airdrop 200 for 60 XP. Ammo bought during a night goes straight to the guns; otherwise it goes to `S.base.stock` for the next night.
 - **Armory tab** (`#armory`, `viewArmory`): every exam has it, before Review. It shows the loadout from `D.info()` (a read-only view of `cfg()`, `VARIANTS`, `FOE`, `DPS` and `ZOMBIE_SPEED`), weapon levels, the shop (`shopHTML`/`bindShop`) and a horde guide built from `FOE_INFO` (a name and note for each variant), with health, time to the wall and wall damage for the current night. Add new zombie variants to `FOE_INFO`.

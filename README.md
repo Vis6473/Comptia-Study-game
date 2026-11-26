@@ -95,6 +95,9 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
   - **Mortar weapons** shell the densest pack. The blast knocks zombies back and leaves a crater.
   - **Railguns** swing to the busiest lane, charge, then fire a beam that hits every zombie in that lane.
   - **Minefields:** Security+'s Honeypot mine and CISSP's Cryptographic mine are mines instead of a mortar, like a potato mine. They're buried in the zombies' lanes. Once armed, each blows up under the first zombie to reach it with splash damage, then a new one is buried in another lane and slowly arms (20 s at level 1, down to 12 s).
+  - **Toner jets:** A+ Core 1's Toner bomb sends a small jet over the busiest pack every few seconds. It drops a string of cyan, magenta, yellow and black toner bombs that splash the zombies and stain the ground.
+  - **Stun mortar:** A+ Core 2's Disk wipe charge doesn't knock zombies back. It freezes every zombie in the blast for a second or more.
+  - **Max range:** turrets and the long-range weapons only fire at zombies inside the first 70% of the field, marked with a dashed MAX RANGE line, so you see the horde before it's hit.
   - The Armory describes each weapon's exact damage, range and recharge at your level.
 - **The base:** behind the wall is a command post, ammo depot, barracks and generator, plus props for each exam. The field has craters, tank traps and barbed wire. Upgrades show up too: the wall gets armor plates as you buy plating, and the turret barrels change with caliber and autoloader upgrades.
 - **Focus mode:** while a quick exam (or review round) runs, only the exam and the outpost are on screen. The header, tabs and footer come back when you leave through the result screen or the pause menu.

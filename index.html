@@ -1051,11 +1051,20 @@ const WSTAT={
   rail:L=>({dmg:6+5*L,reload:Math.max(2.5,7-1.3*L),charge:1}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
   // under the first zombie to step on one, then take a long time to re-lay.
-  mine:L=>({dmg:6+3*L,radius:34+8*L,reload:Math.max(12,24-4*L),count:2+L,trigger:9})
+  mine:L=>({dmg:6+3*L,radius:34+8*L,reload:Math.max(12,24-4*L),count:2+L,trigger:9}),
+  // Toner jets (WPN entry with jets:true, A+ Core 1): a small jet flies over the busiest pack and drops a string of toner bombs.
+  toner:L=>({dmg:2+1.6*L,radius:22+5*L,reload:Math.max(3.5,7.5-L),bombs:2+L}),
+  // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
+  wipe:L=>({dmg:2+1.5*L,radius:30+8*L,reload:Math.max(2.5,6-L),stun:1+0.5*L})
 };
+// Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
+const WEAPON_RANGE=0.7;
+const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":null);
 const fieldM=x=>Math.round(x/3.84);
-function wDesc(k,L,mine){if(mine)k="mine";const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
+function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
+  toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack and drops ${s.bombs} toner bombs, each dealing ${f(s.dmg)} damage across ${fieldM(s.radius)} m.`,
+  wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Bursts of flame deal ${f(s.dmg)} damage a second to zombies within ${fieldM(s.range)} m of the wall, every ${s.reload} s. Sets them on fire: ${f(s.burn)} damage a second for ${s.burnT} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombies for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
@@ -1159,7 +1168,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,mines:[]};
+    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,mines:[],jets:[],tbombs:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
   }
@@ -1211,10 +1220,10 @@ const D=(function(){
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
-    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
     S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);S.base.night=G.night+1;save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];G.rounds=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
@@ -1300,7 +1309,7 @@ const D=(function(){
       if(e.stun>0){e.stun-=dt;continue;} // stunned zombies neither move nor damage the wall
       if(e.x>line){e.x-=e.spd*dt;e.ph+=dt*e.spd*0.12;}else{e.x=line;e.ph+=dt*9;
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
-    const vis=G.enemies.filter(e=>e.x<W-6).sort((a,b)=>a.x-b.x);
+    const rangeX=line+WEAPON_RANGE*(W-line),vis=G.enemies.filter(e=>e.x<rangeX).sort((a,b)=>a.x-b.x);
     G.turrets.forEach((t,i)=>{
       t.cd-=dt;t.fl-=dt;const e=vis[Math.min(i%3,vis.length-1)];if(!e)return;
       const ty=e.y-12*u*depth(e.y);t.a=Math.atan2(ty-t.y,e.x-t.x);
@@ -1337,7 +1346,7 @@ const D=(function(){
       }
     }
     // Minefield (mine weapons): mines sit in the field; the first zombie over one sets it off, and it re-lays slowly.
-    const mineW=WPN.find(w=>w.k==="mortar"&&w.mine);
+    const w3=wMode(WPN.find(w=>w.k==="mortar")),mineW=w3==="mine";
     if(G.c.mortar&&mineW){
       const st=WSTAT.mine(G.c.mortar);
       const spot=()=>{const z=G.enemies.length?G.enemies[Math.floor(Math.random()*G.enemies.length)]:null; // lay it in a zombie's lane when there is one
@@ -1353,19 +1362,44 @@ const D=(function(){
       }
     }
     // Mortar pit: lobs a shell at the densest pack; the blast knocks zombies back and leaves a crater.
-    if(G.c.mortar&&!mineW){
-      const st=WSTAT.mortar(G.c.mortar);G.mcd-=dt;
+    // Toner jets: a jet crosses the field along the busiest pack's lane and drops toner bombs as it passes over.
+    if(G.c.mortar&&w3==="toner"){
+      const st=WSTAT.toner(G.c.mortar);G.mcd-=dt;
       if(G.mcd<=0&&vis.length){
         let best=vis[0],bn=-1;
         for(const e of vis){let n=0;for(const o of vis)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
-        const m=mortarPos(),ys=yard().ys;G.shells.push({x0:m[0],y0:m[1]-8*ys,x1:Math.max(line,best.x-best.spd*1),y1:best.y,t:0,T:1.0,L:G.c.mortar});
+        const spd=480*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.radius*u*0.9,drops=[];
+        for(let k=0;k<st.bombs;k++)drops.push(tx+(k-(st.bombs-1)/2)*gap);
+        G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0});G.mcd=st.reload;
+      }
+    }
+    for(let i=G.jets.length-1;i>=0;i--){const j=G.jets[i];j.x+=j.spd*dt;
+      while(j.n<j.drops.length&&j.x>=j.drops[j.n]){G.tbombs.push({x:j.x,y0:j.alt,y1:j.lane+rnd(-5,5)*u,t:0,T:0.45,c:TONER[(j.n+i)%4],L:G.c.mortar});j.n++;}
+      if(j.x>W+40*u)G.jets.splice(i,1);}
+    for(let i=G.tbombs.length-1;i>=0;i--){const b=G.tbombs[i];b.t+=dt;
+      if(b.t>=b.T){const st=WSTAT.toner(b.L),r=st.radius*u;
+        for(const e of G.enemies){const d=Math.hypot(e.x-b.x,e.y-b.y1);if(d<r){e.hp-=st.dmg;e.hit=0.12;}}
+        for(let k=0;k<9;k++)G.fx.push({k:"ton",x:b.x+rnd(-0.4,0.4)*r,y:b.y1+rnd(-0.25,0.25)*r,vx:rnd(-30,30)*u,vy:rnd(-22,-6)*u,c:b.c,life:rnd(0.6,1.1),m:1.1});
+        G.craters.push({x:b.x,y:b.y1,r:r*0.28,c:b.c});if(G.craters.length>14)G.craters.shift();
+        G.tbombs.splice(i,1);}}
+    // Mortar pit (and the stun mortar): lobs a shell at the densest pack.
+    if(G.c.mortar&&(!w3||w3==="wipe")){
+      const st=WSTAT[w3||"mortar"](G.c.mortar);G.mcd-=dt;
+      if(G.mcd<=0&&vis.length){
+        let best=vis[0],bn=-1;
+        for(const e of vis){let n=0;for(const o of vis)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
+        const m=mortarPos(),ys=yard().ys;G.shells.push({x0:m[0],y0:m[1]-8*ys,x1:Math.max(line,best.x-best.spd*1),y1:best.y,t:0,T:1.0,L:G.c.mortar,wipe:w3==="wipe"});
         for(let k=0;k<6;k++)G.fx.push({k:"smk",x:m[0]+rnd(-3,3)*ys,y:m[1]-10*ys,vx:rnd(-10,10),vy:rnd(-34,-16),life:rnd(0.7,1.1),m:1.1});
         G.mcd=st.reload;
       }
     }
     for(let i=G.shells.length-1;i>=0;i--){
       const s=G.shells[i];s.t+=dt;
-      if(s.t>=s.T){
+      if(s.t>=s.T&&s.wipe){ // stun mortar: no knockback, everything in the blast is frozen in place
+        const st=WSTAT.wipe(s.L),r=st.radius*u;
+        for(const e of G.enemies){const d=Math.hypot(e.x-s.x1,e.y-s.y1);if(d<r){e.hp-=st.dmg;e.hit=0.12;e.stun=Math.max(e.stun||0,st.stun);}}
+        G.fx.push({k:"wp",x:s.x1,y:s.y1,r,life:0.6,m:0.6});G.shells.splice(i,1);
+      }else if(s.t>=s.T){
         const st=WSTAT.mortar(s.L),r=st.radius*u;
         for(const e of G.enemies){const d=Math.hypot(e.x-s.x1,e.y-s.y1);if(d<r){e.hp-=st.dmg;e.hit=0.12;e.x=Math.min(W-8,e.x+st.kb*u*(1-d/r));}}
         G.fx.push({k:"b",x:s.x1,y:s.y1,r,life:0.35,m:0.35});G.craters.push({x:s.x1,y:s.y1,r:r*0.32});if(G.craters.length>14)G.craters.shift();
@@ -1380,7 +1414,7 @@ const D=(function(){
         if(G.railBy==null){let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<band)n++;if(n>bn){bn=n;by=e.y;}}G.railBy=by;}
         const ty=G.railBy-12*u*depth(G.railBy);G.railY+=(ty-G.railY)*Math.min(1,dt*10);G.rcharge=Math.min(1,1-Math.max(0,G.rcd)/st.charge);
         if(G.rcd<=0){
-          for(const e of G.enemies)if(Math.abs(e.y-G.railBy)<band&&e.x<W){e.hp-=st.dmg;e.hit=0.15;}
+          for(const e of G.enemies)if(Math.abs(e.y-G.railBy)<band&&e.x<rangeX){e.hp-=st.dmg;e.hit=0.15;}
           G.railY=ty;G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=st.reload;G.railBy=null;G.rcharge=0;
         }
       }else if(G.rcd<0)G.rcd=0;
@@ -1402,14 +1436,16 @@ const D=(function(){
   function idle(dt){for(const e of G.enemies){e.hit-=dt;e.ph+=dt*6;}}
   function stepFx(dt){
     for(const s of G.splats)s.life-=dt*0.4;G.splats=G.splats.filter(s=>s.life>0);
-    for(const f of G.fx){f.life-=dt;if(f.k==="f"||f.k==="smk"){f.x+=f.vx*dt;f.y+=f.vy*dt;}else if(f.k==="t")f.y-=22*dt;}
+    for(const f of G.fx){f.life-=dt;if(f.k==="f"||f.k==="smk"||f.k==="ton"){f.x+=f.vx*dt;f.y+=f.vy*dt;}else if(f.k==="t")f.y-=22*dt;}
     G.fx=G.fx.filter(f=>f.life>0);
+    for(const f of G.fx)if(f.k==="ton"){f.vx*=0.96;f.vy*=0.96;}
   }
   const u0=()=>U();
   // Base yard layout: structures sit at fractions of the yard (left of the wall), drawn in ys units so they fit
   // a narrow phone yard as well as a wide desktop one.
   const WCOL={net:"25,240,255",sec:"120,240,255",a1:"255,176,32",a2:"156,255,87",cissp:"179,136,255"};
   const wcol=()=>WCOL[S.exam]||WCOL.net;
+  const TONER=["0,200,255","255,43,214","255,214,0","70,70,78"]; // cyan, magenta, yellow, black
   function yard(){
     const u=U(),wx=wallX(),ft=fTop(),fh=Math.max(40,H-ft-6),YW=Math.max(30,wx-12*u),ys=Math.max(0.35,Math.min(u,YW/150));
     const X=f=>f*YW,Y=f=>ft+f*fh;
@@ -1516,7 +1552,12 @@ const D=(function(){
       ctx.strokeStyle=`rgba(${c},.7)`;for(let k=0;k<3;k++){ctx.beginPath();ctx.ellipse(x+7*s,y+(12+k*5)*s,4*s,1.3*s,0,0,7);ctx.stroke();}
       ctx.fillStyle=`rgba(${c},${0.2+0.6*ch})`;ctx.beginPath();ctx.arc(x+7*s,y,(4+3*ch)*s,0,7);ctx.fill();ctx.fillStyle="#E8FDFF";ctx.beginPath();ctx.arc(x+7*s,y,2*s,0,7);ctx.fill();}
     // mortar pit: a ring of sandbags around a tube aimed at the field
-    if(G.c.mortar&&WPN.find(w=>w.k==="mortar"&&w.mine)){const [x,y]=mortarPos();for(let k=0;k<3;k++){ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(x+(k-1)*9*s,y+(k%2)*3*s,4.5*s,2.2*s,0,0,7);ctx.fill();ctx.fillStyle=`rgba(${c},.8)`;ctx.beginPath();ctx.arc(x+(k-1)*9*s,y+(k%2)*3*s-1*s,0.9*s,0,7);ctx.fill();}}
+    const m3=wMode(WPN.find(w=>w.k==="mortar"));
+    if(G.c.mortar&&m3==="toner"){const [x,y]=mortarPos();ctx.fillStyle="#1C2228";ctx.fillRect(x-20*s,y-4*s,40*s,9*s);
+      ctx.fillStyle="rgba(255,214,0,.6)";for(let k=0;k<4;k++)ctx.fillRect(x-17*s+k*10*s,y,5*s,1*s);
+      const ready=1-Math.max(0,Math.min(1,G.mcd/WSTAT.toner(G.c.mortar).reload));if(ready>0.85)drawJet({x:x+2*s,alt:y-3*s,lane:y+3*s},s*0.8);
+      TONER.forEach((tc,k)=>{ctx.fillStyle=`rgb(${tc})`;ctx.fillRect(x-20*s+k*5*s,y+7*s,4*s,6*s);});}
+    else if(G.c.mortar&&m3==="mine"){const [x,y]=mortarPos();for(let k=0;k<3;k++){ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(x+(k-1)*9*s,y+(k%2)*3*s,4.5*s,2.2*s,0,0,7);ctx.fill();ctx.fillStyle=`rgba(${c},.8)`;ctx.beginPath();ctx.arc(x+(k-1)*9*s,y+(k%2)*3*s-1*s,0.9*s,0,7);ctx.fill();}}
     else if(G.c.mortar){const [x,y]=mortarPos();ctx.fillStyle="#1A1F22";ctx.beginPath();ctx.arc(x,y,10*s,0,7);ctx.fill();
       ctx.fillStyle="#4A4231";for(let k=0;k<10;k++){const a=k*Math.PI/5;ctx.beginPath();ctx.ellipse(x+Math.cos(a)*12*s,y+Math.sin(a)*8*s,4*s,2.4*s,a,0,7);ctx.fill();}
       ctx.save();ctx.translate(x,y);ctx.rotate(-0.9);ctx.fillStyle="#7F8E99";ctx.fillRect(0,-2.4*s,15*s,4.8*s);ctx.restore();}
@@ -1563,6 +1604,13 @@ const D=(function(){
   const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"],PUR=["rgba(179,136,255,.45)","#D9C7FF"];
   const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU,insider:PUR,spy:PUR,apt:PUR};
   const TRC={sec:"120,240,255",a2:"156,255,87",cissp:"179,136,255"}; // tracer colors; others amber
+  // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
+  function drawJet(j,u){const x=j.x,y=j.alt,c=wcol();
+    ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,j.lane,9*u,1.6*u,0,0,7);ctx.fill();
+    ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(255,170,60,${0.5+0.4*Math.random()})`;ctx.beginPath();ctx.ellipse(x-12*u,y,5*u,1.4*u,0,0,7);ctx.fill();ctx.restore();
+    ctx.fillStyle="#5C6670";ctx.beginPath();ctx.moveTo(x+10*u,y);ctx.lineTo(x-9*u,y-2.2*u);ctx.lineTo(x-9*u,y+2.2*u);ctx.closePath();ctx.fill();
+    ctx.fillStyle="#3E464E";ctx.beginPath();ctx.moveTo(x+1*u,y);ctx.lineTo(x-6*u,y-8*u);ctx.lineTo(x-8*u,y-8*u);ctx.lineTo(x-4*u,y);ctx.lineTo(x-8*u,y+6*u);ctx.lineTo(x-6*u,y+6*u);ctx.closePath();ctx.fill();
+    ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-9*u,y-4.5*u,2.5*u,4*u);ctx.fillStyle="#BFE9FF";ctx.beginPath();ctx.ellipse(x+4*u,y-1*u,2.6*u,1.1*u,0,0,7);ctx.fill();}
   function drawBomber(x,y,u){
     // ground shadow
     ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(x-10*u,(fTop()+fBot())/2+30*u,34*u,6*u,0,0,7);ctx.fill();
@@ -1582,7 +1630,9 @@ const D=(function(){
     ctx.setTransform(dpr,0,0,dpr,0,0);if(!G)return;
     const u=U(),wx=wallX(),ft=fTop(),fb=fBot(),mid=(ft+fb)/2;
     for(const s of G.splats){ctx.fillStyle=`rgba(110,220,70,${0.28*Math.min(1,s.life/3)})`;ctx.beginPath();ctx.ellipse(s.x,s.y,s.r*1.6,s.r*0.6,0,0,7);ctx.fill();}
-    for(const c of G.craters){ctx.fillStyle="rgba(12,9,6,.55)";ctx.beginPath();ctx.ellipse(c.x,c.y,c.r*1.6,c.r*0.6,0,0,7);ctx.fill();}
+    {const rx=wallX()+8*u+WEAPON_RANGE*(W-wallX()-8*u);ctx.save();ctx.setLineDash([4*u,6*u]);ctx.strokeStyle="rgba(255,176,32,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(rx,fTop());ctx.lineTo(rx,fBot());ctx.stroke();ctx.restore();
+      ctx.fillStyle="rgba(255,176,32,.4)";ctx.font=`600 ${Math.round(9*Math.min(1.3,u))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText("MAX RANGE",rx+4*u,fTop()+12*u);}
+    for(const c of G.craters){ctx.fillStyle=c.c?`rgba(${c.c},.28)`:"rgba(12,9,6,.55)";ctx.beginPath();ctx.ellipse(c.x,c.y,c.r*1.6,c.r*0.6,0,0,7);ctx.fill();}
     if(G.mines.length&&G.c.mortar){const st=WSTAT.mine(G.c.mortar),mc=wcol();
       for(const m of G.mines){const d=depth(m.y);
         if(m.rearm>0){const pr=1-m.rearm/(m.arm||st.reload);ctx.fillStyle="rgba(40,30,20,.85)";ctx.beginPath();ctx.ellipse(m.x,m.y,5.5*u*d,2*u*d,0,0,7);ctx.fill(); // dirt mound
@@ -1626,6 +1676,11 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(gx,gy,(2+3*k)*u,(1+1.2*k)*u,0,0,7);ctx.fill();
       ctx.fillStyle="rgba(180,180,170,.25)";for(let q=1;q<5;q++){const kk=Math.max(0,k-q*0.03),qx=s.x0+(s.x1-s.x0)*kk,qy=s.y0+(s.y1-s.y0)*kk-Math.sin(Math.PI*kk)*H*0.4;ctx.beginPath();ctx.arc(qx,qy,(1.5+q*0.6)*u,0,7);ctx.fill();}
       ctx.fillStyle="#FFE2A0";ctx.beginPath();ctx.arc(gx,y,2.8*u,0,7);ctx.fill();}
+    for(const f of G.fx)if(f.k==="ton"){const a=f.life/f.m;ctx.fillStyle=`rgba(${f.c},${0.55*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(3+7*(1-a))*u,0,7);ctx.fill();}
+    for(const b of G.tbombs){const k=Math.min(1,b.t/b.T),y=b.y0+(b.y1-b.y0)*k*k;
+      ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
+      ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u,3.2*u,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u,y-4.2*u,3.6*u,1.2*u);}
+    for(const j of G.jets)drawJet(j,u);
     for(const f of G.fx)if(f.k==="smk"){const a=f.life/f.m;ctx.fillStyle=`rgba(170,170,160,${0.35*a})`;ctx.beginPath();ctx.arc(f.x,f.y,(3+6*(1-a))*u,0,7);ctx.fill();}
     // 30 mm rounds: a brass slug with a short glowing tracer tail in the exam's tracer color
     for(const r of G.rounds||[]){
@@ -1644,6 +1699,8 @@ const D=(function(){
       else if(f.k==="z"){const a=f.life/f.m;ctx.lineWidth=2.2;ctx.strokeStyle=`rgba(${wcol()},${a})`;ctx.beginPath();
         f.pts.forEach((p2,i)=>{if(!i){ctx.moveTo(p2[0],p2[1]);return;}const q=f.pts[i-1];for(let s=1;s<=5;s++){const tt=s/5;ctx.lineTo(q[0]+(p2[0]-q[0])*tt+(s<5?rnd(-6,6):0),q[1]+(p2[1]-q[1])*tt+(s<5?rnd(-6,6):0));}});ctx.stroke();}
       else if(f.k==="b"){const a=f.life/f.m;ctx.fillStyle=`rgba(255,140,40,${0.45*a})`;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.1-0.5*a),0,7);ctx.fill();ctx.strokeStyle=`rgba(255,220,120,${a})`;ctx.lineWidth=2;ctx.stroke();}
+      else if(f.k==="wp"){const a=f.life/f.m;ctx.strokeStyle=`rgba(${wcol()},${a})`;ctx.lineWidth=2;for(let q=0;q<2;q++){ctx.beginPath();ctx.ellipse(f.x,f.y,f.r*(1.05-0.6*a+q*0.15),f.r*(1.05-0.6*a+q*0.15)*0.45,0,0,7);ctx.stroke();}
+        ctx.fillStyle=`rgba(${wcol()},${0.18*a})`;ctx.beginPath();ctx.ellipse(f.x,f.y,f.r,f.r*0.45,0,0,7);ctx.fill();}
       else if(f.k==="r"){const a=f.life/f.m;ctx.fillStyle=`rgba(${wcol()},${0.5*a})`;ctx.fillRect(wx,f.y-4*u*a,W-wx,8*u*a);ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fillRect(wx,f.y-1,W-wx,2);}
     }
     ctx.globalCompositeOperation="source-over";
@@ -2008,7 +2065,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   insider:["Insider","The standard CISSP zombie."],spy:["Spy","Fast and fragile."],apt:["APT brute","Heals 3% of its health every second unless you finish it off."]};
 function viewArmory(){
   const I=D.info(),c=I.cfg,n=S.base.night,ramp=1+0.04*(n-1);
-  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w.mine))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
+  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"]]
     .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
     .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*ramp*(f.sp||1)),dps=b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker),inf=FOE_INFO[v]||[v,""];
@@ -3447,13 +3504,13 @@ const A1_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Surge protector",d:"+40 wall integrity"},{n:"RAM upgrade",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A1_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Overheat vent",d:"Blasts hot exhaust at hostiles that reach the wall. Uses no ammo."},{n:"ESD arc",d:"A static discharge that jumps between hostiles."},
-  {n:"Toner bomb",d:"Drops on the densest pack for splash damage."},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
+  {n:"Toner bomb",d:"Jets fly over and drop colorful toner bombs on the densest pack.",jets:true},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
 const A2_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Admin rights",d:"+35% turret damage"},{n:"Task Scheduler",d:"+20% turret fire rate"},{n:"Remote session",d:"Adds another turret to the wall"},
   {n:"BitLocker wall",d:"+40 wall integrity"},{n:"Restore point",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A2_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Quarantine pit",d:"Burns hostiles that reach the wall. Uses no ammo."},{n:"Group Policy chain",d:"A policy push that jumps between hostiles."},
-  {n:"Disk wipe charge",d:"Shells the densest pack for splash damage."},{n:"Safe Mode beam",d:"A beam that pierces every hostile in its lane."}][i]));
+  {n:"Disk wipe charge",d:"A stun mortar that freezes the densest pack in place.",stun:true},{n:"Safe Mode beam",d:"A beam that pierces every hostile in its lane."}][i]));
 
 // Hardware Match (Core 1): [description, answer]
 const HARDWARE=[
