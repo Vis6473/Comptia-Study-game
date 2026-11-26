@@ -1064,7 +1064,7 @@ const WSTAT={
   pulse:L=>({targets:WRI(L,1,4),reload:WR(L,6,1.8),stun:WR(L,1,2.4)}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
   // under the first zombie to step on one, then take a long time to re-lay.
-  mine:L=>({dmg:WR(L,5,15),radius:WR(L,34,58),reload:WR(L,30,12),count:WRI(L,2,5),trigger:9}),
+  mine:L=>({dmg:WR(L,5,15),radius:WR(L,34,58),reload:WR(L,30,12),count:5+5*Math.max(1,Math.min(3,L)),trigger:9}),
   // Toner jets (WPN entry with jets:true, A+ Core 1): a small jet flies over the busiest pack and drops a string of toner bombs.
   toner:L=>({dmg:WR(L,2,6.8),radius:WR(L,24,37),reload:WR(L,10,4.5),bombs:WRI(L,2,5),carpet:WRI(L,4,10),cdmg:WR(L,1,3.4),cr:WR(L,16,25)}), // aimed bombs plus a CMYK carpet of bomblets
   // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
