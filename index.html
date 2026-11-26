@@ -1053,7 +1053,9 @@ const WSTAT={
   flame:L=>({dmg:4+4*L,burn:1+0.8*L,burnT:2,range:30+22*L,reload:1.5,burst:0.6}),
   tesla:L=>({dmg:3+2*L,targets:1+L,reload:Math.max(1.4,4.5-0.9*L),stun:0.5}),
   mortar:L=>({dmg:3+2.5*L,radius:30+8*L,reload:Math.max(2,5.5-L),kb:16+4*L}),
-  rail:L=>({dmg:6+5*L,reload:Math.max(2.5,7-1.3*L),charge:1}),
+  rail:L=>({dmg:6+5*L,reload:Math.max(2.5,7-1.3*L),charge:1,slide:28+6*L}), // slide: how fast it moves along the wall (U px a second)
+  // Stun-only tesla (WPN entry with stunOnly:true, Security+'s EDR pulse): no damage, a much longer stun.
+  pulse:L=>({targets:1+L,reload:Math.max(1.4,4.5-0.9*L),stun:1.2+0.4*L}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
   // under the first zombie to step on one, then take a long time to re-lay.
   mine:L=>({dmg:6+3*L,radius:34+8*L,reload:Math.max(12,24-4*L),count:2+L,trigger:9}),
@@ -1064,16 +1066,17 @@ const WSTAT={
 };
 // Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
 const WEAPON_RANGE=0.6;
-const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":null);
+const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
   toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Bursts of flame deal ${f(s.dmg)} damage a second to zombies within ${fieldM(s.range)} m of the wall, every ${s.reload} s. Sets them on fire: ${f(s.burn)} damage a second for ${s.burnT} s.`,
+  pulse:()=>`Charges up, then pulses through ${s.targets} zombies and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombies for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
-  rail:()=>`Swings to the busiest lane, charges for ${s.charge} s, then hits every zombie in it for ${f(s.dmg)} damage. Recharges in ${f(s.reload)} s.`};return D[k]?D[k]():"";}
+  rail:()=>`Slides slowly along the wall to the busiest lane, charges for ${s.charge} s, then hits every zombie in it for ${f(s.dmg)} damage. Recharges in ${f(s.reload)} s.`};return D[k]?D[k]():"";}
 const SUPPLY=[ // ammo: straight to the guns during a night, otherwise stockpiled for the next one
  {k:"crate",n:"Ammo crate",amt:40,scrap:15,d:"40 rounds"},
  {k:"pallet",n:"Ammo pallet",amt:150,scrap:50,d:"150 rounds, best value"},
@@ -1169,7 +1172,7 @@ const D=(function(){
   function layout(){
     if(!G)return;const n=G.c.turrets,wx=wallX(),old=G.turrets;G.turrets=[];
     for(let i=0;i<n;i++){const y=fTop()+(fBot()-fTop())*(i+0.5)/n;G.turrets.push({x:wx-2,y,a:Math.PI,cd:old[i]?old[i].cd:(0.3+i/n)/G.c.rate,fl:0});}
-    if(!G.railY)G.railY=(fTop()+fBot())/2;
+    if(!G.railAt){G.railAt=(fTop()+fBot())/2;G.railY=G.railAt-12*U()*depth(G.railAt);}
   }
   function newRound(){
     const c=cfg();
@@ -1339,12 +1342,12 @@ const D=(function(){
     }
     // Tesla tower: charges, then chains lightning through several zombies and stuns them.
     if(G.c.tesla){
-      const st=WSTAT.tesla(G.c.tesla);G.tcd-=dt;
+      const so=wMode(WPN.find(w=>w.k==="tesla"))==="pulse",st=WSTAT[so?"pulse":"tesla"](G.c.tesla);G.tcd-=dt;
       if(G.tcd<=0&&vis.length){
         const o=teslaOrb();let px=o[0],py=o[1];const pool=vis.slice(),pts=[[px,py]];
         for(let k=0;k<st.targets&&pool.length;k++){
           pool.sort((a,b)=>Math.hypot(a.x-px,a.y-py)-Math.hypot(b.x-px,b.y-py));
-          const e=pool.shift();e.hp-=st.dmg;e.hit=0.12;e.stun=Math.max(e.stun||0,st.stun);px=e.x;py=e.y-12*u*depth(e.y);pts.push([px,py]);
+          const e=pool.shift();if(!so){e.hp-=st.dmg;e.hit=0.12;}e.stun=Math.max(e.stun||0,st.stun);px=e.x;py=e.y-12*u*depth(e.y);pts.push([px,py]);
         }
         G.fx.push({k:"z",pts,life:0.22,m:0.22});G.tcd=st.reload;
       }
@@ -1414,18 +1417,18 @@ const D=(function(){
         G.shells.splice(i,1);
       }
     }
-    // Railgun: swings to the busiest lane, charges, then fires through every zombie in it.
+    // Railgun: slides slowly along the wall to the busiest lane, charges, and fires through every zombie in it once lined up.
     if(G.c.rail){
-      const st=WSTAT.rail(G.c.rail);G.rcd-=dt;
-      if(G.rcd<=st.charge&&vis.length){
-        const band=10*u;
-        if(G.railBy==null){let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<band)n++;if(n>bn){bn=n;by=e.y;}}G.railBy=by;}
-        const ty=G.railBy-12*u*depth(G.railBy);G.railY+=(ty-G.railY)*Math.min(1,dt*10);G.rcharge=Math.min(1,1-Math.max(0,G.rcd)/st.charge);
-        if(G.rcd<=0){
-          for(const e of G.enemies)if(Math.abs(e.y-G.railBy)<band&&e.x<rangeX){e.hp-=st.dmg;e.hit=0.15;}
-          G.railY=ty;G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=st.reload;G.railBy=null;G.rcharge=0;
-        }
-      }else if(G.rcd<0)G.rcd=0;
+      const st=WSTAT.rail(G.c.rail),band=10*u;G.rcd=Math.max(0,G.rcd-dt);
+      if(G.railBy!=null&&!vis.some(e=>Math.abs(e.y-G.railBy)<band))G.railBy=null; // its lane emptied: pick another
+      if(vis.length&&G.railBy==null){let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<band)n++;if(n>bn){bn=n;by=e.y;}}G.railBy=by;}
+      if(G.railBy!=null){const d=G.railBy-G.railAt,step=st.slide*u*dt;G.railAt+=Math.abs(d)<=step?d:Math.sign(d)*step;}
+      G.railY=G.railAt-12*u*depth(G.railAt);
+      G.rcharge=vis.length?Math.min(1,1-G.rcd/st.charge):0;
+      if(G.rcd<=0&&G.railBy!=null&&Math.abs(G.railBy-G.railAt)<0.5){
+        for(const e of G.enemies)if(Math.abs(e.y-G.railAt)<band&&e.x<rangeX){e.hp-=st.dmg;e.hit=0.15;}
+        G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=st.reload;G.railBy=null;G.rcharge=0;
+      }
     }
     const born=[];
     G.enemies=G.enemies.filter(e=>{
@@ -3282,7 +3285,7 @@ const SEC_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Patch level",d:"+35% turret damage"},{n:"Threat feed",d:"+20% turret fire rate"},{n:"Sensor node",d:"Adds another turret to the wall"},
   {n:"Hardened firewall",d:"+40 wall integrity"},{n:"Backup cache",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const SEC_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
-  {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that jumps between hostiles."},
+  {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that stuns hostiles in place.",stunOnly:true},
   {n:"Honeypot mine",d:"Mines laid in the field blow up under the horde, then slowly re-lay.",mine:true},{n:"Kill switch",d:"A beam that wipes every hostile in its lane."}][i]));
 
 /* ---------------- Security+ mini-game content ---------------- */

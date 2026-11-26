@@ -94,7 +94,8 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
   - **Flame weapons** (Flame bunker and its equivalents) fire bursts at zombies near the wall and set them on fire, so they keep burning for a couple of seconds.
   - **Tesla weapons** charge up, then arc lightning through several zombies and stun them, so they stop walking and stop hitting the wall.
   - **Mortar weapons** shell the densest pack. The blast knocks zombies back and leaves a crater.
-  - **Railguns** swing to the busiest lane, charge, then fire a beam that hits every zombie in that lane.
+  - **Railguns** slide slowly along the wall to the busiest lane, charge, then fire a beam that hits every zombie in that lane once they're lined up.
+  - **EDR pulse** (Security+) only stuns. It deals no damage, but its stun lasts much longer (1.6 s at level 1, up to 2.4 s).
   - **Minefields:** Security+'s Honeypot mine and CISSP's Cryptographic mine are mines instead of a mortar, like a potato mine. They're buried in the zombies' lanes. Once armed, each blows up under the first zombie to reach it with splash damage, then a new one is buried in another lane and slowly arms (20 s at level 1, down to 12 s).
   - **Toner jets:** A+ Core 1's Toner bomb sends a slow little jet over the busiest pack every few seconds. It flies anywhere on the field, past the max range line, aims toner bombs right at the zombies in its lane, and carpet-bombs the pack with a line of small cyan, magenta, yellow and black bomblets that splash the zombies and stain the ground.
   - **Stun mortar:** A+ Core 2's Disk wipe charge doesn't knock zombies back. It freezes every zombie in the blast for a second or more.

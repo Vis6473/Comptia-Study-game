@@ -88,7 +88,8 @@ Each question is one line in `Q`:
     - Flame: bursts plus a burn (`e.burn`).
     - Tesla: charge, then chain lightning plus a stun (`e.stun`; stunned zombies don't move or hit the wall).
     - Mortar: knockback plus `G.craters`.
-    - Rail: aims at the busiest lane (`G.railBy`), charges (`G.rcharge`), then fires.
+    - Rail: picks the busiest lane (`G.railBy`), slides slowly along the wall toward it (`G.railAt`, `WSTAT.rail().slide`, as the owner asked), charges (`G.rcharge`), and fires only once lined up.
+    - `stunOnly:true` (Security+'s EDR pulse) makes the tesla stun only, with no damage and a longer stun (`WSTAT.pulse`).
     - A `WPN` entry with `mine:true` (Honeypot mine for Security+, Cryptographic mine for CISSP) replaces the mortar with a potato-mine-style minefield. `WSTAT.mine` sets the stats, and `G.mines` holds each mine, with `rearm` counting down while it arms, buried in a zombie's lane. The owner asked for a very slow recharge.
     - `jets:true` (A+ Core 1's Toner bomb) replaces the mortar with toner jets: `G.jets` fly along the busiest lane and drop `G.tbombs` in the `TONER` colors (`WSTAT.toner`): `bombs` aimed at zombies in the lane plus a CMYK carpet of `carpet` bomblets (`small:true`, `cdmg`, `cr`) spaced across the pack. The owner wants the jets and the bomber free to attack past the max range.
     - `stun:true` (A+ Core 2's Disk wipe charge) makes the mortar a stun mortar (`WSTAT.wipe`; shells carry `wipe`, with no knockback).
