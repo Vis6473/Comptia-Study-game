@@ -1294,17 +1294,16 @@ const D=(function(){
       G.bT-=dt;if(G.bT<=0){spawn("b");G.bT=bruteGap();}
     }
     if(G.bomber&&!G.bomber.done){
-      const B=G.bomber;B.x+=(W+180*u0())/2.8*dt;
-      while(B.x>=B.drop&&B.drop<W){
-        for(let k=0;k<3;k++){const y=fTop()+(fBot()-fTop())*(k+rnd(0.1,0.9))/3;G.bombs.push({x:B.drop+rnd(-10,10),y0:fTop()-6*u0(),y1:y,t:0,T:0.45});}
-        B.drop+=36*u0();
-      }
+      // Slow pass (about 7 s across) with precise drops: one bomb per zombie, released so it lands where that zombie will be.
+      const B=G.bomber;B.x+=(W+180*u0())/7*dt;B.tg=B.tg||new Set();
+      for(const e of G.enemies){if(B.tg.has(e)||e.x>W-4)continue;
+        if(B.x>=e.x-e.spd*0.45){B.tg.add(e);G.bombs.push({x:B.x,y0:fTop()-6*u0(),y1:e.y,t:0,T:0.45,e});}}
       if(B.x>W+90*u0()){B.done=true;
         G.enemies.forEach((e,k)=>G.bombs.push({x:e.x,y0:fTop()-6*u0(),y1:e.y,t:-k*0.03,T:0.4}));}
     }
     for(let i=G.bombs.length-1;i>=0;i--){
       const bm=G.bombs[i];bm.t+=dt;
-      if(bm.t>=bm.T){const r=44*u0();
+      if(bm.t>=bm.T){const r=(bm.e?22:44)*u0();if(bm.e)bm.e.hp=0;
         for(const e of G.enemies)if(Math.hypot(e.x-bm.x,e.y-bm.y1)<r){e.hp=0;}
         G.fx.push({k:"b",x:bm.x,y:bm.y1,r,life:0.5,m:0.5});G.bombs.splice(i,1);}
     }
@@ -1380,7 +1379,9 @@ const D=(function(){
       }
     }
     for(let i=G.jets.length-1;i>=0;i--){const j=G.jets[i];j.x+=j.spd*dt;
-      while(j.n<j.drops.length&&j.x>=j.drops[j.n]){G.tbombs.push({x:j.x,y0:j.alt,y1:j.lane+rnd(-5,5)*u,t:0,T:0.45,c:TONER[(j.n+i)%4],L:G.c.mortar});j.n++;}
+      j.tg=j.tg||new Set();const band=16*u*depth(j.lane);
+      for(const e of G.enemies){if(j.n>=j.drops.length)break;if(j.tg.has(e)||Math.abs(e.y-j.lane)>band||e.x>W-4)continue;
+        if(j.x>=e.x-e.spd*0.45){j.tg.add(e);G.tbombs.push({x:j.x,y0:j.alt,y1:e.y,t:0,T:0.45,c:TONER[(j.n+i)%4],L:G.c.mortar});j.n++;}}
       if(j.x>W+40*u)G.jets.splice(i,1);}
     for(let i=G.tbombs.length-1;i>=0;i--){const b=G.tbombs[i];b.t+=dt;
       if(b.t>=b.T){const st=WSTAT.toner(b.L),r=st.radius*u;
