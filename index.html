@@ -224,6 +224,23 @@ nav.tabs a:hover{color:var(--ink)}
 .crt .panel.flash-ok{animation:crtok .35s}.crt .panel.flash-bad{animation:crtbad .35s}
 @keyframes crtok{from{box-shadow:0 0 0 2px var(--ph),0 0 24px rgba(25,240,255,.5)}}
 @keyframes crtbad{from{box-shadow:0 0 0 2px var(--ph-bad),0 0 24px rgba(255,43,214,.5)}}
+/* Every page (the owner asked) sits on the same terminal: route pages are wrapped in .crt.crt-page, and the theme
+   tokens switch to the terminal palette inside the screen so cards, tables and buttons follow. Normal case and fonts
+   for readability; panels keep their padding. */
+.crt.crt-page{max-width:none}
+.crt-page .crt-screen{text-transform:none;letter-spacing:0;font-family:var(--f-body);color:var(--ink);text-shadow:0 0 4px rgba(25,240,255,.22);animation:none;min-height:0;
+  --bg:#041016;--surface:rgba(25,240,255,.045);--surface-2:rgba(25,240,255,.08);--ink:#CBF7FF;--muted:#74BCCB;--line:rgba(25,240,255,.26);
+  --orange:#FFB020;--green:#19F0FF;--blue:#19F0FF;--brown:#FFB020;--ok:#19F0FF;--ok-bg:rgba(25,240,255,.12);--bad:#FF2BD6;--bad-bg:rgba(255,43,214,.14);
+  --accent:#19F0FF;--on-accent:#041016;color-scheme:dark}
+.crt-page .crt-screen::after{mix-blend-mode:normal;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+.crt.crt-page .panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:clamp(14px,2.6vw,24px)}
+.crt.crt-page .stack>.panel+.panel{border-top:1px solid var(--line);padding-top:clamp(14px,2.6vw,24px)}
+.crt-page .crt-screen>*+*{margin-top:16px}
+.crt-page a{color:var(--ph)}
+.crt-page select{background:#02080C;color:var(--ph);border:1px solid var(--ph-dim);border-radius:2px;font-family:var(--f-mono)}
+.crt-page input[type=checkbox],.crt-page input[type=range]{accent-color:var(--ph)}
+.crt-page .label{color:var(--ph-dim)}
+
 
 
 @keyframes fo{from{box-shadow:0 0 0 4px var(--ok)}to{box-shadow:0 0 0 0 transparent}}
@@ -2918,6 +2935,14 @@ const Music=(()=>{
     refresh(){if(!ac){start();return;}if(sbus){const t=ac.currentTime;sbus.gain.cancelScheduledValues(t);sbus.gain.setValueAtTime(sbus.gain.value,t);sbus.gain.linearRampToValueAtTime(sfxOn()?sfxVol():0,t+0.1);}apply();if(ac&&cur){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(vol(),t+0.2);}},
     playing:()=>cur,ctx:()=>ac};
 })();
+// Every page goes on the terminal too (the owner asked): after a view renders, its content is moved into a CRT
+// monitor (moving keeps event handlers). Skipped on the title screen, while an exam is running (focus mode), and for
+// screens that already draw their own terminal (the mini-games).
+function crtify(){const b=document.body.classList;if(b.contains("focus-mode")||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
+  const act=document.activeElement,keep=act&&$app.contains(act)?act:null,y=window.scrollY;
+  const w=document.createElement("div");w.className="crt crt-page";w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
+  const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);$app.appendChild(w);if(keep)keep.focus({preventScroll:true});window.scrollTo(0,y);}
+new MutationObserver(crtify).observe($app,{childList:true});
 // The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
 const musicFor=name=>GLOBAL_VIEWS[name]?"menu":name==="mock"?null:name==="quiz"?"night":GAMES[name]?"arcade":"base";
 

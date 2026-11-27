@@ -19,6 +19,10 @@ During quick exam nights, very quiet sound effects play for the outpost and the 
 
 Everything is synthesized in the browser, so there are no audio files. Sound starts after your first click or key press, because browsers don't allow it before that, and pauses while the tab is in the background. Settings has separate on/off switches and volume sliders for music and sound effects, and a night's pause menu has Music and Sounds buttons.
 
+## The terminal look
+
+Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Review to Settings and High Scores, sits on the same CRT terminal as the mini-games, in the game's cyan, magenta and amber. The animated title screen keeps its own look, and the question screens stay plain while a quick or mock exam is running so nothing gets in the way.
+
 ## Mini-games on the terminal
 
 Every mini-game is played on an old CRT terminal: Port Blitz, OSI Stack, Subnet Sprint, Control Sort, Attack Match, Hardware Match, Command Match, Tool Match and Concept Match. It's in the game's own look: a dark monitor bezel with a hazard stripe and an amber power light, and a curved, scanlined screen with glowing cyan text. In the match games, boot lines type out, answers are numbered `[1]`–`[4]` entries (keys 1–4 still work), and the timer is an ASCII bar that turns amber in the last 10 seconds. Across all of them, right answers glow cyan and misses glow magenta, and the gameplay is the same as before.
