@@ -19,9 +19,9 @@ During quick exam nights, very quiet sound effects play for the outpost and the 
 
 Everything is synthesized in the browser, so there are no audio files. Sound starts after your first click or key press, because browsers don't allow it before that, and pauses while the tab is in the background. Settings has separate on/off switches and volume sliders for music and sound effects, and a night's pause menu has Music and Sounds buttons.
 
-## Match games on the terminal
+## Mini-games on the terminal
 
-Attack Match, Hardware Match, Command Match, Tool Match and Concept Match are played on an old CRT terminal in the game's own look: a dark monitor bezel with a hazard stripe and an amber power light, and a curved, scanlined screen with glowing cyan text. Boot lines type out, answers are numbered `[1]`–`[4]` entries (keys 1–4 still work), the timer is an ASCII bar that turns amber in the last 10 seconds, and misses flash magenta.
+Every mini-game is played on an old CRT terminal: Port Blitz, OSI Stack, Subnet Sprint, Control Sort, Attack Match, Hardware Match, Command Match, Tool Match and Concept Match. It's in the game's own look: a dark monitor bezel with a hazard stripe and an amber power light, and a curved, scanlined screen with glowing cyan text. In the match games, boot lines type out, answers are numbered `[1]`–`[4]` entries (keys 1–4 still work), and the timer is an ASCII bar that turns amber in the last 10 seconds. Across all of them, right answers glow cyan and misses glow magenta, and the gameplay is the same as before.
 
 ## Network+ modes
 
