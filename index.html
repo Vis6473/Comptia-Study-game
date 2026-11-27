@@ -1413,7 +1413,7 @@ const D=(function(){
       if(e.under&&e.x<=line+70*U()){e.under=false;for(let k=0;k<10;k++)G.fx.push({k:"smk",x:e.x,y:e.y,vx:rnd(-50,50)*U(),vy:rnd(-40,-10)*U(),life:rnd(0.6,1),m:1});text(e.x,e.y-34*U(),"BURROWER","#FFB020");}
       if(e.v==="spitter"&&spit(e,dt,line))continue;
       let mul=1;if(scr.length&&e.v!=="scream"&&scr.some(z=>Math.abs(z.x-e.x)<60*U()&&Math.abs(z.y-e.y)<40*U()))mul=1.3;
-      if(e.v==="overclock")mul*=1+1.5*(1-Math.max(0,e.hp)/e.max);if(e.run)mul*=1.8;e.boost=mul>1;
+      if(e.v==="overclock")mul*=1+1.5*(1-Math.max(0,e.hp)/e.max);if(e.run)mul*=2.2;e.boost=mul>1;
       if(e.x>line){e.x-=e.spd*mul*dt;e.ph+=dt*e.spd*mul*0.12;}else{e.x=line;e.ph+=dt*9;
       if(e.v==="keylog"){e.kl=(e.kl||0)+dt;if(e.kl>=1){e.kl=0;if(S.base.scrap>0&&!infScrap()){S.base.scrap--;if(!G.klT||G.time-G.klT>2.5){G.klT=G.time;text(wallX()+46*U(),e.y-30*U(),"SCRAP STOLEN","#9CFF57");}}}}
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
@@ -2412,7 +2412,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   phish:["Phisher","The standard Core 2 zombie."],rootkit:["Rootkit","Flickers half out of sight, with 25% more health."],trojan:["Trojan brute","Releases two phishers when it's destroyed."],
   insider:["Insider","The standard CISSP zombie."],spy:["Spy","Fast and fragile."],apt:["APT brute","Heals 3% of its health every second unless you finish it off."],
   spitter:["Spitter","Stops about 40 m out (or when a team in its lane is in reach) and spits acid at the wall or the team."],
-  shield:["Shield bearer","In SWAT gear behind a riot shield that soaks up turret rounds, team rifles and railgun hits. When it breaks, they drop it and run at 1.8x speed. Flame, tesla, mines, bombs, explosive and armor-piercing rounds go around it."],
+  shield:["Shield bearer","In SWAT gear behind a riot shield that soaks up turret rounds, team rifles and railgun hits. When it breaks, they drop it and run at 2.2x speed. Flame, tesla, mines, bombs, explosive and armor-piercing rounds go around it."],
   burrow:["Burrower","Tunnels underground where nothing can hit it, then surfaces about 18 m from the wall."],
   scream:["Screamer","Zombies near it move 30% faster while it's alive."],
   bloat:["Bloater","Slow and swollen. Bursts when killed, hurting nearby teams, and the wall if it's close."],
