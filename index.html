@@ -2071,7 +2071,7 @@ const D=(function(){
   let yardPaths=null;
   function yardPath(L,A,B){const s=L.ys,key=[W,H,G.c.flame,G.c.tesla,G.c.mortar,S.exam].join();
     if(!yardPaths||yardPaths.key!==key){const cs=Math.max(2,3*s),x1=L.wx-6*s,nx=Math.ceil(x1/cs),ny=Math.ceil(L.fh/cs),blk=new Uint8Array(nx*ny);
-      const box=(p,a,b,c,d)=>{const pad=2.5*s;for(let j=Math.max(0,Math.floor((p[1]+b*s-pad-L.ft)/cs));j<=Math.min(ny-1,Math.floor((p[1]+d*s+pad-L.ft)/cs));j++)
+      const box=(p,a,b,c,d)=>{const pad=6.5*s;for(let j=Math.max(0,Math.floor((p[1]+b*s-pad-L.ft)/cs));j<=Math.min(ny-1,Math.floor((p[1]+d*s+pad-L.ft)/cs));j++)
         for(let i=Math.max(0,Math.floor((p[0]+a*s-pad)/cs));i<=Math.min(nx-1,Math.floor((p[0]+c*s+pad)/cs));i++)blk[j*nx+i]=1;};
       box(L.hq,0,-4,56,40);box(L.depot,0,-4,46,24);box(L.props,0,0,62,32);box(L.barracks,0,2,72,16);box(L.gen,0,0,26,20);
       if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),-22,-12,22,12);
@@ -2090,11 +2090,20 @@ const D=(function(){
       pts.push(B);}
     let tot=0;const seg=[0];for(let k=1;k<pts.length;k++){tot+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);seg.push(tot);}
     return Y.memo[mk]={pts,seg,len:Math.max(1,tot)};}
+  // A copy of a path shifted sideways by off px, so each crew member walks its own lane (the owner asked). The legs are
+  // straight, so each corner moves by both neighbouring legs' sideways offsets.
+  function lanePath(r,off){if(!off)return r;r.lanes=r.lanes||{};if(r.lanes[off])return r.lanes[off];
+    const P=r.pts,n=P.length,nrm=k=>{const dx=P[k+1][0]-P[k][0],dy=P[k+1][1]-P[k][1],l=Math.hypot(dx,dy)||1;return [-dy/l,dx/l];},pts=[];
+    for(let k=0;k<n;k++){const a=k>0?nrm(k-1):null,b=k<n-1?nrm(k):null;let ox,oy;
+      if(a&&b){ox=a[0]+b[0];oy=a[1]+b[1];if(Math.abs(a[0]*b[0]+a[1]*b[1])>0.99){ox=a[0];oy=a[1];}}else{[ox,oy]=a||b;}
+      pts.push([P[k][0]+ox*off,P[k][1]+oy*off]);}
+    let tot=0;const seg=[0];for(let k=1;k<n;k++){tot+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);seg.push(tot);}
+    return r.lanes[off]={pts,seg,len:Math.max(1,tot)};}
   // Position f (0–1) along a yard path, with the direction of travel along x.
   function alongPath(r,f){const d=f*r.len;let k=1;while(k<r.pts.length-1&&r.seg[k]<d)k++;const A=r.pts[k-1],B=r.pts[k],L0=r.seg[k]-r.seg[k-1],t=L0?(d-r.seg[k-1])/L0:0;
     return [A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,B[0]-A[0]];}
   function drawCrew(L){const s=L.ys,z=s*1.5,R=crewRoutes(L),t=G.time;
-    CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],rt=yardPath(L,A,B),len=rt.len;
+    CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],rt=lanePath(yardPath(L,A,B),Math.round((i-2.5)*2.2*s*10)/10),len=rt.len; // each member has its own lane
       const ph=((t*c.sp*s/len)+c.ph)%2,out=ph<1,f=Math.max(0,Math.min(1,(out?ph:2-ph)*1.15-0.075)); // brief stop at each end to load and unload
       const [x,y,ddx]=alongPath(rt,f),dir=(ddx||1)*(out?1:-1)>=0?1:-1,moving=f>0&&f<1,carry=out&&f<1||(!out&&f>=1),step=moving?Math.sin(t*10+i):0;
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x,y+0.6*z,3*z,0.9*z,0,0,7);ctx.fill();
@@ -2368,7 +2377,27 @@ function viewSettings(){
     ...EXAM_IDS.filter(id=>EXAMS[id].ready).map(id=>{const n=EXAMS[id].name;return [id,n+" progress",`Stats, review queue, miss history, mock exams and high scores for ${n}.`,n+" progress"];}),
     ["outpost","Outpost","Nights, scrap, stockpiled ammo, base upgrades and weapons for every exam. XP you spent on weapons is refunded.","the outpost"],
     ["all","Everything","All progress, XP, level, streak, outpost and settings. The game starts over from the main menu.","everything"]];
-  let armed=null,done="";
+  let armed=null,done="",admEx=EXAM_IDS.includes(S.exam)&&EXAMS[S.exam].ready!==false?S.exam:"net",admMsg="";
+  // Admin test tools (preview build only): pick an exam, then jump to any night, max out or reset its armory, or set
+  // the ammo stockpile.
+  function admHTML(){const ids=EXAM_IDS.filter(id=>EXAMS[id].ready!==false),ex=S.ex[admEx],up=S.base.up[admEx]||{};
+    return `<div class="adm stack">
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>Exam</b><select id="admEx">${ids.map(id=>`<option value="${id}"${id===admEx?" selected":""}>${esc(EXAMS[id].name)}</option>`).join("")}</select>
+        <span class="muted small">Night ${ex.night||1} · best ${ex.bestNight||0}</span></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>Start on night</b><input id="admNight" type="number" min="1" max="999" value="${ex.night||1}" style="width:80px">
+        <button class="btn sm" id="admSetNight">Set</button>${[1,5,10,20,50,100,150].map(n=>`<button class="btn sm" data-night="${n}">${n}${n%10===0?" · boss":""}</button>`).join("")}</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>Armory</b><button class="btn sm" id="admMax">Max all upgrades and weapons</button><button class="btn sm" id="admReset">Reset upgrades and weapons</button>
+        <span class="muted small">${Object.keys(up).filter(k=>up[k]).length} owned</span></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b>Ammo stockpile</b><input id="admStock" type="number" min="0" max="99999" value="${S.base.stock||0}" style="width:90px"><button class="btn sm" id="admSetStock">Set</button>
+        <span class="muted small">Loads into the next night.</span></div>
+      ${admMsg?`<p class="set-done" role="status" style="margin:0">${esc(admMsg)}</p>`:""}</div>`;}
+  function bindAdm(){const g=id=>document.getElementById(id),ok=m=>{admMsg=m;save();renderHud();draw();};
+    g("admEx").onchange=e=>{admEx=e.target.value;admMsg="";draw();};
+    const setN=n=>{n=Math.max(1,Math.min(999,Math.floor(+n)||1));const ex=S.ex[admEx];ex.night=n;ok(`${EXAMS[admEx].name} starts on night ${n}. High scores aren't changed.`);};
+    g("admSetNight").onclick=()=>setN(g("admNight").value);$app.querySelectorAll("[data-night]").forEach(b=>b.onclick=()=>setN(b.dataset.night));
+    g("admMax").onclick=()=>{const E=EXAMS[admEx],up=S.base.up[admEx]||(S.base.up[admEx]={});[...E.UPG,...E.WPN].forEach(u=>up[u.k]=u.max);if(S.exam===admEx)setExam(admEx);ok(`Every ${E.name} upgrade and weapon is at its top level.`);};
+    g("admReset").onclick=()=>{S.base.up[admEx]={};if(S.exam===admEx)setExam(admEx);ok(`${EXAMS[admEx].name}'s upgrades and weapons are reset.`);};
+    g("admSetStock").onclick=()=>{S.base.stock=Math.max(0,Math.min(99999,Math.floor(+g("admStock").value)||0));ok(`Ammo stockpile set to ${S.base.stock}.`);};}
   function draw(){
     $app.innerHTML=`<div class="stack">
       <div class="panel stack">
@@ -2380,6 +2409,7 @@ function viewSettings(){
         <p class="muted small" style="margin:0">For testing the game. While a switch is on, that balance shows ∞ and buying things doesn't use it up. Turn it off to go back to your real balance, including anything you earned meanwhile.</p>
         <label class="toggle" for="admXP"><input type="checkbox" id="admXP"${infXP()?" checked":""}><span><b>Infinite XP</b> for weapons and airdrops. Your level still counts only the XP you've earned.</span></label>
         <label class="toggle" for="admScrap"><input type="checkbox" id="admScrap"${infScrap()?" checked":""}><span><b>Infinite scrap</b> for upgrades and ammo.</span></label>
+        ${admHTML()}
       </div>`:""}
       <div class="panel">
         <span class="label">Reset</span><h3 style="font-size:20px;margin:4px 0 6px">Start fresh</h3>
@@ -2388,7 +2418,7 @@ function viewSettings(){
           ${armed===k?`<div class="confirm"><b>Reset ${c}?</b><span class="muted">This can't be undone.</span><div class="row"><button class="btn danger" id="yes">Reset ${c}</button><button class="btn" id="no">Cancel</button></div></div>`:""}</div>`).join("")}
       </div></div>`;
     document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
-    if(ADMIN)[["admXP","xp"],["admScrap","scrap"]].forEach(([el,k])=>document.getElementById(el).onchange=e=>{S.settings.admin=Object.assign({},S.settings.admin,{[k]:e.target.checked});save();renderHud();});
+    if(ADMIN){[["admXP","xp"],["admScrap","scrap"]].forEach(([el,k])=>document.getElementById(el).onchange=e=>{S.settings.admin=Object.assign({},S.settings.admin,{[k]:e.target.checked});save();renderHud();});bindAdm();}
     $app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{armed=b.dataset.r;done="";draw();});
     if(armed){document.getElementById("no").onclick=()=>{armed=null;draw();};document.getElementById("yes").onclick=()=>{done=resetPart(armed);armed=null;draw();};}
   }
