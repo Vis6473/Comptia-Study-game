@@ -1070,7 +1070,10 @@ const WSTAT={
   rail:L=>({dmg:WR(L,7,21),reload:WR(L,9,3.1),charge:WR(L,1.8,1),slide:WR(L,18,46)}), // slide: how fast it moves along the wall (U px a second)
   // Field squads (WPN entry with squad:true, CISSP's Incident response team): teams dropped between 0 and 75 m build a
   // temporary bunker and shoot from it. Zombies that touch a team attack it; a team out of supplies is airlifted out.
-  squad:L=>({ship:WR(L,45,75),size:WRI(L,2,5),dmg:WR(L,0.8,2.3),rate:WR(L,0.7,1.2),range:WR(L,192,384),supply:WRI(L,14,42),hp:WRI(L,14,46),build:2.5,max:5,impact:WR(L,2,6)}),
+  squad:L=>({ship:WR(L,45,75),size:WRI(L,2,5),dmg:WR(L,0.8,2.3),rate:WR(L,0.7,1.2),range:WR(L,192,384),supply:WRI(L,14,70),hp:WRI(L,14,46),build:2.5,max:5,impact:WR(L,2,6)}),
+  // Suicide drones (WPN entry with drones:true, Security+): the depot holds count drones and launches one every launch s
+  // at a zombie within range (U px, 100 m) of the wall; it blows up on contact. A spent drone is rebuilt every rebuild s.
+  drone:L=>({count:5*Math.max(1,Math.min(3,L)),dmg:WR(L,6,14),radius:WR(L,14,22),launch:WR(L,1.2,0.5),rebuild:WR(L,4,2),speed:WR(L,220,300),range:384}),
   // Stun-only tesla (WPN entry with stunOnly:true, Security+'s EDR pulse): no damage, a much longer stun.
   pulse:L=>({targets:WRI(L,1,4),reload:WR(L,6,1.8),stun:WR(L,1,2.4)}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
@@ -1086,13 +1089,14 @@ const WSTAT={
 };
 // Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
 const WEAPON_RANGE=0.6;
-const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":w.squad?"squad":w.tank?"tank":null);
+const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":w.squad?"squad":w.tank?"tank":w.drones?"drone":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
   toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
+  drone:()=>`The depot holds ${s.count} suicide drones. One launches every ${f(s.launch)} s at a zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. A new drone is built every ${f(s.rebuild)} s.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
   tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s. Each tank has ${f(s.hp)} health: zombies that reach one attack it, and a destroyed tank is rebuilt in ${f(s.rebuild)} s.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombie${s.targets>1?"s":""} and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
@@ -1207,7 +1211,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,tanks:[],tshells:[]};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,drones:[],dstock:null,dcd:0.5,drb:0,tanks:[],tshells:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1260,7 +1264,7 @@ const D=(function(){
   function mkFoe(t,v,x,y){
     const n=effNight(G.night),b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
-    const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(v==="boss"?1:(1+0.04*(n-1)))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
+    const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(v==="boss"?1:Math.min(1.4,1+0.04*(n-1)))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
     if(v==="shield"){o.sh=o.shMax=hp*2.5;}if(v==="burrow")o.under=true;if(v==="zeroday")o.imm={};if(v==="spitter")o.sc=1;
     return o;
   }
@@ -1309,12 +1313,12 @@ const D=(function(){
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
-    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];G.drones=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
     P.bestNight=Math.max(P.bestNight||0,G.night);S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);P.night=G.night+1;
     G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry; // leftover ammo carries over to the next night
     save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];G.drones=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}${G.carry?` · ${G.carry} ammo carried over`:""}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
@@ -1476,7 +1480,25 @@ const D=(function(){
       G.squads=G.squads.filter(q=>q.state!=="gone"||q.t<0);
     }
     // Flame bunker: bursts of flame at zombies near the wall, which keep burning afterwards.
-    if(G.c.flame&&!sqW){
+    // Drone depot: launches suicide drones at zombies within range; each one homes in and blows up with splash.
+    const drW=wMode(WPN.find(w=>w.k==="flame"))==="drone";
+    if(G.c.flame&&drW){
+      const st=WSTAT.drone(G.c.flame),reach=line+st.range*u,Ly=yard(),dx=Ly.flame[0]+17*Ly.ys,dy=Ly.flame[1]+8*Ly.ys;
+      if(G.dstock==null)G.dstock=st.count;
+      if(G.dstock+G.drones.length<st.count){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;}}else G.drb=st.rebuild;
+      G.dcd-=dt;
+      const pick=ex=>{let tg=null,bd=1e9;for(const e of G.enemies){if(!tgt(e)||e.x>reach||e.x>W-4||ex.has(e))continue;if(e.x<bd){bd=e.x;tg=e;}}return tg;}; // nearest the wall first
+      if(G.dcd<=0&&G.dstock>0){const tg=pick(new Set(G.drones.map(d=>d.e)));if(tg){G.drones.push({x:dx,y:dy,e:tg,tx:tg.x,ty:tg.y,a:0});G.dstock--;G.dcd=st.launch;}}
+      for(let i=G.drones.length-1;i>=0;i--){const d=G.drones[i];
+        if(!d.e||d.e.hp<=0||!G.enemies.includes(d.e))d.e=pick(new Set(G.drones.filter(o=>o!==d).map(o=>o.e)))||null;
+        if(d.e){d.tx=d.e.x;d.ty=d.e.y-10*u*depth(d.e.y);}
+        const ddx=d.tx-d.x,ddy=d.ty-d.y,dist=Math.hypot(ddx,ddy),step=st.speed*u*dt;d.a=Math.atan2(ddy,ddx);
+        if(dist<=step+2*u){const r=st.radius*u,gy=d.e?d.e.y:d.ty;
+          for(const e of G.enemies){const q=Math.hypot(e.x-d.tx,e.y-gy);if(q<r){hurt(e,st.dmg*(q<r*0.5?1:0.6),"drone");e.hit=0.12;}}
+          G.fx.push({k:"b",x:d.tx,y:gy,r,life:0.3,m:0.3});G.drones.splice(i,1);}
+        else{d.x+=ddx/dist*step;d.y+=ddy/dist*step;}}
+    }
+    if(G.c.flame&&!sqW&&!drW){
       const st=WSTAT.flame(G.c.flame),reach=line+st.range*u;
       // Burns continuously while zombies are in reach, using fuel only while firing; an empty tank cools down and refuels.
       if(G.fuel===undefined)G.fuel=st.fuel;G.fburst=0;
@@ -1743,7 +1765,8 @@ const D=(function(){
     if(fr>=1){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(${c},${0.25+0.2*Math.sin(G.time*6)})`;ctx.fillRect(x-1,y-1,w+2,h+2);ctx.restore();}}
   const clamp01=v=>Math.max(0,Math.min(1,v));
   function drawCooldowns(L){const s=L.ys,bw=Math.max(14,26*s),bh=Math.max(2.5,2.6*s);
-    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;cdBar(x+4*s,y+25*s,bw,bh,G.ship?clamp01(G.ship.x/W):1);}
+    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="drone"){const [x,y]=L.flame,st=WSTAT.drone(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.dstock==null?1:G.dstock/st.count);}
+    else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;cdBar(x+4*s,y+25*s,bw,bh,G.ship?clamp01(G.ship.x/W):1);}
     else if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fcool>0?1-clamp01(G.fcool/st.cool):clamp01((G.fuel===undefined?st.fuel:G.fuel)/st.fuel));} // fuel left, or cooldown progress
     if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
     if(G.c.mortar){const [x,y]=mortarPos(),m=wMode(WPN.find(w=>w.k==="mortar"))||"mortar";
@@ -1766,7 +1789,11 @@ const D=(function(){
     const nC=Math.min(10,Math.ceil(G.ammo/25));for(let k=0;k<nC;k++){const cx=L.depot[0]+(48+(k%5)*7)*s,cy=L.depot[1]+(18-Math.floor(k/5)*6)*s;
       ctx.fillStyle="#5A4325";ctx.fillRect(cx,cy,6*s,5*s);ctx.strokeStyle="#2A1F12";ctx.lineWidth=0.8;ctx.strokeRect(cx,cy,6*s,5*s);}
     // flame bunker: a concrete dome whose firing slit glows during a burst
-    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
+    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="drone"){const [x,y]=L.flame,st=WSTAT.drone(G.c.flame);ctx.fillStyle="#232A30";ctx.beginPath();ctx.moveTo(x,y+20*s);ctx.lineTo(x+4*s,y+6*s);ctx.lineTo(x+30*s,y+6*s);ctx.lineTo(x+34*s,y+20*s);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#14181C";ctx.fillRect(x+9*s,y+11*s,16*s,9*s);ctx.fillStyle=`rgba(${c},.8)`;ctx.fillRect(x+9*s,y+10*s,16*s,1.2*s);
+      const n=G.dstock==null?st.count:G.dstock;for(let k=0;k<Math.min(n,5);k++){ctx.fillStyle="#3A434C";ctx.fillRect(x+10*s+k*3.2*s,y+15*s,2.4*s,2.4*s);}
+      ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+st.count,x+36*s,y+17*s);}
+    else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
       ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=Math.max(1,1.2*s);ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,13*s,6*s,0,0,7);ctx.stroke();
       ctx.fillStyle=`rgba(${c},.9)`;ctx.fillRect(x+13*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+19.4*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+13*s,y+13.2*s,8*s,1.4*s);
       const n=G.squads.filter(q=>q.state!=="gone").length;ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+WSTAT.squad(G.c.flame).max,x+36*s,y+17*s);}
@@ -1912,6 +1939,12 @@ const D=(function(){
     if(q.state==="evac"){const p=Math.min(1,q.t/1.8),hx=q.t<1.8?-30*u+(x+30*u)*(1-Math.pow(1-p,2)):q.t<2.4?x:x+(q.t-2.4)*260*u;drawHeli(hx,y-44*k,u,c);
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
+  // Suicide drone: a small quad-rotor with a warhead and a blinking light.
+  function drawDrone(x,y,u,a){const c=wcol(),k=u*1.1;ctx.save();ctx.translate(x,y);
+    ctx.strokeStyle="#3A434C";ctx.lineWidth=1.2*k;ctx.beginPath();ctx.moveTo(-4*k,-3*k);ctx.lineTo(4*k,3*k);ctx.moveTo(-4*k,3*k);ctx.lineTo(4*k,-3*k);ctx.stroke();
+    ctx.fillStyle="rgba(200,210,220,.35)";for(const [px,py] of [[-4,-3],[4,3],[-4,3],[4,-3]]){ctx.beginPath();ctx.ellipse(px*k,py*k,2.6*k,0.8*k,0,0,7);ctx.fill();}
+    ctx.fillStyle="#2B3138";ctx.beginPath();ctx.ellipse(0,0,2.6*k,1.8*k,0,0,7);ctx.fill();ctx.fillStyle="#C0392B";ctx.beginPath();ctx.arc(Math.cos(a)*2.4*k,Math.sin(a)*2.4*k,1.1*k,0,7);ctx.fill();
+    if(Math.sin(G.time*14+x)>0){ctx.fillStyle=`rgb(${c})`;ctx.beginPath();ctx.arc(0,-1*k,0.8*k,0,7);ctx.fill();}ctx.restore();}
   // Tank: tracked hull with a turret and barrel that turn toward its target, in the exam color.
   function drawTank(t,u){const k=u*TANK_SCALE,c=wcol(),x=t.x,y=t.y;
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
@@ -2004,6 +2037,7 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
+    for(const d of G.drones)drawDrone(d.x,d.y,u,d.a);
     for(const t of G.tanks)if(t.state!=="reload"&&t.state!=="dead")drawTank(t,u);
     for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+((p.by||p.y1)-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
@@ -2425,7 +2459,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   zeroday:["Zero-day","Shrugs off the first hit from each weapon type."],
   boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. It walks at a fixed slow pace. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
-  const I=D.info(),c=I.cfg,night=P.night||1,n=effNight(night),ramp=1+0.04*(n-1);
+  const I=D.info(),c=I.cfg,night=P.night||1,n=effNight(night),ramp=Math.min(1.4,1+0.04*(n-1));
   const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)} <button class="btn sm" data-return="${w.k}">Send back</button>`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
@@ -3640,7 +3674,7 @@ const SEC_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Patch level",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Threat feed",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Sensor node",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"Hardened firewall",d:"+40 wall integrity"},{n:"Backup cache",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const SEC_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
-  {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that stuns hostiles in place.",stunOnly:true},
+  {n:"Drone depot",d:"Suicide drones fly out and blow up zombies within 100 m. Uses no ammo.",drones:true},{n:"EDR pulse",d:"A chained response that stuns hostiles in place.",stunOnly:true},
   {n:"Honeypot mine",max:3,d:"Mines laid in the field blow up under the horde, then slowly re-lay.",mine:true},{n:"Kill switch",d:"A beam that wipes every hostile in its lane."}][i]));
 
 /* ---------------- Security+ mini-game content ---------------- */
