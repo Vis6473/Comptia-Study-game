@@ -2032,7 +2032,7 @@ const D=(function(){
   function drawPlanes(L){const s=L.ys,[bx,by]=L.barracks,ry=by+9*s;
     for(let k=0;k<Math.min(G.pallets,20);k++){const px=bx+(48+(k%5)*4.6)*s,py=by-(1+Math.floor(k/5)*2.8)*s;ctx.fillStyle=k%2?"#7A5A2E":"#86663A";ctx.fillRect(px,py-2.6*s,4*s,2.6*s);ctx.strokeStyle="#3A2A16";ctx.lineWidth=0.4*s;ctx.strokeRect(px,py-2.6*s,4*s,2.6*s);}
     if(G.pallets>20){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(7*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText("x"+G.pallets,bx+72*s,by-4*s);}
-    {const b=G.cbot||{f:0,load:0,dir:0},A=[bx+46*s,by+1*s],B=[L.depot[0]+44*s,L.depot[1]+26*s],f=b.f,x=A[0]+(B[0]-A[0])*f,y=A[1]+(B[1]-A[1])*f,z=s*1.5,dir=b.dir>=0?(B[0]>=A[0]?1:-1):(B[0]>=A[0]?-1:1);
+    {const b=G.cbot||{f:0,load:0,dir:0},A=[bx+46*s,by+1*s],B=[L.depot[0]+44*s,L.depot[1]+26*s],f=b.f,rt=yardPath(L,A,B),[x,y,ddx]=alongPath(rt,f),z=s*1.5,dir=b.dir>=0?(ddx>=0?1:-1):(ddx>=0?-1:1);
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x,y+0.6*z,3.6*z,1*z,0,0,7);ctx.fill();
       ctx.fillStyle="#1A1F24";for(const wx2 of [-2.2,0,2.2]){ctx.beginPath();ctx.arc(x+wx2*z,y,1*z,0,7);ctx.fill();} // treads
       ctx.fillStyle="#C9A227";ctx.fillRect(x-3.2*z,y-3.4*z,6.4*z,2.8*z);ctx.fillStyle="#1A1F24";ctx.fillRect(x-3.2*z,y-2.2*z,6.4*z,0.6*z); // hazard-yellow body
@@ -2065,10 +2065,38 @@ const D=(function(){
     if(ty.length>2)R.push([dep,[wallX,ty[Math.floor(ty.length/2)]]]);
     R.push([[L.gen[0]+19*s,L.gen[1]+24*s],dep]); // generator to depot
     return R;}
+  // Yard paths: the crew and the cargo bot walk around the buildings instead of over them. A coarse grid marks every
+  // building (with a little padding) as blocked, and a breadth-first search finds a route of straight legs between
+  // them. Routes are cached until the yard changes (screen size or a new weapon structure).
+  let yardPaths=null;
+  function yardPath(L,A,B){const s=L.ys,key=[W,H,G.c.flame,G.c.tesla,G.c.mortar,S.exam].join();
+    if(!yardPaths||yardPaths.key!==key){const cs=Math.max(2,3*s),x1=L.wx-6*s,nx=Math.ceil(x1/cs),ny=Math.ceil(L.fh/cs),blk=new Uint8Array(nx*ny);
+      const box=(p,a,b,c,d)=>{const pad=2.5*s;for(let j=Math.max(0,Math.floor((p[1]+b*s-pad-L.ft)/cs));j<=Math.min(ny-1,Math.floor((p[1]+d*s+pad-L.ft)/cs));j++)
+        for(let i=Math.max(0,Math.floor((p[0]+a*s-pad)/cs));i<=Math.min(nx-1,Math.floor((p[0]+c*s+pad)/cs));i++)blk[j*nx+i]=1;};
+      box(L.hq,0,-4,56,40);box(L.depot,0,-4,46,24);box(L.props,0,0,62,32);box(L.barracks,0,2,72,16);box(L.gen,0,0,26,20);
+      if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),-22,-12,22,12);
+      yardPaths={key,cs,nx,ny,blk,memo:{}};}
+    const Y=yardPaths,mk=A.map(Math.round).join()+">"+B.map(Math.round).join();if(Y.memo[mk])return Y.memo[mk];
+    const {cs,nx,ny,blk}=Y,cell=p=>[Math.max(0,Math.min(nx-1,Math.floor(p[0]/cs))),Math.max(0,Math.min(ny-1,Math.floor((p[1]-L.ft)/cs)))];
+    const a=cell(A),b=cell(B),near=(i,j,c)=>Math.abs(i-c[0])+Math.abs(j-c[1])<=Math.ceil(9*s/cs); // endpoints sit at a building's door
+    const prev=new Int32Array(nx*ny).fill(-1),q=[a[1]*nx+a[0]];prev[q[0]]=q[0];let found=false;
+    for(let h=0;h<q.length&&!found;h++){const c=q[h],i=c%nx,j=(c-i)/nx;
+      for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=nx||jj>=ny)continue;const n=jj*nx+ii;
+        if(prev[n]>=0||(blk[n]&&!near(ii,jj,a)&&!near(ii,jj,b)))continue;prev[n]=c;if(ii===b[0]&&jj===b[1]){found=true;break;}q.push(n);}}
+    let pts=[A,B];
+    if(found){const cells=[];for(let c=b[1]*nx+b[0];;c=prev[c]){cells.push(c);if(c===prev[c])break;}cells.reverse();
+      const ctr=c=>{const i=c%nx;return [(i+0.5)*cs,L.ft+((c-i)/nx+0.5)*cs];};pts=[A];
+      for(let k=1;k<cells.length-1;k++){const p0=cells[k-1],p1=cells[k],p2=cells[k+1];if(p1-p0!==p2-p1)pts.push(ctr(p1));} // keep only the corners
+      pts.push(B);}
+    let tot=0;const seg=[0];for(let k=1;k<pts.length;k++){tot+=Math.hypot(pts[k][0]-pts[k-1][0],pts[k][1]-pts[k-1][1]);seg.push(tot);}
+    return Y.memo[mk]={pts,seg,len:Math.max(1,tot)};}
+  // Position f (0–1) along a yard path, with the direction of travel along x.
+  function alongPath(r,f){const d=f*r.len;let k=1;while(k<r.pts.length-1&&r.seg[k]<d)k++;const A=r.pts[k-1],B=r.pts[k],L0=r.seg[k]-r.seg[k-1],t=L0?(d-r.seg[k-1])/L0:0;
+    return [A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,B[0]-A[0]];}
   function drawCrew(L){const s=L.ys,z=s*1.5,R=crewRoutes(L),t=G.time;
-    CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],len=Math.max(1,Math.hypot(B[0]-A[0],B[1]-A[1]));
+    CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],rt=yardPath(L,A,B),len=rt.len;
       const ph=((t*c.sp*s/len)+c.ph)%2,out=ph<1,f=Math.max(0,Math.min(1,(out?ph:2-ph)*1.15-0.075)); // brief stop at each end to load and unload
-      const x=A[0]+(B[0]-A[0])*f,y=A[1]+(B[1]-A[1])*f,dir=(B[0]-A[0])*(out?1:-1)>=0?1:-1,moving=f>0&&f<1,carry=out&&f<1||(!out&&f>=1),step=moving?Math.sin(t*10+i):0;
+      const [x,y,ddx]=alongPath(rt,f),dir=(ddx||1)*(out?1:-1)>=0?1:-1,moving=f>0&&f<1,carry=out&&f<1||(!out&&f>=1),step=moving?Math.sin(t*10+i):0;
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x,y+0.6*z,3*z,0.9*z,0,0,7);ctx.fill();
       if(c.bot){ctx.fillStyle="#1A1F24";ctx.beginPath();ctx.arc(x-1.8*z,y,1.1*z,0,7);ctx.arc(x+1.8*z,y,1.1*z,0,7);ctx.fill(); // wheels
         ctx.fillStyle="#5A6670";ctx.fillRect(x-2.8*z,y-3.6*z,5.6*z,3*z);ctx.fillStyle=`rgba(${wcol()},.9)`;ctx.fillRect(x+dir*1.6*z-0.6*z,y-3*z,1.2*z,1*z);
