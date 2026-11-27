@@ -1534,7 +1534,10 @@ const D=(function(){
           if(go(t,t.tx,t.ty)){t.state="fight";t.idle=0;}continue;}
         // fight: shoot the nearest zombie in range ahead; with nothing to shoot for a while, move to a busier lane
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
-        if(tg){t.idle=0;t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*TANK_SCALE),tg.x-t.x);t.cd-=dt;
+        if(tg){t.idle=0;
+          // a zombie closing in (within ~25 m ahead): drive forward to meet it, stopping ~6 m short, never past 100 m from the wall
+          if(tg.x>t.x&&tg.x-t.x<96*u&&tg.x-t.x>24*u&&t.x<line+384*u){const step=st.speed*0.6*u*dt;t.x=Math.min(line+384*u,t.x+step);t.tx=t.x;}
+          t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*TANK_SCALE),tg.x-t.x);t.cd-=dt;
           if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
             G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
             G.fx.push({k:"hit",x:mx,y:my,life:0.12,m:0.12});
