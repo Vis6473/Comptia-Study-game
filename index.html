@@ -1051,7 +1051,7 @@ const NET_UPG=[ // bought with scrap
 const NET_WPN=[ // unlocked with XP, then upgraded with scrap
  {k:"flame",n:"Flame bunker",d:"Burns hostiles that reach the wall. Uses no ammo.",xp:150,max:3,cost:l=>90+70*(l-1)},
  {k:"tesla",n:"Tesla coil",d:"Chain lightning that jumps between hostiles.",xp:300,max:3,cost:l=>130+90*(l-1)},
- {k:"mortar",n:"Tank bunker",d:"Tanks roll out to fight, then return to the bunker to reload.",xp:450,max:3,cost:l=>150+100*(l-1),tank:true},
+ {k:"mortar",n:"Tank bunker",d:"Tanks roll out to fight, then return to the bunker to reload. Level 4 adds damage and ammo.",xp:450,max:4,cost:l=>150+100*(l-1),tank:true},
  {k:"rail",n:"Railgun",d:"A beam that pierces every hostile in its lane.",xp:650,max:3,cost:l=>180+120*(l-1)}
 ];
 // Weapon stats by level (set by the owner): every exam's weapons share these mechanics under their own names.
@@ -1078,7 +1078,7 @@ const WSTAT={
   toner:L=>({dmg:WR(L,2,6.8),radius:WR(L,24,37),reload:WR(L,10,4.5),bombs:WRI(L,2,5),carpet:WRI(L,4,10),cdmg:WR(L,1,3.4),cr:WR(L,16,25)}), // aimed bombs plus a CMYK carpet of bomblets
   // Tanks (WPN entry with tank:true, Network+): roll out to the busiest lane, fire splash shells at zombies in range, and
   // drive back into the bunker to reload when the magazine is empty. Range is in U px (3.84 a metre).
-  tank:L=>({count:2*Math.max(1,Math.min(3,L)),dmg:WR(L,4,12),radius:WR(L,16,26),rate:WR(L,2.4,1.1),mag:WRI(L,4,8),reload:WR(L,9,4),speed:WR(L,35,65),range:WR(L,230,384),hp:WR(L,30,80),rebuild:WR(L,20,10)}), // 2/4/6 tanks, 60-100 m range (set by the owner)
+  tank:L=>({count:2*Math.max(1,Math.min(3,L)),dmg:L>=4?18:WR(L,4,12),radius:WR(L,16,26),rate:WR(L,2.4,1.1),mag:L>=4?12:WRI(L,4,8),reload:WR(L,9,4),speed:WR(L,35,65),range:WR(L,230,384),hp:WR(L,30,80),rebuild:WR(L,20,10)}), // 2/4/6 tanks, 60-100 m range (set by the owner)
   // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
   wipe:L=>({dmg:WR(L,2,6.5),radius:WR(L,30,54),reload:WR(L,8,3),stun:WR(L,0.8,2.5)})
 };
@@ -1515,19 +1515,27 @@ const D=(function(){
     if(G.c.mortar&&w3==="tank"){
       const st=WSTAT.tank(G.c.mortar),gx=line+4*u;
       while(G.tanks.length<st.count){const i=G.tanks.length;G.tanks.push({x:gx,y:fTop()+(fBot()-fTop())*(i+1)/(st.count+1),a:0,state:"out",ammo:st.mag,cd:0.5,rt:0,idle:0,i,hp:st.hp,hit:0});}
-      const lane=()=>{if(!vis.length)return null;let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<18*u)n++;if(n>bn){bn=n;by=e.y;}}return by;};
+      // choose a firing spot: zombie lanes by density, then evenly spaced rows; prefer a lane no other tank holds
+      const spot=t=>{const band=22*u,cl=y=>Math.min(fBot()-6*u,Math.max(fTop()+12*u,y)),c=[];
+        for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<band)n++;c.push([n,cl(e.y)]);}c.sort((a,b)=>b[0]-a[0]);
+        for(let r=0;r<6;r++)c.push([0,cl(fTop()+12*u+(fBot()-fTop()-18*u)*(r+0.5)/6)]);
+        const others=G.tanks.filter(o=>o!==t&&o.state!=="reload"&&o.state!=="dead"),held=y=>others.filter(o=>Math.abs((o.ty!=null?o.ty:o.y)-y)<band).length;
+        let best=c[0]?c[0][1]:t.y,bn=1e9;for(const [,y] of c){const h=held(y);if(h<bn){bn=h;best=y;if(!h)break;}}
+        return [line+(48+34*bn)*u,best];};
       const go=(t,tx,ty)=>{const dx=tx-t.x,dy=ty-t.y,d=Math.hypot(dx,dy),step=st.speed*u*dt;if(d<=step){t.x=tx;t.y=ty;return true;}t.x+=dx/d*step;t.y+=dy/d*step;t.a=Math.atan2(dy,dx);return false;};
+      for(const a of G.tanks)for(const b of G.tanks){if(a===b||a.state==="reload"||a.state==="dead"||b.state==="reload"||b.state==="dead")continue;
+        const dx=a.x-b.x,dy=a.y-b.y;if(Math.abs(dx)<30*u&&Math.abs(dy)<16*u){const push=(dy>0||(dy===0&&a.i>b.i)?1:-1)*24*u*dt;a.y=Math.min(fBot()-6*u,Math.max(fTop()+12*u,a.y+push));if(a.ty!=null)a.ty=a.y;}}
       for(const t of G.tanks){t.hit-=dt;
         if(t.state==="dead"){t.rt-=dt;if(t.rt<=0){t.hp=st.hp;t.ammo=st.mag;t.x=gx;t.state="out";t.ty=null;}continue;}
         if(t.hp<=0){t.state="dead";t.rt=st.rebuild;G.fx.push({k:"b",x:t.x,y:t.y,r:24*u,life:0.45,m:0.45});G.craters.push({x:t.x,y:t.y,r:7*u});if(G.craters.length>24)G.craters.shift();text(t.x,t.y-26*u,"TANK LOST","#FF2BD6");continue;}
         if(t.state==="reload"){t.rt-=dt;if(t.rt<=0){t.ammo=st.mag;t.state="out";t.ty=null;}continue;}
         if(t.state==="back"){if(go(t,gx,t.y)){t.state="reload";t.rt=st.reload;}continue;}
-        if(t.state==="out"){if(t.ty==null){const ly=lane();t.ty=ly==null?t.y:Math.min(fBot()-6*u,Math.max(fTop()+10*u,ly+(t.i-1)*10*u));t.tx=line+(48+24*(t.i%3)+12*Math.floor(t.i/3))*u;}
+        if(t.state==="out"){if(t.ty==null){const sp=spot(t);t.ty=sp[1];t.tx=sp[0];}
           if(go(t,t.tx,t.ty)){t.state="fight";t.idle=0;}continue;}
         // fight: shoot the nearest zombie in range ahead; with nothing to shoot for a while, move to a busier lane
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
-        if(tg){t.idle=0;t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*1.4),tg.x-t.x);t.cd-=dt;
-          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*1.4,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
+        if(tg){t.idle=0;t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*TANK_SCALE),tg.x-t.x);t.cd-=dt;
+          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
             G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
             G.fx.push({k:"hit",x:mx,y:my,life:0.12,m:0.12});
             if(t.ammo<=0){t.state="back";text(t.x,t.y-24*u,"RELOADING","#FFB020");}}}
@@ -1636,6 +1644,7 @@ const D=(function(){
   // a narrow phone yard as well as a wide desktop one.
   const WCOL={net:"25,240,255",sec:"120,240,255",a1:"255,176,32",a2:"156,255,87",cissp:"179,136,255"};
   const wcol=()=>WCOL[S.exam]||WCOL.net;
+  const TANK_SCALE=1.15; // tank size; drawTank and the muzzle position in update() both use it
   const TONER=["0,200,255","255,43,214","255,214,0","70,70,78"]; // cyan, magenta, yellow, black
   function yard(){
     const u=U(),wx=wallX(),ft=fTop(),fh=Math.max(40,H-ft-6),YW=Math.max(30,wx-12*u),ys=Math.max(0.35,Math.min(u,YW/150));
@@ -1888,7 +1897,7 @@ const D=(function(){
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
   // Tank: tracked hull with a turret and barrel that turn toward its target, in the exam color.
-  function drawTank(t,u){const d=depth(t.y),k=u*d*1.4,c=wcol(),x=t.x,y=t.y;
+  function drawTank(t,u){const d=depth(t.y),k=u*d*TANK_SCALE,c=wcol(),x=t.x,y=t.y;
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
     ctx.fillStyle="#1E2226";ctx.fillRect(x-13*k,y-4*k,26*k,4.5*k);ctx.fillStyle="#3A4046";for(let i=0;i<6;i++)ctx.fillRect(x-12*k+i*4.6*k+((G.time*8)%1)*1*k,y-3*k,2*k,2.5*k);
     ctx.fillStyle=t.hit>0?"#C9D2C0":"#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
@@ -3614,7 +3623,7 @@ const SEC_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Hardened firewall",d:"+40 wall integrity"},{n:"Backup cache",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const SEC_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that stuns hostiles in place.",stunOnly:true},
-  {n:"Honeypot mine",d:"Mines laid in the field blow up under the horde, then slowly re-lay.",mine:true},{n:"Kill switch",d:"A beam that wipes every hostile in its lane."}][i]));
+  {n:"Honeypot mine",max:3,d:"Mines laid in the field blow up under the horde, then slowly re-lay.",mine:true},{n:"Kill switch",d:"A beam that wipes every hostile in its lane."}][i]));
 
 /* ---------------- Security+ mini-game content ---------------- */
 // Control Sort: [control, category, type, why]. Only controls whose category and type are well established.
@@ -3860,13 +3869,13 @@ const A1_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Surge protector",d:"+40 wall integrity"},{n:"RAM upgrade",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A1_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Overheat vent",d:"Blasts hot exhaust at hostiles that reach the wall. Uses no ammo."},{n:"ESD arc",d:"A static discharge that jumps between hostiles."},
-  {n:"Toner bomb",d:"Jets fly over and drop colorful toner bombs on the densest pack.",jets:true},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
+  {n:"Toner bomb",max:3,d:"Jets fly over and drop colorful toner bombs on the densest pack.",jets:true},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
 const A2_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Admin rights",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Task Scheduler",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Remote session",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"BitLocker wall",d:"+40 wall integrity"},{n:"Restore point",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A2_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Quarantine pit",d:"Burns hostiles that reach the wall. Uses no ammo."},{n:"Group Policy chain",d:"A policy push that jumps between hostiles."},
-  {n:"Disk wipe charge",d:"A stun mortar that freezes the densest pack in place.",stun:true},{n:"Safe Mode beam",d:"A beam that pierces every hostile in its lane."}][i]));
+  {n:"Disk wipe charge",max:3,d:"A stun mortar that freezes the densest pack in place.",stun:true},{n:"Safe Mode beam",d:"A beam that pierces every hostile in its lane."}][i]));
 
 // Hardware Match (Core 1): [description, answer]
 const HARDWARE=[
@@ -4463,7 +4472,7 @@ const CISSP_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Hardened perimeter",d:"+40 wall integrity"},{n:"Risk reserve",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const CISSP_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Incident response team",d:"Teams drop into the field, dig in and hold the line until their supplies run out.",squad:true},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
-  {n:"Cryptographic mine",d:"Mines laid in the field shatter the horde with splash damage, then slowly re-lay.",mine:true},{n:"Zero Trust lance",d:"A beam that verifies, then destroys, every hostile in its lane."}][i]));
+  {n:"Cryptographic mine",max:3,d:"Mines laid in the field shatter the horde with splash damage, then slowly re-lay.",mine:true},{n:"Zero Trust lance",d:"A beam that verifies, then destroys, every hostile in its lane."}][i]));
 // Concept Match (CISSP): [description, concept]
 const CONCEPTS=[
  ["Security model: no read up, no write down","Bell-LaPadula"],["Integrity model: no read down, no write up","Biba"],
