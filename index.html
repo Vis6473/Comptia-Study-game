@@ -524,6 +524,37 @@ body.has-dock .panel.answered .fb-next{flex:none;margin-top:12px!important}
   .panel{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* The header is always dark with a cyber look (the owner asked), whatever the page theme: a console bar in the outpost's
+   palette with scanlines and glow, mono uppercase tabs, and a neon version of the cable stripe. */
+.cable{--orange:#FF2BD6;--green:#19F0FF;--blue:#9CFF57;--brown:#FFB020;--surface:#06090D;box-shadow:0 0 10px rgba(25,240,255,.35)}
+header.top,nav.tabs{--bg:#06090D;--surface:#0C131A;--ink:#D6F4FF;--muted:#7A93A2;--line:#1C2E3B;--accent:#19F0FF;color:var(--ink);color-scheme:dark;position:relative}
+header.top{background:linear-gradient(180deg,#0C131A,#06090D);padding-inline:clamp(12px,2.4vw,22px);border:1px solid #1C2E3B;border-bottom:0;border-radius:0 0 0 0;margin-top:0}
+header.top::after,nav.tabs::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 1px,transparent 1px 3px)}
+header.top .brand h1{font-family:var(--f-display);color:#E8FDFF;text-transform:uppercase;letter-spacing:.06em;text-shadow:0 0 10px rgba(25,240,255,.55)}
+header.top .brand small{color:#FF2BD6;text-shadow:0 0 6px rgba(255,43,214,.45)}
+header.top .zlogo{color:#19F0FF;filter:drop-shadow(0 0 6px rgba(25,240,255,.6))}
+header.top .hud b{color:#E8FDFF}
+header.top .xpbar{background:#1C2E3B}
+header.top .xpbar i{background:#19F0FF;box-shadow:0 0 8px rgba(25,240,255,.7)}
+header.top .hdr-links a{color:#7A93A2;font-family:var(--f-mono);text-transform:uppercase;font-size:12px;letter-spacing:.06em}
+header.top .hdr-links a:hover{color:#19F0FF;text-decoration:none;text-shadow:0 0 6px rgba(25,240,255,.6)}
+nav.tabs{background:#0C131A;border:1px solid #1C2E3B;border-top:1px solid rgba(25,240,255,.25);padding-inline:6px;border-radius:0 0 8px 8px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+nav.tabs a{font-family:var(--f-mono);text-transform:uppercase;font-size:12.5px;letter-spacing:.06em;color:#7A93A2;position:relative;z-index:1}
+nav.tabs a:hover{color:#D6F4FF}
+nav.tabs a[aria-current="page"]{color:#19F0FF;border-color:#19F0FF;text-shadow:0 0 8px rgba(25,240,255,.6)}
+body.global-mode header.top{border-bottom:1px solid #1C2E3B;border-radius:0 0 8px 8px;margin-bottom:24px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+/* the quick exam's terminal: the same screen with a thinner bezel and no stand, so it fits above the outpost dock */
+.crt.crt-quiz{padding:8px;border-radius:18px}
+.crt.crt-quiz .crt-base{display:none}
+.crt.crt-quiz .crt-screen{border-radius:12px;padding:clamp(12px,2.4vw,22px)}
+.crt.crt-quiz .panel{padding:0;background:transparent;border:0}
+body.has-dock .crt-quiz .panel.answered{height:calc(100vh - var(--dock-h) - env(safe-area-inset-bottom,0px) - 40px - 16px - 2*clamp(12px,2.4vw,22px));height:calc(100dvh - var(--dock-h) - env(safe-area-inset-bottom,0px) - 40px - 16px - 2*clamp(12px,2.4vw,22px))}
+.crt-page .opt{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:center;border:1px solid var(--line);border-radius:4px;font-family:var(--f-body)!important;font-size:17px;padding:12px 14px}
+.crt-page .opt kbd{background:transparent;border:1px solid var(--ph-dim);color:var(--ph);box-shadow:none}
+.crt-page .opt:hover kbd,.crt-page .opt:focus-visible kbd{border-color:var(--ph-bg);color:var(--ph-bg)}
+.crt-page .opt.dim{opacity:.45}
+.crt-page .qtext{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -2938,9 +2969,9 @@ const Music=(()=>{
 // Every page goes on the terminal too (the owner asked): after a view renders, its content is moved into a CRT
 // monitor (moving keeps event handlers). Skipped on the title screen, while an exam is running (focus mode), and for
 // screens that already draw their own terminal (the mini-games).
-function crtify(){const b=document.body.classList;if(b.contains("focus-mode")||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
+function crtify(){const b=document.body.classList;if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
   const act=document.activeElement,keep=act&&$app.contains(act)?act:null,y=window.scrollY;
-  const w=document.createElement("div");w.className="crt crt-page";w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
+  const w=document.createElement("div");w.className="crt crt-page"+(b.contains("quiz-term")?" crt-quiz":"");w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
   const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);$app.appendChild(w);if(keep)keep.focus({preventScroll:true});window.scrollTo(0,y);}
 new MutationObserver(crtify).observe($app,{childList:true});
 // The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
@@ -2949,7 +2980,7 @@ const musicFor=name=>GLOBAL_VIEWS[name]?"menu":name==="mock"?null:name==="quiz"?
 function route(){
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
-  document.body.classList.remove("focus-mode");
+  document.body.classList.remove("focus-mode","quiz-term");
   let name=(location.hash||"").slice(1)||"menu";
   if(S.exam&&EXAMS[S.exam]&&EXAMS[S.exam].ready&&(!EX||EX.id!==S.exam))setExam(S.exam);
   document.body.classList.toggle("menu-mode",name==="menu");
@@ -3308,7 +3339,7 @@ function viewReview(){
 function startQuiz(pool,label,again){
   if(cleanup){cleanup();cleanup=null;}
   const st={pool,i:0,correct:0,label,done:false,streak:0};
-  document.body.classList.add("focus-mode"); // hide the header, tabs and footer while the night runs
+  document.body.classList.add("focus-mode","quiz-term"); // hide the header, tabs and footer while the night runs; the quiz goes on the terminal
   D.mount();D.newRound();
   st.again=again||startExam;
   D.setNext(()=>st.again());

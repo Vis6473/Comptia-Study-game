@@ -21,7 +21,7 @@ Everything is synthesized in the browser, so there are no audio files. Sound sta
 
 ## The terminal look
 
-Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Review to Settings and High Scores, sits on the same CRT terminal as the mini-games, in the game's cyan, magenta and amber. The animated title screen keeps its own look, and the question screens stay plain while a quick or mock exam is running so nothing gets in the way.
+Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Review to Settings and High Scores, sits on the same CRT terminal as the mini-games, in the game's cyan, magenta and amber. Quick exams play on it too, in a slimmer monitor that leaves room for the outpost below. The animated title screen keeps its own look, and the mock exam stays plain while it's running. The header and tabs are always dark, with a neon cyber style in light or dark mode.
 
 ## Mini-games on the terminal
 
