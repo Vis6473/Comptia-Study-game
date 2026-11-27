@@ -1104,15 +1104,15 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
   rail:()=>`Slides slowly along the wall to the busiest lane, charges for ${f(s.charge)} s, then hits every zombie in it for ${f(s.dmg)} damage. Recharges in ${f(s.reload)} s.`};return D[k]?D[k]():"";}
 const SUPPLY=[ // ammo: straight to the guns during a night, otherwise stockpiled for the next one
- {k:"crate",n:"Ammo crate",amt:40,scrap:15,d:"40 rounds"},
- {k:"pallet",n:"Ammo pallet",amt:150,scrap:50,d:"150 rounds, best value"},
- {k:"airdrop",n:"Airdrop",amt:200,xp:60,d:"200 rounds, paid with XP"}
+ {k:"crate",n:"Ammo crate",amt:40,scrap:15,d:"40 rounds",boxes:1},
+ {k:"pallet",n:"Ammo pallet",amt:150,scrap:50,d:"150 rounds, best value",boxes:5},
+ {k:"airdrop",n:"Airdrop",amt:200,xp:60,d:"200 rounds, paid with XP",boxes:10}
 ];
 function buySupply(k){
   const it=SUPPLY.find(x=>x.k===k);if(!it)return false;
   if(it.xp){if(xpAvail()<it.xp)return false;spendXP(it.xp);}
   else{if(!hasScrap(it.scrap))return false;spendScrap(it.scrap);}
-  if(!D.addAmmo(it.amt))S.base.stock=(S.base.stock||0)+it.amt;
+  if(!D.addAmmo(it.amt,it.boxes))S.base.stock=(S.base.stock||0)+it.amt;
   save();renderHud();return true;
 }
 const upSet=()=>S.base.up[S.exam]||(S.base.up[S.exam]={});
@@ -1293,9 +1293,9 @@ const D=(function(){
   const spawnGap=()=>1/Math.min(1.6,0.28+0.06*(capN(G.night)-1))*rnd(0.6,1.4);
   const packChance=()=>Math.min(0.6,0.06*(capN(G.night)-1));
   const bruteGap=()=>Math.max(22,45-2*capN(G.night))*rnd(0.85,1.15);
-  function supplyFlight(){if(!G)return;const p=G.planes.find(p=>p.t<1.6);if(p)p.cargo++;else if(G.planes.length<3)G.planes.push({t:0,cargo:1,drop:false});}
+  function supplyFlight(n){if(!G)return;n=n||2;const p=G.planes.find(p=>p.t<1.6);if(p)p.cargo+=n;else if(G.planes.length<3)G.planes.push({t:0,cargo:n,drop:false});else G.planes[G.planes.length-1].cargo+=n;}
   function correct(rw,streak){
-    if(!G||G.status!=="live")return;supplyFlight();
+    if(!G||G.status!=="live")return;supplyFlight(2);
     const a=rw.ammo+G.c.bonusAmmo;G.ammo+=a;
     text(wallX()+46*U(),fTop()+14*U(),"+"+a+" AMMO","#FFB020");
     if(rw.scrap)text(wallX()+46*U(),fTop()+32*U(),"+"+rw.scrap+" SCRAP","#19F0FF");
@@ -1380,8 +1380,10 @@ const D=(function(){
 
   function update(dt){
     G.time+=dt;if(G.shake>0)G.shake=Math.max(0,G.shake-dt);
-    for(let i=G.planes.length-1;i>=0;i--){const p=G.planes[i];p.t+=dt;if(!p.drop&&p.t>=3.3){p.drop=true;G.pallets=Math.min(8,G.pallets+p.cargo);}if(p.t>=6)G.planes.splice(i,1);}
-    if(G.pallets>0){G.palT+=dt;if(G.palT>=5){G.palT=0;G.pallets--;}}else G.palT=0;
+    for(let i=G.planes.length-1;i>=0;i--){const p=G.planes[i];p.t+=dt;if(!p.drop&&p.t>=3.3){p.drop=true;G.pallets=Math.min(40,G.pallets+p.cargo);}if(p.t>=6)G.planes.splice(i,1);}
+    {const b=G.cbot||(G.cbot={f:0,dir:0,load:0,wait:0});const LEG=2.4; // cargo bot: airstrip pile (f=0) to the ammo station (f=1)
+      if(b.dir===0){b.wait-=dt;if(b.wait<=0&&G.pallets>0){b.load=Math.min(2,G.pallets);G.pallets-=b.load;b.dir=1;}}
+      else{b.f+=b.dir*dt/LEG;if(b.f>=1){b.f=1;b.load=0;b.dir=-1;}else if(b.f<=0){b.f=0;b.dir=0;b.wait=0.4;}}}
     for(let i=G.q.length-1;i>=0;i--)if(G.q[i].at<=G.time){spawn(G.q[i].t);G.q.splice(i,1);}
     if(G.spawning&&G.status==="live"&&G.enemies.length<120){
       G.sT-=dt;if(G.sT<=0){spawn("w");if(Math.random()<packChance()){spawn("w");if(Math.random()<packChance()*0.5)spawn("w");}G.sT=spawnGap();}
@@ -1751,7 +1753,7 @@ const D=(function(){
     b.fillStyle="rgba(255,176,32,.8)";for(let k=0;k<9;k++){b.fillRect(x+(1+k*8.7)*s,y+3*s,1*s,1*s);b.fillRect(x+(1+k*8.7)*s,y+14.4*s,1*s,1*s);} // edge lights
     b.strokeStyle="#8A96A0";b.lineWidth=Math.max(1,0.6*s);b.beginPath();b.moveTo(x+4*s,y+2*s);b.lineTo(x+4*s,y-6*s);b.stroke();
     b.fillStyle="#FF8A1A";b.beginPath();b.moveTo(x+4*s,y-6*s);b.lineTo(x+10*s,y-5*s);b.lineTo(x+4*s,y-3.6*s);b.fill(); // windsock
-    lab("AIRSTRIP",x+24*s,y-2*s);
+    lab("AIRSTRIP",x+12*s,y-2*s);
     // generator housing (the core glow is drawn live)
     [x,y]=L.gen;R(x,y,26,20,"#18232C");R(x,y,26,3,"#2A3B47");b.strokeStyle="rgba(214,244,255,.12)";
     for(let k=0;k<3;k++){b.beginPath();b.moveTo(x+3*s,y+(7+k*4)*s);b.lineTo(x+11*s,y+(7+k*4)*s);b.stroke();}
@@ -1984,7 +1986,15 @@ const D=(function(){
   // Cargo plane (cosmetic): flies in for each ammo delivery, lands on the airstrip, drops a pallet beside it, takes off.
   // Phases by p.t: approach 0-1.8 s, rollout 1.8-2.8, unload 2.8-3.8, take-off 3.8-6.
   function drawPlanes(L){const s=L.ys,[bx,by]=L.barracks,ry=by+9*s;
-    for(let k=0;k<Math.min(G.pallets,8);k++){const px=bx+(50+(k%4)*5)*s,py=by-(1+Math.floor(k/4)*3)*s;ctx.fillStyle="#7A5A2E";ctx.fillRect(px,py-2.6*s,4*s,2.6*s);ctx.fillStyle="#3A2A16";ctx.fillRect(px,py,4*s,0.7*s);}
+    for(let k=0;k<Math.min(G.pallets,20);k++){const px=bx+(48+(k%5)*4.6)*s,py=by-(1+Math.floor(k/5)*2.8)*s;ctx.fillStyle=k%2?"#7A5A2E":"#86663A";ctx.fillRect(px,py-2.6*s,4*s,2.6*s);ctx.strokeStyle="#3A2A16";ctx.lineWidth=0.4*s;ctx.strokeRect(px,py-2.6*s,4*s,2.6*s);}
+    if(G.pallets>20){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(7*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText("x"+G.pallets,bx+72*s,by-4*s);}
+    {const b=G.cbot||{f:0,load:0,dir:0},A=[bx+46*s,by+1*s],B=[L.depot[0]+44*s,L.depot[1]+26*s],f=b.f,x=A[0]+(B[0]-A[0])*f,y=A[1]+(B[1]-A[1])*f,z=s*1.5,dir=b.dir>=0?(B[0]>=A[0]?1:-1):(B[0]>=A[0]?-1:1);
+      ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x,y+0.6*z,3.6*z,1*z,0,0,7);ctx.fill();
+      ctx.fillStyle="#1A1F24";for(const wx2 of [-2.2,0,2.2]){ctx.beginPath();ctx.arc(x+wx2*z,y,1*z,0,7);ctx.fill();} // treads
+      ctx.fillStyle="#C9A227";ctx.fillRect(x-3.2*z,y-3.4*z,6.4*z,2.8*z);ctx.fillStyle="#1A1F24";ctx.fillRect(x-3.2*z,y-2.2*z,6.4*z,0.6*z); // hazard-yellow body
+      ctx.fillStyle="#8A96A0";ctx.fillRect(x+dir*3.2*z-(dir<0?2.4*z:0),y-1.4*z,2.4*z,0.6*z); // forks
+      ctx.fillStyle=`rgba(${wcol()},.9)`;ctx.fillRect(x-dir*2.2*z-0.6*z,y-4.6*z,1.2*z,1.2*z);
+      for(let k=0;k<b.load;k++){ctx.fillStyle="#7A5A2E";ctx.fillRect(x-2*z,y-(6.2+k*2.6)*z,4*z,2.6*z);ctx.strokeStyle="#3A2A16";ctx.lineWidth=0.4*z;ctx.strokeRect(x-2*z,y-(6.2+k*2.6)*z,4*z,2.6*z);}}
     for(const p of G.planes){const t=p.t;let x,alt,ang=0;
       if(t<1.8){const k=t/1.8;x=-30*s+(bx+12*s+30*s)*k;alt=(1-k)*(1-k)*34*s;ang=0.12*(1-k);}
       else if(t<2.8){const k=(t-1.8);x=bx+12*s+30*s*(1-Math.pow(1-k,2));alt=0;}
@@ -2009,7 +2019,7 @@ const D=(function(){
     if(G.c.tesla)R.push([dep,[L.tesla[0]+7*s,L.tesla[1]+50*s]]);
     if(G.c.mortar){const m=mortarPos();R.push([dep,[m[0],m[1]+16*s]]);}
     if(ty.length>2)R.push([dep,[wallX,ty[Math.floor(ty.length/2)]]]);
-    R.push([[L.barracks[0]+56*s,L.barracks[1]-2*s],dep]); // pallets from the airstrip to the ammo depot
+    R.push([[L.gen[0]+19*s,L.gen[1]+24*s],dep]); // generator to depot
     return R;}
   function drawCrew(L){const s=L.ys,z=s*1.5,R=crewRoutes(L),t=G.time;
     CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],len=Math.max(1,Math.hypot(B[0]-A[0],B[1]-A[1]));
@@ -2178,7 +2188,7 @@ const D=(function(){
     saveT+=dt;if(saveT>3){saveT=0;save();}
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
-  function addAmmo(n){if(!live())return false;G.ammo+=n;supplyFlight();text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
+  function addAmmo(n,boxes){if(!live())return false;G.ammo+=n;supplyFlight(boxes||1);text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
   return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:(P.night||1),info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
