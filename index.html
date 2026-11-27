@@ -1216,7 +1216,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,planes:[],pallets:0,palT:0,wires:[],wbot:null,drones:[],dstock:null,dcd:0.5,drb:0,tanks:[],tshells:[]};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,helis:[],planes:[],pallets:0,palT:0,wires:[],wbot:null,drones:[],dstock:null,dcd:0.5,drb:0,tanks:[],tshells:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1321,12 +1321,12 @@ const D=(function(){
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
-    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.spits=[];G.drones=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.helis=[];G.spits=[];G.drones=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
     P.bestNight=Math.max(P.bestNight||0,G.night);S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);P.night=G.night+1;
     G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry; // leftover ammo carries over to the next night
     save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.spits=[];G.drones=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.helis=[];G.spits=[];G.drones=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}${G.carry?` · ${G.carry} ammo carried over`:""}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
@@ -1484,6 +1484,7 @@ const D=(function(){
       }
       // Restocking sortie (the owner's design): a shuttle lands on the yard pad, troopers run out of the command post and
       // board, and it blasts off the top of the screen; then the orbital dropship crosses the field with the pods.
+      stepHelis(dt);
       if(G.sortie){G.sortie.t+=dt;if(G.sortie.t>=SORTIE.end){G.sortie=null;G.ship={x:-90*u,spd:st.ship*u};}}
       if(G.ship){G.ship.x+=G.ship.spd*dt;if(G.ship.x>W+110*u){G.ship=null;for(const q of G.squads)if(q.state==="ship"){q.state="inbound";q.t=0;}}}
       for(const q of G.squads){q.t+=dt;q.hit-=dt;q.fl=(q.fl||0)-dt;
@@ -1498,7 +1499,8 @@ const D=(function(){
             for(let k=0;k<16;k++){const a=Math.random()*Math.PI*2,sp=rnd(40,120)*u;G.fx.push({k:"smk",x:q.x,y:q.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp*0.4-20*u,life:rnd(0.8,1.4),m:1.4});}
             G.craters.push({x:q.x,y:q.y,r:r*0.32});if(G.craters.length>24)G.craters.shift();if(!matchMedia("(prefers-reduced-motion: reduce)").matches)G.shake=0.4;}}continue;}
         if(q.state==="build"){if(q.t>=st.build){q.state="hold";q.t=0;}continue;}
-        if(q.state==="evac"){if(q.t>=3.4){q.state="gone";text(q.x,q.y-30*u,"TEAM EXTRACTED","#19F0FF");}continue;}
+        if(q.state==="evac"){if(q.t>=2.4){q.state="gone";text(q.x,q.y-30*u,"TEAM EXTRACTED","#19F0FF");
+          G.helis.push({x:q.x,y:q.y-44*u*depth(q.y),k:u*depth(q.y),t:0,state:"fly",n:Math.min(3,q.n)});}continue;} // the helicopter flies the team home
         const alive=Math.max(1,Math.ceil(q.n*q.hp/q.max));q.cd-=dt;
         if(q.cd<=0){let tg=null,bd=st.range*u;for(const e of G.enemies){if(e.x<q.x-14*u||e.x>W-4||!tgt(e))continue;const d=Math.hypot(e.x-q.x,e.y-q.y);if(d<bd){bd=d;tg=e;}} // shoots ahead of the team, out to its range
           if(tg){hurt(tg,st.dmg,"squad");tg.hit=0.08;q.fl=0.08;snd("rifle",q.x);q.shot=(q.shot||0)+1;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
@@ -1998,7 +2000,7 @@ const D=(function(){
   const TRC={sec:"120,240,255",a2:"156,255,87",cissp:"179,136,255"}; // tracer colors; others amber
   // Field team: arrives by helicopter (flies in from the base and hovers) or drop pod (falls with a fiery trail),
   // builds a sandbag bunker, and shows its health and supplies; a helicopter returns to lift it out.
-  function drawHeli(x,y,u,c){ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,y+40*u,12*u,2.2*u,0,0,7);ctx.fill();
+  function drawHeli(x,y,u,c,shY){ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,shY==null?y+40*u:shY,12*u,2.2*u,0,0,7);ctx.fill();
     ctx.fillStyle="#3E464E";ctx.fillRect(x-18*u,y-1.2*u,14*u,2.4*u);ctx.fillRect(x-19*u,y-4*u,2*u,6*u);
     ctx.fillStyle="#55606A";ctx.beginPath();ctx.ellipse(x,y,9*u,4.5*u,0,0,7);ctx.fill();ctx.fillStyle="#BFE9FF";ctx.beginPath();ctx.ellipse(x+5*u,y-0.5*u,3*u,2.4*u,0,0,7);ctx.fill();
     ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-3*u,y+1*u,5*u,1.4*u);
@@ -2045,7 +2047,7 @@ const D=(function(){
     const bw=22*k,bx=x-bw/2,by=y-22*k;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-1,by-1,bw+2,6*k+2);
     ctx.fillStyle="#FF3B5C";ctx.fillRect(bx,by,bw*Math.max(0,q.hp/q.max),2.4*k);
     if(q.heal>0){const a=0.5+0.5*Math.sin(G.time*8),hx=bx+bw+4*k,hy=by+1.2*k;ctx.fillStyle=`rgba(156,255,87,${0.5+0.5*a})`;ctx.fillRect(hx-0.7*k,hy-2.2*k,1.4*k,4.4*k);ctx.fillRect(hx-2.2*k,hy-0.7*k,4.4*k,1.4*k);} // green cross while healingctx.fillStyle="#FFB020";ctx.fillRect(bx,by+3.4*k,bw*Math.max(0,q.supply/q.maxSup),2.4*k);
-    if(q.state==="evac"){const p=Math.min(1,q.t/1.8),hx=q.t<1.8?-30*u+(x+30*u)*(1-Math.pow(1-p,2)):q.t<2.4?x:x+(q.t-2.4)*260*u;drawHeli(hx,y-44*k,u,c);
+    if(q.state==="evac"){const p=Math.min(1,q.t/1.8),hx=q.t<1.8?-30*u+(x+30*u)*(1-Math.pow(1-p,2)):x;drawHeli(hx,y-44*k,u,c);
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
   // Base crew (cosmetic): soldiers and little wheeled bots haul crates from the ammo depot to the wall turrets and the
@@ -2188,6 +2190,25 @@ const D=(function(){
     ctx.fillStyle="#3A403A";ctx.fillRect(12.5*k,-1.9*k,2.5*k,3.8*k);ctx.restore();
     if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}
     const st=WSTAT.tank(G.c.mortar);ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-21*k,16*k,2.4*k);ctx.fillStyle="#FF3B5C";ctx.fillRect(x-8*k,y-21*k,16*k*Math.max(0,t.hp/st.hp),2.4*k);}
+  // Extraction helicopters fly the team back to the yard pad (the owner asked): fly at 200 U a second, shrinking to
+  // yard scale, then land (0.8 s), let the troopers out to run back into the command post (2.6 s), and lift off to the left.
+  const HELI={land:0.8,unload:2.6};
+  function heliPad(){const L=yard(),s=L.ys;return {L,s,px:L.flame[0]+3*s,py:L.flame[1]+16*s};} // the left edge of the pad, clear of the parked shuttle
+  function stepHelis(dt){const H=heliPad(),u=U();
+    for(let i=G.helis.length-1;i>=0;i--){const h=G.helis[i];h.t+=dt;
+      if(h.state==="fly"){if(h.d0==null){h.x0=h.x;h.y0=h.y;h.k0=h.k;h.d0=Math.max(1,Math.hypot(H.px-h.x,H.py-26*H.s-h.y));}
+        const tx=H.px,ty=H.py-26*H.s,dx=tx-h.x,dy=ty-h.y,d=Math.hypot(dx,dy),step=200*u*dt;
+        if(d<=step){h.x=tx;h.y=ty;h.state="land";h.t=0;}else{h.x+=dx/d*step;h.y+=dy/d*step;}
+        h.k=h.k0+(H.s*0.8-h.k0)*Math.min(1,1-d/h.d0);}
+      else if(h.state==="land"){const f=Math.min(1,h.t/HELI.land);h.y=H.py-26*H.s+f*20*H.s;h.k=H.s*0.8;if(f>=1){h.state="unload";h.t=0;}}
+      else if(h.state==="unload"){if(h.t>=HELI.unload){h.state="leave";h.t=0;}}
+      else{h.x-=170*u*dt;h.y-=60*u*dt;if(h.x<-60*u)G.helis.splice(i,1);}}}
+  function drawHelis(){if(!G.helis||!G.helis.length)return;const H=heliPad(),c=wcol();
+    for(const h of G.helis){const gy=h.state==="fly"?h.y+40*h.k:H.py;drawHeli(h.x,h.y,h.k,c,h.state==="leave"?null:gy);
+      if(h.state==="unload"){const door=[H.L.hq[0]+28*H.s,H.L.hq[1]+40*H.s],gate=[H.px,H.L.flame[1]+24*H.s],rt=yardPath(H.L,gate,door),z=H.s*1.4;
+        for(let i=0;i<h.n;i++){const k=(h.t-0.2-i*0.25)/2;if(k<=0||k>=1)continue; // troopers hop out and run back inside
+          let x,y,dir=1;if(k<0.15){const f=k/0.15;x=H.px+(gate[0]-H.px)*f;y=H.py+(gate[1]-H.py)*f;}else{const [ax,ay,ddx]=alongPath(rt,(k-0.15)/0.85);x=ax;y=ay;dir=ddx>=0?1:-1;}
+          drawTrooper(x,y,z,dir,Math.sin(G.time*14+i));}}}}
   // Sortie timeline in seconds: the shuttle lands (0–land), troopers run from the command post (from 0.3, each a
   // little behind the last, run s each) and board (by board), then the shuttle lifts off and leaves (board–end).
   const SORTIE={land:1.1,run:2.2,board:3.2,end:5};
@@ -2327,6 +2348,7 @@ const D=(function(){
     for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+((p.by||p.y1)-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
     for(const q of G.squads)drawSquad(q,u);
+    drawHelis();
     {const bz=G.enemies.find(e=>e.v==="boss");if(bz){const bw=Math.min(W*0.5,420*u),bx=(W-bw)/2,by=fTop()+4*u;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-2,by-2,bw+4,10*u+4);
       ctx.fillStyle="#FF2BD6";ctx.fillRect(bx,by,bw*Math.max(0,bz.hp/bz.max),10*u);ctx.fillStyle="#F4F7FA";ctx.font=`600 ${Math.max(9,Math.round(9*u))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";
       ctx.fillText(bossName().toUpperCase(),W/2,by+8.2*u);}}
