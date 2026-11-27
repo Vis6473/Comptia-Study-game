@@ -1042,8 +1042,8 @@ const hasScrap=c=>infScrap()||S.base.scrap>=c;
 function spendScrap(c){if(!infScrap())S.base.scrap-=c;}
 function spendXP(c){if(!infXP())S.base.xpSpent=(S.base.xpSpent||0)+c;}
 const NET_UPG=[ // bought with scrap
- {k:"caliber",n:"Heavy caliber",d:"+0.43 turret damage a round. Level 5 adds explosive rounds",max:5,cost:l=>40+40*l},
- {k:"autoload",n:"Autoloader",d:"+0.28 shots a second per turret. Level 5 adds armor-piercing rounds",max:5,cost:l=>40+35*l},
+ {k:"caliber",n:"Heavy caliber",d:"+0.8 turret damage a round. Level 5 adds explosive rounds",max:5,cost:l=>40+40*l},
+ {k:"autoload",n:"Autoloader",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds",max:5,cost:l=>40+35*l},
  {k:"turrets",n:"Turret mount",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets",max:3,cost:l=>90+70*l},
  {k:"plating",n:"Wall plating",d:"+40 wall integrity",max:5,cost:l=>35+30*l},
  {k:"cache",n:"Ammo cache",d:"+20 starting ammo and +5 per correct answer",max:5,cost:l=>30+30*l}
@@ -1056,6 +1056,8 @@ const NET_WPN=[ // unlocked with XP, then upgraded with scrap
 ];
 // Weapon stats by level (set by the owner): every exam's weapons share these mechanics under their own names.
 // Ranges and radii are in outpost units (U px); 3.84 units is about 1 m on the field ruler.
+// Zombie strength (health, speed, wall damage) climbs every night up to night 10, then only every 5 nights (the owner's rule).
+const effNight=n=>n<=10?n:10+Math.floor((n-10)/5);
 // Every weapon starts much weaker and slower at level 1 and reaches full strength only at its top level (3), as the
 // owner asked: WR(L,first,full) runs from the level 1 value to the fully upgraded one.
 const WR=(L,a,b)=>a+(b-a)*Math.min(1,Math.max(0,(L-1)/2)),WRI=(L,a,b)=>Math.round(WR(L,a,b));
@@ -1076,7 +1078,7 @@ const WSTAT={
   toner:L=>({dmg:WR(L,2,6.8),radius:WR(L,24,37),reload:WR(L,10,4.5),bombs:WRI(L,2,5),carpet:WRI(L,4,10),cdmg:WR(L,1,3.4),cr:WR(L,16,25)}), // aimed bombs plus a CMYK carpet of bomblets
   // Tanks (WPN entry with tank:true, Network+): roll out to the busiest lane, fire splash shells at zombies in range, and
   // drive back into the bunker to reload when the magazine is empty. Range is in U px (3.84 a metre).
-  tank:L=>({count:WRI(L,1,3),dmg:WR(L,4,12),radius:WR(L,16,26),rate:WR(L,2.4,1.1),mag:WRI(L,4,8),reload:WR(L,9,4),speed:WR(L,35,65),range:WR(L,150,230)}),
+  tank:L=>({count:2*Math.max(1,Math.min(3,L)),dmg:WR(L,4,12),radius:WR(L,16,26),rate:WR(L,2.4,1.1),mag:WRI(L,4,8),reload:WR(L,9,4),speed:WR(L,35,65),range:WR(L,230,384),hp:WR(L,30,80),rebuild:WR(L,20,10)}), // 2/4/6 tanks, 60-100 m range (set by the owner)
   // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
   wipe:L=>({dmg:WR(L,2,6.5),radius:WR(L,30,54),reload:WR(L,8,3),stun:WR(L,0.8,2.5)})
 };
@@ -1090,7 +1092,7 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
-  tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s.`,
+  tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s. Each tank has ${f(s.hp)} health: zombies that reach one attack it, and a destroyed tank is rebuilt in ${f(s.rebuild)} s.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombie${s.targets>1?"s":""} and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombie${s.targets>1?"s":""} for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
@@ -1156,7 +1158,7 @@ const D=(function(){
   // Turrets start weak (0.6 damage, 0.6 shots a second) and reach full strength (2.75 damage, 2 shots a second) at
   // upgrade level 5, as the owner asked.
   const TURRET_RATE=0.6, TURRET_DMG0=0.6, ROUND_SPEED=900;
-  function cfg(){return{turrets:2+upL("turrets")+(upL("turrets")>=3?1:0),dmg:TURRET_DMG0+0.43*upL("caliber"),explosive:upL("caliber")>=5,ap:upL("autoload")>=5,rate:TURRET_RATE+0.28*upL("autoload"),wallMax:100+40*upL("plating"),ammo0:50+20*upL("cache"),bonusAmmo:5*upL("cache"),flame:upL("flame"),tesla:upL("tesla"),mortar:upL("mortar"),rail:upL("rail")};}
+  function cfg(){return{turrets:2+upL("turrets")+(upL("turrets")>=3?1:0),dmg:TURRET_DMG0+0.8*upL("caliber"),explosive:upL("caliber")>=5,ap:upL("autoload")>=5,rate:TURRET_RATE+0.38*upL("autoload"),wallMax:100+40*upL("plating"),ammo0:50+20*upL("cache"),bonusAmmo:5*upL("cache"),flame:upL("flame"),tesla:upL("tesla"),mortar:upL("mortar"),rail:upL("rail")};}
 
   function mount(){
     if(dock)return;
@@ -1208,7 +1210,7 @@ const D=(function(){
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
     if(G.bossDue)text(W/2,fTop()+36*U(),`NIGHT ${G.night} · SUPER BOSS NIGHT`,"#FF2BD6");
-    else if(G.night>1)text(W/2,fTop()+36*U(),`NIGHT ${G.night} · THE HORDE GROWS STRONGER`,"#FF2BD6");
+    else if(G.night>1&&effNight(G.night)>effNight(G.night-1))text(W/2,fTop()+36*U(),`NIGHT ${G.night} · THE HORDE GROWS STRONGER`,"#FF2BD6");
   }
   // Variants per exam (e.t, w or b, still sets size, health bar and scrap):
   // Network+: walkers and brutes. Security+: botnet zombies, fast fragile worms, and ransomware brutes that
@@ -1251,7 +1253,7 @@ const D=(function(){
   // Each night the horde gets stronger: more health (above), 4% faster, spawning more often, and NIGHT_DMG more wall damage.
   const NIGHT_DMG=0.06;
   function mkFoe(t,v,x,y){
-    const n=G.night,b=t==="b",span=W-wallX(),f=FOE[v]||{};
+    const n=effNight(G.night),b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
     const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
     if(v==="shield")o.sh=hp*2.5;if(v==="burrow")o.under=true;if(v==="zeroday")o.imm={};if(v==="spitter")o.sc=1;
@@ -1401,7 +1403,9 @@ const D=(function(){
         e.sum-=dt;if(e.sum<=0){e.sum=12;const V=VARIANTS[S.exam]||VARIANTS.net;for(let k=0;k<3;k++)G.enemies.push(mkFoe("w",V[k%2],e.x+rnd(-20,30)*U(),Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-40,40)*U()))));text(e.x,e.y-90*U(),"SUMMON","#FF2BD6");}}
       if(e.stun>0){e.stun-=dt;continue;} // stunned zombies neither move nor damage the wall
       if(G.squads.length&&!e.under){const q=G.squads.find(q=>q.state!=="inbound"&&q.state!=="gone"&&e.x>q.x-4*U()&&e.x-q.x<12*U()&&Math.abs(e.y-q.y)<14*U()*depth(q.y));
-        if(q){q.hp-=e.dps*dt;q.hit=0.1;e.ph+=dt*9;continue;}} // a zombie touching a field team attacks it instead of walking on
+        if(q){q.hp-=e.dps*dt;q.hit=0.1;e.ph+=dt*9;continue;}}
+      if(G.tanks.length&&!e.under){const tk=G.tanks.find(t=>t.state!=="reload"&&t.state!=="dead"&&e.x>t.x-6*U()&&e.x-t.x<16*U()&&Math.abs(e.y-t.y)<12*U()*depth(t.y));
+        if(tk){tk.hp-=e.dps*dt;tk.hit=0.1;e.ph+=dt*9;continue;}} // zombies touching a tank attack it // a zombie touching a field team attacks it instead of walking on
       // burrowers surface about 18 m from the wall; spitters stop and spit; screamers and damage speed others up
       if(e.under&&e.x<=line+70*U()){e.under=false;for(let k=0;k<10;k++)G.fx.push({k:"smk",x:e.x,y:e.y,vx:rnd(-50,50)*U(),vy:rnd(-40,-10)*U(),life:rnd(0.6,1),m:1});text(e.x,e.y-34*U(),"BURROWER","#FFB020");}
       if(e.v==="spitter"&&spit(e,dt,line))continue;
@@ -1507,16 +1511,18 @@ const D=(function(){
     }
     // Mortar pit: lobs a shell at the densest pack; the blast knocks zombies back and leaves a crater.
     // Tank bunker: tanks leave through a gate in the wall, hold a firing position in the busiest lane, and go back to
-    // reload when they run dry. They can't be hurt.
+    // reload when they run dry. Zombies that reach one attack it; a destroyed tank is rebuilt in the bunker.
     if(G.c.mortar&&w3==="tank"){
       const st=WSTAT.tank(G.c.mortar),gx=line+4*u;
-      while(G.tanks.length<st.count){const i=G.tanks.length;G.tanks.push({x:gx,y:fTop()+(fBot()-fTop())*(i+1)/(st.count+1),a:0,state:"out",ammo:st.mag,cd:0.5,rt:0,idle:0,i});}
+      while(G.tanks.length<st.count){const i=G.tanks.length;G.tanks.push({x:gx,y:fTop()+(fBot()-fTop())*(i+1)/(st.count+1),a:0,state:"out",ammo:st.mag,cd:0.5,rt:0,idle:0,i,hp:st.hp,hit:0});}
       const lane=()=>{if(!vis.length)return null;let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<18*u)n++;if(n>bn){bn=n;by=e.y;}}return by;};
       const go=(t,tx,ty)=>{const dx=tx-t.x,dy=ty-t.y,d=Math.hypot(dx,dy),step=st.speed*u*dt;if(d<=step){t.x=tx;t.y=ty;return true;}t.x+=dx/d*step;t.y+=dy/d*step;t.a=Math.atan2(dy,dx);return false;};
-      for(const t of G.tanks){
+      for(const t of G.tanks){t.hit-=dt;
+        if(t.state==="dead"){t.rt-=dt;if(t.rt<=0){t.hp=st.hp;t.ammo=st.mag;t.x=gx;t.state="out";t.ty=null;}continue;}
+        if(t.hp<=0){t.state="dead";t.rt=st.rebuild;G.fx.push({k:"b",x:t.x,y:t.y,r:24*u,life:0.45,m:0.45});G.craters.push({x:t.x,y:t.y,r:7*u});if(G.craters.length>24)G.craters.shift();text(t.x,t.y-26*u,"TANK LOST","#FF2BD6");continue;}
         if(t.state==="reload"){t.rt-=dt;if(t.rt<=0){t.ammo=st.mag;t.state="out";t.ty=null;}continue;}
         if(t.state==="back"){if(go(t,gx,t.y)){t.state="reload";t.rt=st.reload;}continue;}
-        if(t.state==="out"){if(t.ty==null){const ly=lane();t.ty=ly==null?t.y:Math.min(fBot()-6*u,Math.max(fTop()+10*u,ly+(t.i-1)*10*u));t.tx=line+(48+30*t.i)*u;}
+        if(t.state==="out"){if(t.ty==null){const ly=lane();t.ty=ly==null?t.y:Math.min(fBot()-6*u,Math.max(fTop()+10*u,ly+(t.i-1)*10*u));t.tx=line+(48+24*(t.i%3)+12*Math.floor(t.i/3))*u;}
           if(go(t,t.tx,t.ty)){t.state="fight";t.idle=0;}continue;}
         // fight: shoot the nearest zombie in range ahead; with nothing to shoot for a while, move to a busier lane
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
@@ -1720,7 +1726,7 @@ const D=(function(){
     else if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fcool>0?1-clamp01(G.fcool/st.cool):clamp01((G.fuel===undefined?st.fuel:G.fuel)/st.fuel));} // fuel left, or cooldown progress
     if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
     if(G.c.mortar){const [x,y]=mortarPos(),m=wMode(WPN.find(w=>w.k==="mortar"))||"mortar";
-      const fr=m==="tank"?(G.tanks.length?G.tanks.reduce((a,t)=>a+(t.state==="reload"?1-t.rt/WSTAT.tank(G.c.mortar).reload:t.ammo/WSTAT.tank(G.c.mortar).mag),0)/G.tanks.length:1):m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
+      const fr=m==="tank"?(G.tanks.length?G.tanks.reduce((a,t)=>a+(t.state==="dead"?1-t.rt/WSTAT.tank(G.c.mortar).rebuild:t.state==="reload"?1-t.rt/WSTAT.tank(G.c.mortar).reload:t.ammo/WSTAT.tank(G.c.mortar).mag),0)/G.tanks.length:1):m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
       cdBar(x-bw/2,y+(m==="toner"?16:15)*s,bw,bh,fr);}
   }
   function drawBase(L){
@@ -1756,7 +1762,7 @@ const D=(function(){
     const m3=wMode(WPN.find(w=>w.k==="mortar"));
     if(G.c.mortar&&m3==="tank"){const [x,y]=mortarPos();ctx.fillStyle="#2B3036";ctx.beginPath();ctx.moveTo(x-22*s,y+8*s);ctx.lineTo(x-16*s,y-6*s);ctx.lineTo(x+16*s,y-6*s);ctx.lineTo(x+22*s,y+8*s);ctx.closePath();ctx.fill();
       ctx.fillStyle="#14181C";ctx.fillRect(x-9*s,y-1*s,18*s,9*s);ctx.fillStyle="rgba(255,176,32,.7)";for(let k=0;k<4;k++)ctx.fillRect(x-9*s+k*5*s,y-1*s,2.5*s,1.2*s);
-      const n=G.tanks.filter(t=>t.state==="reload").length;if(n){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+" RELOADING",x,y+18*s);}}
+      const n=G.tanks.filter(t=>t.state==="reload"||t.state==="dead").length;if(n){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+" IN BUNKER",x,y+18*s);}}
     else
     if(G.c.mortar&&m3==="toner"){const [x,y]=mortarPos();ctx.fillStyle="#1C2228";ctx.fillRect(x-20*s,y-4*s,40*s,9*s);
       ctx.fillStyle="rgba(255,214,0,.6)";for(let k=0;k<4;k++)ctx.fillRect(x-17*s+k*10*s,y,5*s,1*s);
@@ -1884,10 +1890,11 @@ const D=(function(){
   function drawTank(t,u){const d=depth(t.y),k=u*d*1.4,c=wcol(),x=t.x,y=t.y;
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
     ctx.fillStyle="#1E2226";ctx.fillRect(x-13*k,y-4*k,26*k,4.5*k);ctx.fillStyle="#3A4046";for(let i=0;i<6;i++)ctx.fillRect(x-12*k+i*4.6*k+((G.time*8)%1)*1*k,y-3*k,2*k,2.5*k);
-    ctx.fillStyle="#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
+    ctx.fillStyle=t.hit>0?"#C9D2C0":"#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
     ctx.save();ctx.translate(x,y-10*k);ctx.rotate(t.a||0);ctx.fillStyle="#2E3430";ctx.fillRect(0,-1.1*k,15*k,2.2*k);ctx.restore();
     ctx.fillStyle="#5E6B58";ctx.beginPath();ctx.ellipse(x,y-10*k,6*k,3.6*k,0,0,7);ctx.fill();
-    if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}}
+    if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}
+    const st=WSTAT.tank(G.c.mortar);ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-21*k,16*k,2.4*k);ctx.fillStyle="#FF3B5C";ctx.fillRect(x-8*k,y-21*k,16*k*Math.max(0,t.hp/st.hp),2.4*k);}
   // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
   function drawJet(j,u){const x=j.x,y=j.alt,c=wcol();
     ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,j.lane,9*u,1.6*u,0,0,7);ctx.fill();
@@ -1967,7 +1974,7 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
-    for(const t of G.tanks)if(t.state!=="reload")drawTank(t,u);
+    for(const t of G.tanks)if(t.state!=="reload"&&t.state!=="dead")drawTank(t,u);
     for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+(p.y1-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
     for(const q of G.squads)drawSquad(q,u);
@@ -2388,7 +2395,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   zeroday:["Zero-day","Shrugs off the first hit from each weapon type."],
   boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
-  const I=D.info(),c=I.cfg,n=P.night||1,ramp=1+0.04*(n-1);
+  const I=D.info(),c=I.cfg,night=P.night||1,n=effNight(night),ramp=1+0.04*(n-1);
   const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)} <button class="btn sm" data-return="${w.k}">Send back</button>`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
@@ -2403,7 +2410,7 @@ function viewArmory(){
       <span class="label">Loadout</span>
       <div class="board board-3">
         <div><small>Turrets</small><b>${c.turrets}</b><small>30 mm autocannons</small></div>
-        <div><small>Damage per round</small><b>${+c.dmg.toFixed(2)}</b><small>${esc((UPG.find(u=>u.k==="caliber")||{n:"Caliber"}).n)} adds 0.43 a level${c.explosive?". Explosive rounds":""}</small></div>
+        <div><small>Damage per round</small><b>${+c.dmg.toFixed(2)}</b><small>${esc((UPG.find(u=>u.k==="caliber")||{n:"Caliber"}).n)} adds 0.8 a level${c.explosive?". Explosive rounds":""}</small></div>
         <div><small>Fire rate</small><b>${+c.rate.toFixed(2)}/s</b><small>per turret${c.ap?". Armor-piercing rounds":""}</small></div>
         <div><small>Wall</small><b>${c.wallMax}</b><small>integrity</small></div>
         <div><small>Starting ammo</small><b>${c.ammo0}</b><small>+${S.base.stock||0} stockpiled</small></div>
@@ -2418,9 +2425,9 @@ function viewArmory(){
       ${shopHTML()}
     </section>
     <div class="panel stack">
-      <div><span class="label">Horde guide</span><h3 style="font-size:22px;margin-top:2px">What's coming on night ${n}</h3></div>
+      <div><span class="label">Horde guide</span><h3 style="font-size:22px;margin-top:2px">What's coming on night ${night}</h3></div>
       <div class="foes">${foes}</div>
-      <p class="muted small" style="margin:0">The horde gets stronger every night: walkers gain a quarter of their first-night health and brutes 5 health, they move 4% faster, spawn more often and deal ${Math.round(I.nightDmg*100)}% more wall damage. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
+      <p class="muted small" style="margin:0">The horde gets stronger every night up to night 10, then every 5 nights (15, 20, 25…): walkers gain a quarter of their first-night health and brutes 5 health, they move 4% faster, spawn more often and deal ${Math.round(I.nightDmg*100)}% more wall damage. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
     </div>
   </div>`;
   bindShop(document.getElementById("outpost"),viewArmory);
@@ -3600,7 +3607,7 @@ const SEC_GUIDE={
 };
 // Security+ armory: the same mechanics as Network+ under Security+ names, with its own upgrade levels.
 const SEC_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
-  {n:"Patch level",d:"+0.43 turret damage a round. Level 5 adds explosive rounds"},{n:"Threat feed",d:"+0.28 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Sensor node",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
+  {n:"Patch level",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Threat feed",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Sensor node",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"Hardened firewall",d:"+40 wall integrity"},{n:"Backup cache",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const SEC_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Sandbox trap",d:"Detonates hostiles that reach the wall. Uses no ammo."},{n:"EDR pulse",d:"A chained response that stuns hostiles in place.",stunOnly:true},
@@ -3846,13 +3853,13 @@ const A2_OBJ={
 };
 // A+ armories: the same mechanics under each exam's own names, with their own upgrade levels.
 const A1_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
-  {n:"Overclocked turrets",d:"+0.43 turret damage a round. Level 5 adds explosive rounds"},{n:"Liquid cooling",d:"+0.28 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Expansion slot",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
+  {n:"Overclocked turrets",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Liquid cooling",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Expansion slot",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"Surge protector",d:"+40 wall integrity"},{n:"RAM upgrade",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A1_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Overheat vent",d:"Blasts hot exhaust at hostiles that reach the wall. Uses no ammo."},{n:"ESD arc",d:"A static discharge that jumps between hostiles."},
   {n:"Toner bomb",d:"Jets fly over and drop colorful toner bombs on the densest pack.",jets:true},{n:"Laser printer beam",d:"A beam that burns through every hostile in its lane."}][i]));
 const A2_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
-  {n:"Admin rights",d:"+0.43 turret damage a round. Level 5 adds explosive rounds"},{n:"Task Scheduler",d:"+0.28 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Remote session",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
+  {n:"Admin rights",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Task Scheduler",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Remote session",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"BitLocker wall",d:"+40 wall integrity"},{n:"Restore point",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const A2_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Quarantine pit",d:"Burns hostiles that reach the wall. Uses no ammo."},{n:"Group Policy chain",d:"A policy push that jumps between hostiles."},
@@ -4449,7 +4456,7 @@ const CISSP_OBJ={
 };
 // CISSP armory: the same mechanics under CISSP names, with its own upgrade levels.
 const CISSP_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
-  {n:"Defense in depth",d:"+0.43 turret damage a round. Level 5 adds explosive rounds"},{n:"Continuous monitoring",d:"+0.28 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Security architecture",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
+  {n:"Defense in depth",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Continuous monitoring",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Security architecture",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"Hardened perimeter",d:"+40 wall integrity"},{n:"Risk reserve",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const CISSP_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
   {n:"Incident response team",d:"Teams drop into the field, dig in and hold the line until their supplies run out.",squad:true},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
