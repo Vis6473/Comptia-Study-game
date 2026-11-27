@@ -576,6 +576,13 @@ footer{color:#5F7884}
   .crt-quiz .opts{gap:6px}
   .crt-quiz .progress{margin-block:6px 10px}
 }
+
+/* Title screen on the terminal: the menu's own art and styles, on the scanlined screen inside the bezel */
+.crt.crt-menu{margin-top:16px}
+.crt-menu .crt-screen{padding:0}
+.crt-menu .tp.menu{margin-top:0;border:0;clip-path:none;background:transparent}
+.crt-menu .tp.menu h2{text-transform:none;color:var(--tp-ink);letter-spacing:.03em;text-shadow:none}
+.crt-menu .ocard b{color:inherit}
 </style>
 </head>
 <body>
@@ -2616,13 +2623,14 @@ function viewMenu(){
     return `<button class="ocard" data-ex="${id}" style="--oc:${X.color}"><span class="ocode">${X.badge||X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
       <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
       <span class="ogo">Night ${(S.ex[id]&&S.ex[id].night)||1} · Defend with ${X.name} →</span></button>`;};
-  $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
+  // the title screen sits on the terminal too (the owner asked); built here so the horde canvas measures its final size
+  $app.innerHTML=`<div class="crt crt-page crt-menu"><div class="crt-screen"><section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
     <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
       <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
     <div class="ostrip"><span>BEST NIGHT <b>${S.base.bestNight||0}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
     <div class="ocards">${EXAM_IDS.map(card).join("")}</div>
     <div class="mrow" style="justify-content:center"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
-  </div></section>`;
+  </div></section></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div></div>`;
   $app.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{setExam(b.dataset.ex);save();location.hash="home";});
   cleanup=menuHorde(document.getElementById("mz"));
 }
