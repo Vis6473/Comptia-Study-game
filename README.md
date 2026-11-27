@@ -21,7 +21,7 @@ Everything is synthesized in the browser, so there are no audio files. Sound sta
 
 ## The terminal look
 
-Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Review to Settings and High Scores, sits on the same CRT terminal as the mini-games, in the game's cyan, magenta and amber. Quick exams play on it too, in a slimmer monitor that leaves room for the outpost below. The animated title screen is on the terminal too, with its horde shuffling across the screen. Only the mock exam stays plain while it's running. The whole site is always dark, and the header and tabs have a neon cyber style. It's laid out to fit phones down to the iPhone SE, including the Surface Duo; on short screens the outpost dock is a little shorter so the answers stay above it.
+Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Review to Settings and High Scores, sits on the same CRT terminal as the mini-games, in the game's cyan, magenta and amber. On long pages, the monitor stops when its top reaches the top of the window and the information scrolls inside the screen. Quick exams play on it too, in a slimmer monitor that leaves room for the outpost below. The animated title screen is on the terminal too, with its horde shuffling across the screen. Only the mock exam stays plain while it's running. The whole site is always dark, and the header and tabs have a neon cyber style. It's laid out to fit phones down to the iPhone SE, including the Surface Duo; on short screens the outpost dock is a little shorter so the answers stay above it.
 
 ## Mini-games on the terminal
 

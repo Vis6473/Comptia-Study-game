@@ -583,6 +583,24 @@ footer{color:#5F7884}
 .crt-menu .tp.menu{margin-top:0;border:0;clip-path:none;background:transparent}
 .crt-menu .tp.menu h2{text-transform:none;color:var(--tp-ink);letter-spacing:.03em;text-shadow:none}
 .crt-menu .ocard b{color:inherit}
+
+/* Scrolling pages (the owner asked): the monitor sticks when its top reaches the top of the window, and the page's
+   information scrolls inside the screen. Scanlines and glow sit on the glass (.crt::after), not the scrolling text.
+   Quick exams keep their own fitted layout. */
+.crt.crt-page:not(.crt-quiz){--bz:clamp(14px,3vw,34px);position:sticky;top:8px;display:flex;flex-direction:column;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+.crt.crt-page:not(.crt-quiz) .crt-screen{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(25,240,255,.45) transparent}
+.crt.crt-page:not(.crt-quiz) .crt-screen::-webkit-scrollbar{width:8px}
+.crt.crt-page:not(.crt-quiz) .crt-screen::-webkit-scrollbar-thumb{background:rgba(25,240,255,.4);border-radius:4px}
+.crt.crt-page:not(.crt-quiz) .crt-base{flex:none}
+.crt.crt-page:not(.crt-quiz) .crt-screen::after,.crt.crt-page:not(.crt-quiz) .crt-screen::before{content:none}
+.crt.crt-page:not(.crt-quiz)::after{content:"";position:absolute;top:var(--bz);left:var(--bz);right:var(--bz);bottom:54px;border-radius:26px/22px;pointer-events:none;z-index:2;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 30%,rgba(25,240,255,.06),transparent 60%)}
+
+/* While a scrolling monitor is up, the page ends right under it (so the monitor's top stops at the top of the window),
+   and the footer's note moves to the end of the screen's contents. */
+body.crt-scroll{padding-bottom:8px}
+body.crt-scroll>.wrap>footer{display:none}
+.crt-foot{font-size:12px;color:var(--muted);margin:28px 0 0;text-shadow:none}
 </style>
 </head>
 <body>
@@ -2624,6 +2642,7 @@ function viewMenu(){
       <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
       <span class="ogo">Night ${(S.ex[id]&&S.ex[id].night)||1} · Defend with ${X.name} →</span></button>`;};
   // the title screen sits on the terminal too (the owner asked); built here so the horde canvas measures its final size
+  document.body.classList.add("crt-scroll");
   $app.innerHTML=`<div class="crt crt-page crt-menu"><div class="crt-screen"><section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
     <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
       <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
@@ -3001,12 +3020,21 @@ const Music=(()=>{
 function crtify(){const b=document.body.classList;if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
   const act=document.activeElement,keep=act&&$app.contains(act)?act:null,y=window.scrollY;
   const w=document.createElement("div");w.className="crt crt-page"+(b.contains("quiz-term")?" crt-quiz":"");w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
-  const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);$app.appendChild(w);if(keep)keep.focus({preventScroll:true});window.scrollTo(0,y);}
+  const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);
+  if(!b.contains("quiz-term")){b.add("crt-scroll");const ft=document.querySelector(".wrap>footer");if(ft){const n=document.createElement("p");n.className="crt-foot";n.textContent=ft.textContent;scr.appendChild(n);}}
+  $app.appendChild(w);if(keep)keep.focus({preventScroll:true});window.scrollTo(0,y);
+  if(crtScroll&&crtScroll.h===location.hash)scr.scrollTop=crtScroll.t;}
+// The screen's scroll position for the current page, so a redraw of the same page doesn't jump back to the top.
+let crtScroll=null;
+document.addEventListener("scroll",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("crt-screen"))crtScroll={h:location.hash,t:t.scrollTop};},true);
+// Wheel or trackpad over the screen scrolls the page until the monitor sticks at the top, then the screen's contents.
+document.addEventListener("wheel",e=>{if(e.deltaY<=0||e.ctrlKey)return;const scr=e.target.closest&&e.target.closest(".crt-page:not(.crt-quiz) .crt-screen");if(!scr)return;
+  const room=document.documentElement.scrollHeight-innerHeight-window.scrollY;if(room>1){e.preventDefault();window.scrollBy(0,Math.min(room,e.deltaY*(e.deltaMode===1?16:1)));}},{passive:false});
 new MutationObserver(crtify).observe($app,{childList:true});
 // The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
 const musicFor=name=>GLOBAL_VIEWS[name]?"menu":name==="mock"?null:name==="quiz"?"night":GAMES[name]?"arcade":"base";
 
-function route(){
+function route(){crtScroll=null;document.body.classList.remove("crt-scroll");
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
   document.body.classList.remove("focus-mode","quiz-term");
