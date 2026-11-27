@@ -555,6 +555,27 @@ body.has-dock .crt-quiz .panel.answered{height:calc(100vh - var(--dock-h) - env(
 .crt-page .opt:hover kbd,.crt-page .opt:focus-visible kbd{border-color:var(--ph-bg);color:var(--ph-bg)}
 .crt-page .opt.dim{opacity:.45}
 .crt-page .qtext{color:var(--ink)}
+
+/* The whole site is always dark (the owner asked), in the outpost's palette, whatever the device theme. */
+:root,:root[data-theme="light"],:root[data-theme="dark"]{
+  --bg:#05090D; --surface:#0C131A; --surface-2:#111C24; --ink:#E2F1F6; --muted:#8AA3AF; --line:#1E313D;
+  --orange:#FFB020; --green:#4DD9A0; --blue:#5BB8F0; --brown:#C08B5E;
+  --ok:#4DD9A0; --ok-bg:#12332A; --bad:#FF5C8A; --bad-bg:#3A1828; --accent:#19F0FF; --on-accent:#041016; color-scheme:dark}
+html{color-scheme:dark;background:#05090D}
+body{background:radial-gradient(ellipse 120% 60% at 50% -10%,rgba(25,240,255,.08),transparent 60%),#05090D}
+footer{color:#5F7884}
+
+/* Short phone screens (iPhone SE, Surface Duo): a slightly shorter outpost dock and a tighter quiz panel so the answers
+   stay clear of the dock (the owner asked for the site to fit these phones). */
+@media (max-height:760px){
+  :root{--dock-h:clamp(210px,40vh,460px)}
+  .crt.crt-quiz{padding:5px}
+  .crt.crt-quiz .crt-screen{padding:10px 12px}
+  .crt-quiz .qtext{font-size:16px;margin-bottom:10px}
+  .crt-quiz .opt{padding:8px 12px;font-size:15px;gap:10px}
+  .crt-quiz .opts{gap:6px}
+  .crt-quiz .progress{margin-block:6px 10px}
+}
 </style>
 </head>
 <body>
