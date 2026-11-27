@@ -1359,10 +1359,12 @@ const D=(function(){
     m.innerHTML=`<div class="pt">PAUSED</div>
       <div class="ps">${G.status==="lost"?`The outpost is overrun, and your quick exam is on hold. Finishing it keeps you on night ${G.night}.`:"The horde is frozen and your quick exam is on hold."}</div>
       <div class="pst"><span>QUESTION <b>${G.wave||1}/${G.waves||"—"}</b></span><span>HOSTILES <b>${G.enemies.length}</b></span><span>WALL <b>${Math.ceil(G.wall)}</b></span><span>AMMO <b>${G.ammo}</b></span></div>
-      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button></div>
+      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button>${ADMIN&&G.status==="live"?`<button class="tpbtn" data-p="boss">Admin: spawn boss now</button>`:""}</div>
       <div class="ps">Press P or Esc to resume. Restart begins this quick exam again from question 1 with a fresh night. Quitting ends the night. Answers so far are saved either way.</div>`;
     m.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p;
-      if(k==="resume")setPause(false);else if(k==="shop")toggleShop(true);else if(k==="restart"){setPause(false);restartFn&&restartFn();}else{setPause(false);location.hash="home";}});
+      if(k==="resume")setPause(false);else if(k==="shop")toggleShop(true);else if(k==="restart"){setPause(false);restartFn&&restartFn();}
+      else if(k==="boss"){setPause(false);if(G&&G.status==="live")spawnBoss();} // admin test tool: a super boss walks on right away
+      else{setPause(false);location.hash="home";}});
     m.querySelector('[data-p="resume"]').focus({preventScroll:true});
   }
   function onPauseKey(e){
