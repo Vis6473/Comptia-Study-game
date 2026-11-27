@@ -1920,7 +1920,9 @@ const D=(function(){
       if(G.wbot&&G.wbot.state==="dead"){ctx.fillStyle="#FF2BD6";ctx.textAlign="center";ctx.fillText("BOT "+Math.ceil(G.wbot.rt)+"s",x+17*s,y+40*s);}}
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
       ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=Math.max(1,1.2*s);ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,13*s,6*s,0,0,7);ctx.stroke();
-      ctx.fillStyle=`rgba(${c},.9)`;ctx.fillRect(x+13*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+19.4*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+13*s,y+13.2*s,8*s,1.4*s);
+      ctx.fillStyle=`rgba(${c},.9)`;ctx.beginPath();ctx.moveTo(x+17*s,y+10.5*s);ctx.lineTo(x+21*s,y+17*s);ctx.lineTo(x+13*s,y+17*s);ctx.closePath();ctx.fill(); // launch marking
+      {const [hx,hy]=heliSpot(L);ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(hx,hy,11*s,5*s,0,0,7);ctx.fill();ctx.strokeStyle="rgba(255,176,32,.75)";ctx.lineWidth=Math.max(1,0.9*s);ctx.beginPath();ctx.ellipse(hx,hy,8.5*s,3.8*s,0,0,7);ctx.stroke();
+        ctx.fillStyle="rgba(232,240,246,.85)";ctx.fillRect(hx-3*s,hy-2.2*s,1.1*s,4.4*s);ctx.fillRect(hx+1.9*s,hy-2.2*s,1.1*s,4.4*s);ctx.fillRect(hx-3*s,hy-0.5*s,6*s,1*s);} // helipad
       const n=G.squads.filter(q=>q.state!=="gone").length;ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+WSTAT.squad(G.c.flame).max,x+36*s,y+17*s);
       drawSortie(L);}
     else if(G.c.flame){const [x,y]=L.flame;ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(x+17*s,y+18*s,17*s,13*s,0,Math.PI,0);ctx.fill();
@@ -2026,11 +2028,12 @@ const D=(function(){
   const TRC={sec:"120,240,255",a2:"156,255,87",cissp:"179,136,255"}; // tracer colors; others amber
   // Field team: arrives by helicopter (flies in from the base and hovers) or drop pod (falls with a fiery trail),
   // builds a sandbag bunker, and shows its health and supplies; a helicopter returns to lift it out.
-  function drawHeli(x,y,u,c,shY){ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,shY==null?y+40*u:shY,12*u,2.2*u,0,0,7);ctx.fill();
+  function drawHeli(x,y,u,c,shY,dir){ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,shY==null?y+40*u:shY,12*u,2.2*u,0,0,7);ctx.fill();
+    ctx.save();if(dir===-1){ctx.translate(2*x,0);ctx.scale(-1,1);} // faces the way it flies
     ctx.fillStyle="#3E464E";ctx.fillRect(x-18*u,y-1.2*u,14*u,2.4*u);ctx.fillRect(x-19*u,y-4*u,2*u,6*u);
     ctx.fillStyle="#55606A";ctx.beginPath();ctx.ellipse(x,y,9*u,4.5*u,0,0,7);ctx.fill();ctx.fillStyle="#BFE9FF";ctx.beginPath();ctx.ellipse(x+5*u,y-0.5*u,3*u,2.4*u,0,0,7);ctx.fill();
     ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-3*u,y+1*u,5*u,1.4*u);
-    const r=Math.abs(Math.cos(G.time*30))*18*u;ctx.strokeStyle="rgba(200,210,220,.6)";ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x-r,y-6*u);ctx.lineTo(x+r,y-6*u);ctx.stroke();}
+    const r=Math.abs(Math.cos(G.time*30))*18*u;ctx.strokeStyle="rgba(200,210,220,.6)";ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(x-r,y-6*u);ctx.lineTo(x+r,y-6*u);ctx.stroke();ctx.restore();}
   // Orbital dropship: a long dark hull crossing the top of the field slowly, engines glowing, bay lights in the exam color.
   function drawShip(sx,u){const c=wcol(),y=fTop()+6*u;
     ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(sx,(fTop()+fBot())/2,60*u,9*u,0,0,7);ctx.fill();
@@ -2127,7 +2130,7 @@ const D=(function(){
       const box=(p,a,b,c,d)=>{const pad=6.5*s;for(let j=Math.max(0,Math.floor((p[1]+b*s-pad-L.ft)/cs));j<=Math.min(ny-1,Math.floor((p[1]+d*s+pad-L.ft)/cs));j++)
         for(let i=Math.max(0,Math.floor((p[0]+a*s-pad)/cs));i<=Math.min(nx-1,Math.floor((p[0]+c*s+pad)/cs));i++)blk[j*nx+i]=1;};
       box(L.hq,0,-4,56,40);box(L.depot,0,-4,46,24);box(L.props,0,0,62,32);box(L.barracks,0,2,72,16);box(L.gen,0,0,26,20);
-      if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-30:-22,wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-34:-12,22,12); // the tank bunker's service apron too
+      if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad")box(heliSpot(L),-12,-6,12,6);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-30:-22,wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-34:-12,22,12); // the tank bunker's service apron too
       yardPaths={key,cs,nx,ny,blk,memo:{}};}
     const Y=yardPaths,mk=A.map(Math.round).join()+">"+B.map(Math.round).join();if(Y.memo[mk])return Y.memo[mk];
     const {cs,nx,ny,blk}=Y,cell=p=>[Math.max(0,Math.min(nx-1,Math.floor(p[0]/cs))),Math.max(0,Math.min(ny-1,Math.floor((p[1]-L.ft)/cs)))];
@@ -2220,7 +2223,8 @@ const D=(function(){
   // Extraction helicopters fly the team back to the yard pad (the owner asked): fly at 200 U a second, shrinking to
   // yard scale, then land (0.8 s), let the troopers out to run back into the command post (2.6 s), and lift off to the left.
   const HELI={land:0.8,unload:2.6};
-  function heliPad(){const L=yard(),s=L.ys;return {L,s,px:L.flame[0]+3*s,py:L.flame[1]+16*s};} // the left edge of the pad, clear of the parked shuttle
+  const heliSpot=L=>[L.flame[0]+4*L.ys,L.flame[1]+42*L.ys]; // the helicopters' own pad, below the shuttle's launch pad
+  function heliPad(){const L=yard(),s=L.ys,[px,py]=heliSpot(L);return {L,s,px,py};}
   function stepHelis(dt){const H=heliPad(),u=U();
     for(let i=G.helis.length-1;i>=0;i--){const h=G.helis[i];h.t+=dt;
       if(h.state==="fly"){if(h.d0==null){h.x0=h.x;h.y0=h.y;h.k0=h.k;h.d0=Math.max(1,Math.hypot(H.px-h.x,H.py-26*H.s-h.y));}
@@ -2231,8 +2235,8 @@ const D=(function(){
       else if(h.state==="unload"){if(h.t>=HELI.unload){h.state="leave";h.t=0;}}
       else{h.x-=170*u*dt;h.y-=60*u*dt;if(h.x<-60*u)G.helis.splice(i,1);}}}
   function drawHelis(){if(!G.helis||!G.helis.length)return;const H=heliPad(),c=wcol();
-    for(const h of G.helis){const gy=h.state==="fly"?h.y+40*h.k:H.py;drawHeli(h.x,h.y,h.k,c,h.state==="leave"?null:gy);
-      if(h.state==="unload"){const door=[H.L.hq[0]+28*H.s,H.L.hq[1]+40*H.s],gate=[H.px,H.L.flame[1]+24*H.s],rt=yardPath(H.L,gate,door),z=H.s*1.4;
+    for(const h of G.helis){const gy=h.state==="fly"?h.y+40*h.k:H.py;drawHeli(h.x,h.y,h.k,c,h.state==="leave"?null:gy,-1);
+      if(h.state==="unload"){const door=[H.L.hq[0]+28*H.s,H.L.hq[1]+40*H.s],gate=[H.px,H.py],rt=yardPath(H.L,gate,door),z=H.s*1.4;
         for(let i=0;i<h.n;i++){const k=(h.t-0.2-i*0.25)/2;if(k<=0||k>=1)continue; // troopers hop out and run back inside
           let x,y,dir=1;if(k<0.15){const f=k/0.15;x=H.px+(gate[0]-H.px)*f;y=H.py+(gate[1]-H.py)*f;}else{const [ax,ay,ddx]=alongPath(rt,(k-0.15)/0.85);x=ax;y=ay;dir=ddx>=0?1:-1;}
           drawTrooper(x,y,z,dir,Math.sin(G.time*14+i));}}}}
