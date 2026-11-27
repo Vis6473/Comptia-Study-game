@@ -19,6 +19,10 @@ During quick exam nights, very quiet sound effects play for the outpost and the 
 
 Everything is synthesized in the browser, so there are no audio files. Sound starts after your first click or key press, because browsers don't allow it before that, and pauses while the tab is in the background. Settings has separate on/off switches and volume sliders for music and sound effects, and a night's pause menu has Music and Sounds buttons.
 
+## Match games on the terminal
+
+Attack Match, Hardware Match, Command Match, Tool Match and Concept Match are played on an old CRT terminal in the game's own look: a dark monitor bezel with a hazard stripe and an amber power light, and a curved, scanlined screen with glowing cyan text. Boot lines type out, answers are numbered `[1]`–`[4]` entries (keys 1–4 still work), the timer is an ASCII bar that turns amber in the last 10 seconds, and misses flash magenta.
+
 ## Network+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds drawn from 365 practice questions across all five exam domains, with an explanation after every answer. Every question is tagged with its N10-009 objective. Each quick exam is also a night of defense in the bottom half of the screen. The undead spawn without end until you answer the last question, and correct answers resupply the guns. Then a bomber makes a slow pass, dropping a bomb on each zombie it flies over, timed to land where that zombie will be. It also carpet-bombs the whole field with three rows of large cyan, magenta, yellow and black toner bombs. Once the field is clear, the next night begins. Press 1–4 to answer and Enter to continue.
