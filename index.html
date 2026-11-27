@@ -880,7 +880,7 @@ const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered","night","bestNight"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0,night:1,bestNight:0};} // night: each exam has its own night counter (the owner asked)
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:"",music:true,musicVol:0.5},ach:{},borrow:{},ex:perExam(()=>exFresh()),
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:"",music:true,musicVol:0.5,sfx:true,sfxVol:0.5},ach:{},borrow:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -1077,7 +1077,7 @@ const WSTAT={
   // 150 m. Zombies in a fence move at slow× speed and take dmg a second, and wear its durability (hp) down. Level 1 is
   // thin RJ11, 2 twisted RJ45, 3 fiber and 4 a laser fence. build is the seconds the bot takes to string one fence.
   wire:L=>{const l=Math.max(1,Math.min(4,L))-1;return {kind:["rj11","rj45","fiber","laser"][l],count:[4,6,8,8][l],slow:[0.6,0.5,0.4,0.3][l],dmg:[0.2,0.35,0.5,0.8][l],hp:[40,70,110,160][l],build:[9,7,5,4][l],speed:[26,30,34,38][l],bhp:[30,45,60,80][l],len:[0.55,0.75,0.95,1.1][l],rebuild:[25,20,15,12][l],lo:96,hi:576};},
-  drone:L=>({count:5*Math.max(1,Math.min(3,L)),dmg:WR(L,6,14),radius:WR(L,14,22),launch:WR(L,1.2,0.5),rebuild:WR(L,4,2),speed:WR(L,220,300),range:384}),
+  drone:L=>({reserve:5,count:5*Math.max(1,Math.min(3,L)),dmg:WR(L,6,14),radius:WR(L,14,22),launch:WR(L,1.2,0.5),rebuild:WR(L,4,2),speed:WR(L,220,300),range:384}),
   // Stun-only tesla (WPN entry with stunOnly:true, Security+'s EDR pulse): no damage, a much longer stun.
   pulse:L=>({targets:WRI(L,1,4),reload:WR(L,6,1.8),stun:WR(L,1,2.4)}),
   // Mines replace the third weapon where it's a mine (WPN entry with mine:true): laid in the field, they blow up
@@ -1101,7 +1101,7 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
   wire:()=>`A cable bot drives out and slowly strings ${s.count} ${s.kind==="laser"?"laser fences":{rj11:"thin RJ11",rj45:"twisted RJ45",fiber:"fiber-optic"}[s.kind]+" barbed-wire fences"} across the field between 25 and 150 m, taking ${f(s.build)} s for each. Each fence's cable covers ${Math.round(s.len*100)}% of a row. Zombies in a fence move at ${Math.round(s.slow*100)}% speed and take ${f(s.dmg)} damage a second. Each fence has ${s.hp} durability: zombies wear it down as they push through, and the bot rebuilds cut fences and patches damaged ones. Zombies go after the bot, which has ${s.bhp} health; a destroyed bot is rebuilt in its shed in ${s.rebuild} s.`,
-  drone:()=>`${s.count} suicide drones launch on their own and hover 25 m out. The nearest one dives at any zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. Each drone takes its own target, except brutes and bosses, which several can hit. A new drone is built every ${f(s.rebuild)} s.`,
+  drone:()=>`${s.count} suicide drones launch on their own and hover 25 m out. The nearest one dives at any zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. Each drone takes its own target, except brutes and bosses, which several can hit. Another ${s.reserve} stay stockpiled on the launch pad, ready to replace a drone the moment it dives. A new drone is built every ${f(s.rebuild)} s.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
   tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s. Each tank has ${f(s.hp)} health: zombies that reach one attack it, and a destroyed tank is rebuilt in ${f(s.rebuild)} s.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombie${s.targets>1?"s":""} and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
@@ -1236,7 +1236,7 @@ const D=(function(){
     boss:{hp:12,sp:0.3,dm:4}};
   const BOSS_EVERY=10,BOSS_NAME={net:"Broadcast Behemoth",sec:"Botnet Overlord",a1:"Meltdown Titan",a2:"Bluescreen Colossus",cissp:"Nation-State Leviathan"};
   const bossName=()=>BOSS_NAME[S.exam]||"Super boss";
-  function spawnBoss(){const u=U(),y=(fTop()+fBot())/2,e=mkFoe("b","boss",W+30*u,y);e.sum=8;e.lx=e.x;G.enemies.push(e);
+  function spawnBoss(){const u=U(),y=(fTop()+fBot())/2,e=mkFoe("b","boss",W+30*u,y);snd("roar",W);e.sum=8;e.lx=e.x;G.enemies.push(e);
     text(W/2,fTop()+36*u,`${bossName().toUpperCase()} INCOMING`,"#FF2BD6");if(!matchMedia("(prefers-reduced-motion: reduce)").matches)G.shake=0.5;}
   // Specials: five shared types plus one themed type per exam (weighted double). Spitters stop at SPIT_AT and spit acid
   // at the wall or a team in their lane; shield bearers block turret, team and railgun fire until the shield breaks;
@@ -1286,7 +1286,7 @@ const D=(function(){
     const q=G.squads.find(q=>(q.state==="hold"||q.state==="build")&&q.x<e.x&&e.x-q.x<reach&&Math.abs(q.y-e.y)<16*u);
     if(!q&&e.x>line+SPIT_AT*u)return false;
     e.ph+=dt*2;e.sc-=dt;if(e.sc<=0){e.sc=2.2;const dmg=5*(1+NIGHT_DMG*(G.night-1));
-      G.spits.push({x0:e.x-4*u,y0:e.y-20*u*depth(e.y),x1:q?q.x:line-2*u,y1:q?q.y-6*u:e.y-10*u,t:0,T:0.9,q,dmg});}
+      snd("spit",e.x);G.spits.push({x0:e.x-4*u,y0:e.y-20*u*depth(e.y),x1:q?q.x:line-2*u,y1:q?q.y-6*u:e.y-10*u,t:0,T:0.9,q,dmg});}
     return true;}
   function text(x,y,s,c){if(G)G.fx.push({k:"t",x,y,s,c,life:1.5});}
   // The horde spawns without end from the first question until the last one is answered.
@@ -1359,11 +1359,12 @@ const D=(function(){
     m.innerHTML=`<div class="pt">PAUSED</div>
       <div class="ps">${G.status==="lost"?`The outpost is overrun, and your quick exam is on hold. Finishing it keeps you on night ${G.night}.`:"The horde is frozen and your quick exam is on hold."}</div>
       <div class="pst"><span>QUESTION <b>${G.wave||1}/${G.waves||"—"}</b></span><span>HOSTILES <b>${G.enemies.length}</b></span><span>WALL <b>${Math.ceil(G.wall)}</b></span><span>AMMO <b>${G.ammo}</b></span></div>
-      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button><button class="tpbtn" data-p="music">Music: ${S.settings.music!==false?"on":"off"}</button>${ADMIN&&G.status==="live"?`<button class="tpbtn" data-p="boss">Admin: spawn boss now</button>`:""}</div>
+      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button><button class="tpbtn" data-p="music">Music: ${S.settings.music!==false?"on":"off"}</button><button class="tpbtn" data-p="sfx">Sounds: ${S.settings.sfx!==false?"on":"off"}</button>${ADMIN&&G.status==="live"?`<button class="tpbtn" data-p="boss">Admin: spawn boss now</button>`:""}</div>
       <div class="ps">Press P or Esc to resume. Restart begins this quick exam again from question 1 with a fresh night. Quitting ends the night. Answers so far are saved either way.</div>`;
     m.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p;
       if(k==="resume")setPause(false);else if(k==="shop")toggleShop(true);else if(k==="restart"){setPause(false);restartFn&&restartFn();}
       else if(k==="music"){S.settings.music=S.settings.music===false;save();Music.refresh();b.textContent="Music: "+(S.settings.music?"on":"off");}
+      else if(k==="sfx"){S.settings.sfx=S.settings.sfx===false;save();Music.refresh();b.textContent="Sounds: "+(S.settings.sfx?"on":"off");}
       else if(k==="boss"){setPause(false);if(G&&G.status==="live")spawnBoss();} // admin test tool: a super boss walks on right away
       else{setPause(false);location.hash="home";}});
     m.querySelector('[data-p="resume"]').focus({preventScroll:true});
@@ -1387,6 +1388,8 @@ const D=(function(){
     st.textContent=txt;st.classList.toggle("alert",alert);
   }
 
+  // Sound effects for the fight (very quiet; see Music.sfx), panned by where they happen on the field.
+  const snd=(n,x)=>Music.sfx(n,x==null?0:(x/Math.max(1,W)*2-1)*0.7);
   function update(dt){
     G.time+=dt;if(G.shake>0)G.shake=Math.max(0,G.shake-dt);
     for(let i=G.planes.length-1;i>=0;i--){const p=G.planes[i];p.t+=dt;if(!p.drop&&p.t>=3.3){p.drop=true;G.pallets=Math.min(40,G.pallets+p.cargo);}if(p.t>=6)G.planes.splice(i,1);}
@@ -1440,15 +1443,17 @@ const D=(function(){
       if(e.v==="overclock")mul*=1+1.5*(1-Math.max(0,e.hp)/e.max);if(e.run)mul*=2.2;e.boost=mul>1;
       if(wst&&!e.under)for(const f of G.wires){if(!f.up||Math.abs(e.x-f.x)>=WIRE_W*U()||Math.abs(e.y-f.y)>=f.h/2)continue;
         mul*=e.v==="boss"?(1+wst.slow)/2:wst.slow;hurt(e,wst.dmg*dt,"wire");f.hp-=e.dps*0.3*dt;f.hit=0.1;break;} // caught in the wire (bosses half as much)
-      if(e.x>line){e.x-=e.spd*mul*dt;e.ph+=dt*e.spd*mul*0.12;}else{e.x=line;e.ph+=dt*9;
+      if(e.x>line){e.x-=e.spd*mul*dt;e.ph+=dt*e.spd*mul*0.12;}else{e.x=line;e.ph+=dt*9;snd("thud",line);
       if(e.v==="keylog"){e.kl=(e.kl||0)+dt;if(e.kl>=1){e.kl=0;if(S.base.scrap>0&&!infScrap()){S.base.scrap--;if(!G.klT||G.time-G.klT>2.5){G.klT=G.time;text(wallX()+46*U(),e.y-30*U(),"SCRAP STOLEN","#9CFF57");}}}}
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
+    G.gT=(G.gT==null?3:G.gT)-dt;if(G.gT<=0&&G.enemies.length){G.gT=rnd(2.5,6);const z=G.enemies[Math.floor(Math.random()*G.enemies.length)];if(!z.under)snd("groan",z.x);} // the odd groan from the horde
+    for(const f of G.fx)if(!f.snd&&(f.k==="b"||f.k==="z"||(f.k==="shock"&&(f.r||0)>40*u))){f.snd=1;snd(f.k==="z"?"zap":f.k==="shock"||(f.r||0)>40*u?"bigboom":"boom",f.x!=null?f.x:(f.pts?f.pts[f.pts.length-1][0]:W/2));}
     const rangeX=line+WEAPON_RANGE*(W-line),vis=G.enemies.filter(e=>e.x<rangeX&&tgt(e)).sort((a,b)=>a.x-b.x);
     G.turrets.forEach((t,i)=>{
       t.cd-=dt;t.fl-=dt;const e=vis[Math.min(i%3,vis.length-1)];if(!e)return;
       const ty=e.y-12*u*depth(e.y);t.a=Math.atan2(ty-t.y,e.x-t.x);
       if(t.cd<=0&&G.ammo>0){
-        G.ammo--;t.cd=1/G.c.rate*rnd(0.97,1.03);t.fl=0.06;
+        G.ammo--;t.cd=1/G.c.rate*rnd(0.97,1.03);t.fl=0.06;snd("gun",t.x);
         const L=13*u;G.rounds.push({x:t.x+Math.cos(t.a)*L,y:t.y+Math.sin(t.a)*L,a:t.a,e,tx:e.x,ty,dmg:G.c.dmg,ex:G.c.explosive,ap:G.c.ap});
       }
     });
@@ -1492,7 +1497,7 @@ const D=(function(){
         if(q.state==="evac"){if(q.t>=3.4){q.state="gone";text(q.x,q.y-30*u,"TEAM EXTRACTED","#19F0FF");}continue;}
         const alive=Math.max(1,Math.ceil(q.n*q.hp/q.max));q.cd-=dt;
         if(q.cd<=0){let tg=null,bd=st.range*u;for(const e of G.enemies){if(e.x<q.x-14*u||e.x>W-4||!tgt(e))continue;const d=Math.hypot(e.x-q.x,e.y-q.y);if(d<bd){bd=d;tg=e;}} // shoots ahead of the team, out to its range
-          if(tg){hurt(tg,st.dmg,"squad");tg.hit=0.08;q.fl=0.08;q.shot=(q.shot||0)+1;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
+          if(tg){hurt(tg,st.dmg,"squad");tg.hit=0.08;q.fl=0.08;snd("rifle",q.x);q.shot=(q.shot||0)+1;q.supply--;const sx=q.x+rnd(-6,6)*u,sy=q.y-6*u*depth(q.y);
             G.fx.push({k:"tr",x1:sx,y1:sy,x2:tg.x,y2:tg.y-12*u*depth(tg.y),life:0.09});G.fx.push({k:"hit",x:tg.x,y:tg.y-12*u*depth(tg.y),life:0.12,m:0.12});}
           q.cd=1/(st.rate*alive);
           if(q.supply<=0){q.state="evac";q.t=0;text(q.x,q.y-30*u,"OUT OF SUPPLIES","#FFB020");}}
@@ -1504,8 +1509,8 @@ const D=(function(){
     const drW=wMode(WPN.find(w=>w.k==="flame"))==="drone";
     if(G.c.flame&&drW){
       const st=WSTAT.drone(G.c.flame),reach=line+st.range*u,Ly=yard(),dx=Ly.flame[0]+DRONE_PAD[0]*Ly.ys,dy=Ly.flame[1]+DRONE_PAD[1]*Ly.ys; // take off from the launch pad
-      if(G.dstock==null)G.dstock=st.count;
-      if(G.dstock+G.drones.length<st.count){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;G.dOut=G.time;}}else G.drb=st.rebuild; // dOut: a finished drone rolls out
+      if(G.dstock==null)G.dstock=st.count+st.reserve; // count drones fly out; reserve more stay stockpiled on the pad, ready
+      if(G.dstock+G.drones.length<st.count+st.reserve){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;G.dOut=G.time;}}else G.drb=st.rebuild; // dOut: a finished drone rolls out
       G.dcd-=dt;
       // drones launch on their own and hover in a line 25 m out; the nearest hovering drone dives at a zombie within range.
       // Each takes its own target, except brutes and bosses, which several drones can hit at once (the owner's rules).
@@ -1559,7 +1564,7 @@ const D=(function(){
       // Burns continuously while zombies are in reach, using fuel only while firing; an empty tank cools down and refuels.
       if(G.fuel===undefined)G.fuel=st.fuel;G.fburst=0;
       if(G.fcool>0){G.fcool-=dt;if(G.fcool<=0){G.fcool=0;G.fuel=st.fuel;}}
-      else if(G.enemies.some(e=>e.x<reach&&!e.under)){G.fburst=1;G.fuel-=dt;if(G.fuel<=0){G.fuel=0;G.fcool=st.cool;text(wx+46*u,fTop()+30*u,"FLAMER COOLING","#FF8A1A");}
+      else if(G.enemies.some(e=>e.x<reach&&!e.under)){G.fburst=1;snd("flame",wx);G.fuel-=dt;if(G.fuel<=0){G.fuel=0;G.fcool=st.cool;text(wx+46*u,fTop()+30*u,"FLAMER COOLING","#FF8A1A");}
         for(const e of G.enemies)if(e.x<reach&&!e.under){hurt(e,st.dmg*dt,"flame");e.burn=st.burnT;e.bd=st.burn;
           if(G.fx.length<320&&Math.random()<0.6)G.fx.push({k:"f",x:wx+6*u,y:e.y-8*u*depth(e.y)+rnd(-4,4),vx:rnd(140,220)*u,vy:rnd(-25,25),life:rnd(0.25,0.45),m:0.45});}
       }
@@ -1625,7 +1630,7 @@ const D=(function(){
             for(const e of G.enemies)if(e.t!=="b"&&!e.under&&e.hp>0&&Math.abs(e.x-(t.x+6*k))<10*k&&Math.abs(e.y-t.y)<8*k){e.hp=0;G.splats.push({x:e.x,y:e.y,r:6*u*depth(e.y),life:8});if(!G.crT||G.time-G.crT>1){G.crT=G.time;text(e.x,e.y-30*u,"CRUSHED","#9CFF57");}}}
           t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*TANK_SCALE),tg.x-t.x);t.cd-=dt;
           if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
-            G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
+            G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});snd("cannon",mx);
             G.fx.push({k:"hit",x:mx,y:my,life:0.12,m:0.12});
             if(t.ammo<=0){t.state="back";text(t.x,t.y-24*u,"RELOADING","#FFB020");}}}
         else{t.idle+=dt;if(t.idle>3){t.state="out";t.ty=null;t.idle=0;}}
@@ -1643,7 +1648,7 @@ const D=(function(){
         for(const e of seenAll){let n=0;for(const o of seenAll)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
         const spd=130*u,x0=-30*u,lead=(best.x-x0)/spd+0.45,tx=Math.max(line+10*u,best.x-best.spd*lead),gap=st.cr*u*1.5,drops=[];
         for(let k=0;k<st.carpet;k++)drops.push(tx+(k-(st.carpet-1)/2)*gap); // carpet bomb: evenly spaced across the pack
-        G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0,cn:0,aim:st.bombs});G.mcd=st.reload;
+        G.jets.push({x:x0,lane:best.y,alt:Math.max(fTop()+6*u,best.y-46*u*depth(best.y)),spd,drops,n:0,cn:0,aim:st.bombs});G.mcd=st.reload;snd("jet",x0);
       }
     }
     for(let i=G.jets.length-1;i>=0;i--){const j=G.jets[i];j.x+=j.spd*dt;
@@ -1664,7 +1669,7 @@ const D=(function(){
       if(G.mcd<=0&&vis.length){
         let best=vis[0],bn=-1;
         for(const e of vis){let n=0;for(const o of vis)if(Math.hypot(o.x-e.x,o.y-e.y)<40*u)n++;if(n>bn){bn=n;best=e;}}
-        const m=mortarPos(),ys=yard().ys;G.shells.push({x0:m[0],y0:m[1]-8*ys,x1:Math.max(line,best.x-best.spd*1),y1:best.y,t:0,T:1.0,L:G.c.mortar,wipe:w3==="wipe"});
+        const m=mortarPos(),ys=yard().ys;snd("thump",m[0]);G.shells.push({x0:m[0],y0:m[1]-8*ys,x1:Math.max(line,best.x-best.spd*1),y1:best.y,t:0,T:1.0,L:G.c.mortar,wipe:w3==="wipe"});
         for(let k=0;k<6;k++)G.fx.push({k:"smk",x:m[0]+rnd(-3,3)*ys,y:m[1]-10*ys,vx:rnd(-10,10),vy:rnd(-34,-16),life:rnd(0.7,1.1),m:1.1});
         G.mcd=st.reload;
       }
@@ -1692,7 +1697,7 @@ const D=(function(){
       G.rcharge=vis.length?Math.min(1,1-G.rcd/st.charge):0;
       if(G.rcd<=0&&G.railBy!=null&&Math.abs(G.railBy-G.railAt)<0.5){
         for(const e of G.enemies)if(Math.abs(e.y-G.railAt)<band&&e.x<rangeX){hurt(e,st.dmg,"rail");e.hit=0.15;}
-        G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});G.rcd=st.reload;G.railBy=null;G.rcharge=0;
+        G.fx.push({k:"r",y:G.railY,life:0.3,m:0.3});snd("rail",W/2);G.rcd=st.reload;G.railBy=null;G.rcharge=0;
       }
     }
     for(let i=G.spits.length-1;i>=0;i--){const p=G.spits[i];p.t+=dt;if(p.t<p.T)continue;
@@ -1709,7 +1714,7 @@ const D=(function(){
       if(e.v==="trojan"){for(let k=0;k<2;k++)born.push(mkFoe("w","phish",e.x+rnd(-8,8),Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-16,16)))));text(e.x,e.y-52*u,"PAYLOAD RELEASED","#9CFF57");}
       if(e.v==="boss"){S.base.scrap+=60;award(30);text(e.x,e.y-70*u,`${bossName().toUpperCase()} DESTROYED · +60 SCRAP · +30 XP`,"#FFB020");
         G.fx.push({k:"b",x:e.x,y:e.y,r:70*u,life:0.6,m:0.6},{k:"shock",x:e.x,y:e.y,r:120*u,life:0.7,m:0.7});if(!matchMedia("(prefers-reduced-motion: reduce)").matches)G.shake=0.6;}
-      G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
+      snd(e.v==="boss"?"bossdie":"squish",e.x);G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
       if(G.splats.length>70)G.splats.shift();
       G.splats.push({x:e.x,y:e.y,r:(e.t==="b"?10:5)*u*depth(e.y),life:8});
       if(e.t==="b")text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
@@ -1826,7 +1831,7 @@ const D=(function(){
     if(fr>=1){ctx.save();ctx.globalCompositeOperation="lighter";ctx.fillStyle=`rgba(${c},${0.25+0.2*Math.sin(G.time*6)})`;ctx.fillRect(x-1,y-1,w+2,h+2);ctx.restore();}}
   const clamp01=v=>Math.max(0,Math.min(1,v));
   function drawCooldowns(L){const s=L.ys,bw=Math.max(14,26*s),bh=Math.max(2.5,2.6*s);
-    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="drone"){const [x,y]=L.flame,st=WSTAT.drone(G.c.flame);cdBar(x+4*s,y+28*s,bw,bh,G.dstock==null?1:G.dstock/st.count);}
+    if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="drone"){const [x,y]=L.flame,st=WSTAT.drone(G.c.flame);cdBar(x+4*s,y+28*s,bw,bh,G.dstock==null?1:Math.min(1,(G.dstock+G.drones.length)/(st.count+st.reserve)));}
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="wire"){const [x,y]=L.flame,st=WSTAT.wire(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.wires.length?G.wires.reduce((a,f)=>a+(f.up?f.hp:0),0)/(st.hp*G.wires.length):0); // fence durability left
       const wb=G.wbot;cdBar(x+4*s,y+25*s+bh+3,bw,bh,!wb?1:wb.state==="dead"?1-clamp01(wb.rt/st.rebuild):clamp01(wb.hp/st.bhp));} // second bar: bot health, or its rebuild cooldown
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;cdBar(x+4*s,y+25*s,bw,bh,G.ship?clamp01(G.ship.x/W):1);}
@@ -1861,7 +1866,7 @@ const D=(function(){
       const off=(t*10)%4;for(let k=0;k<Math.floor((px-bx0)/(4*s));k++)ctx.fillRect(bx0+(k*4+off)*s,by+0.5*s,1.2*s,1.6*s);
       ctx.fillStyle="#2B3138";ctx.beginPath();ctx.ellipse(px,py+1*s,6*s,2.4*s,0,0,7);ctx.fill(); // launch pad
       ctx.strokeStyle=`rgba(${c},${0.5+0.4*Math.sin(t*4)})`;ctx.lineWidth=0.7*s;ctx.beginPath();ctx.ellipse(px,py+1*s,4.6*s,1.7*s,0,0,7);ctx.stroke();
-      const n=G.dstock==null?st.count:G.dstock,show=Math.min(n,6),slide=G.dOut!=null?Math.min(1,(t-G.dOut)/1.2):1;
+      const n=G.dstock==null?st.count+st.reserve:G.dstock,show=Math.min(n,6),slide=G.dOut!=null?Math.min(1,(t-G.dOut)/1.2):1;
       for(let k=0;k<show;k++){let qx=px-k*5.5*s,qy=k?by-0.8*s:py-0.6*s; // queued at the pad, nose to tail along the belt
         if(k===show-1&&slide<1&&n<=6){qx=bx0+(qx-bx0)*slide;} // the newest drone rides out of the door to its spot
         drawDrone(qx,qy,s*0.55,0);}
@@ -1873,7 +1878,7 @@ const D=(function(){
           const hx=px+1.6*s,hy=py-0.4*s,cx=fx+2*s,cy=py-2*s;ctx.strokeStyle="#15191D";ctx.lineWidth=Math.max(1,0.9*s);ctx.beginPath();ctx.moveTo(fx,fy-4*s);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();
           if(!full){ctx.save();ctx.setLineDash([1*s,2.2*s]);ctx.lineDashOffset=-t*12*s;ctx.strokeStyle="rgba(255,176,32,.95)";ctx.lineWidth=Math.max(0.8,0.5*s);ctx.beginPath();ctx.moveTo(fx,fy-4*s);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();ctx.restore();}
           const gw=10*s;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(px-gw/2,py-7*s,gw,1.5*s);ctx.fillStyle=full?"#9CFF57":"#FFB020";ctx.fillRect(px-gw/2,py-7*s,gw*pr,1.5*s);}}
-      const flying=G.drones?G.drones.length:0,building=n+flying<st.count;
+      const flying=G.drones?G.drones.length:0,building=n+flying<st.count+st.reserve;
       if(building){const pr=1-Math.max(0,Math.min(1,G.drb/st.rebuild)),ax=x+19*s,ay=y+14*s; // assembled just inside the door
         ctx.globalAlpha=0.35+0.65*pr;drawDrone(ax,ay,s*0.6,0);ctx.globalAlpha=1;
         for(const side of [-1,1]){const bx=ax+side*6*s,a1=-1.2+0.35*Math.sin(t*7+side),a2=a1+0.9+0.4*Math.sin(t*11+side*2);
@@ -1883,7 +1888,7 @@ const D=(function(){
           if(Math.sin(t*23+side*3)>-0.2){ctx.strokeStyle="rgba(255,210,90,.95)";ctx.lineWidth=0.6*s;ctx.beginPath(); // sparks out of the door
             for(let q=0;q<4;q++){const sa=Math.random()*Math.PI*2,sl=(1.5+Math.random()*3)*s;ctx.moveTo(tx,ty);ctx.lineTo(tx+Math.cos(sa)*sl,ty+Math.sin(sa)*sl);}ctx.stroke();
             ctx.fillStyle="rgba(255,245,200,.9)";ctx.beginPath();ctx.arc(tx,ty,0.9*s,0,7);ctx.fill();}}}
-      ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+"/"+st.count,x+19*s,y);}
+      ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+" READY",x+19*s,y);}
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="wire"){const [x,y]=L.flame,st=WSTAT.wire(G.c.flame);ctx.fillStyle="#232A30";ctx.fillRect(x,y+6*s,34*s,16*s);ctx.fillStyle="#2E3842";ctx.fillRect(x-1*s,y+4*s,36*s,3*s);
       const cols={rj11:"#C9C2B0",rj45:"#2F6FD6",fiber:"#2EC4C4",laser:"#FF3B5C"};["rj11","rj45","fiber"].forEach((q,i)=>{const cx=x+(7+i*10)*s,cy=y+16*s;ctx.fillStyle="#14181C";ctx.beginPath();ctx.arc(cx,cy,4.2*s,0,7);ctx.fill();
         ctx.strokeStyle=cols[st.kind==="laser"?"laser":q];ctx.lineWidth=Math.max(1,1.6*s);ctx.beginPath();ctx.arc(cx,cy,3*s,0,7);ctx.stroke();});
@@ -2438,6 +2443,8 @@ function viewSettings(){
         <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in answer choices. When a question tests what a term means, its choices stay abbreviated until you answer. Questions and explanations always spell abbreviations out.</span></label>
         <label class="toggle" for="musOpt"><input type="checkbox" id="musOpt"${S.settings.music!==false?" checked":""}><span><b>Music.</b> Relaxing 8-bit tunes, a different one for the menus, your exam pages, quick exam nights and the mini-games. Mock exams are always silent.</span></label>
         <label class="row" for="musVol" style="gap:10px;align-items:center"><span class="small">Music volume</span><input type="range" id="musVol" min="0" max="1" step="0.05" value="${S.settings.musicVol==null?0.5:S.settings.musicVol}" style="flex:1;max-width:260px"></label>
+        <label class="toggle" for="sfxOpt"><input type="checkbox" id="sfxOpt"${S.settings.sfx!==false?" checked":""}><span><b>Sound effects.</b> Very quiet sounds for the outpost's weapons and the zombies during quick exam nights.</span></label>
+        <label class="row" for="sfxVol" style="gap:10px;align-items:center"><span class="small">Sound effects volume</span><input type="range" id="sfxVol" min="0" max="1" step="0.05" value="${S.settings.sfxVol==null?0.5:S.settings.sfxVol}" style="flex:1;max-width:260px"></label>
       </div>
       ${ADMIN?`<div class="panel stack">
         <div><span class="label">Admin</span><h3 style="font-size:20px;margin:4px 0 0">Admin</h3></div>
@@ -2455,6 +2462,8 @@ function viewSettings(){
     document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
     document.getElementById("musOpt").onchange=e=>{S.settings.music=e.target.checked;save();Music.refresh();};
     document.getElementById("musVol").oninput=e=>{S.settings.musicVol=+e.target.value;save();Music.refresh();};
+    document.getElementById("sfxOpt").onchange=e=>{S.settings.sfx=e.target.checked;save();Music.refresh();};
+    document.getElementById("sfxVol").oninput=e=>{S.settings.sfxVol=+e.target.value;save();Music.refresh();};
     if(ADMIN){[["admXP","xp"],["admScrap","scrap"]].forEach(([el,k])=>document.getElementById(el).onchange=e=>{S.settings.admin=Object.assign({},S.settings.admin,{[k]:e.target.checked});save();renderHud();});bindAdm();}
     $app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{armed=b.dataset.r;done="";draw();});
     if(armed){document.getElementById("no").onclick=()=>{armed=null;draw();};document.getElementById("yes").onclick=()=>{done=resetPart(armed);armed=null;draw();};}
@@ -2627,50 +2636,101 @@ const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
 // tracks, a quiet hi-hat. Browsers only allow sound after a click or key press, so the music starts on the first one.
 // S.settings.music turns it on or off and S.settings.musicVol (0–1) sets the volume.
 const Music=(()=>{
-  const TRACKS={ // chords are semitones from the root note (MIDI)
-    menu:{bpm:72,root:57,minor:true,prog:[[0,3,7],[-4,0,3],[-9,-5,-2],[-2,2,5]],seed:3,density:0.45,hat:false},
-    base:{bpm:80,root:60,minor:false,prog:[[0,4,7],[-3,0,4],[-7,-3,0],[-5,-1,2]],seed:7,density:0.5,hat:false},
-    night:{bpm:88,root:55,minor:true,prog:[[0,3,7],[-2,2,5],[-4,0,3],[-5,-2,2]],seed:11,density:0.55,hat:true},
-    arcade:{bpm:96,root:62,minor:false,prog:[[0,4,7],[5,9,12],[-3,0,4],[-5,-1,2]],seed:5,density:0.6,hat:true}};
+  // Survival-horror flavored but still relaxing (the owner asked): slow minor-key loops like a safe room between
+  // fights. Each track has a music-box or soft pulse lead, a low drone pad, a broken-chord music-box arpeggio and an
+  // echo; melodies are minor pentatonic with the odd eerie half-step (accent). The night track adds a faint heartbeat.
+  const TRACKS={ // chords are semitones from the root note (MIDI); scale is the melody's notes, also from the root
+    // Main menu, High Scores, Settings: A minor, Am F Dm E (the E major chord gives the harmonic-minor chill)
+    menu:{bpm:62,root:57,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[-7,-4,0],[-5,-1,2]],seed:3,density:0.32,accent:0.08,lead:"box",heart:false,hat:false},
+    // Exam pages: D minor safe room, Dm Bb Gm A
+    base:{bpm:66,root:62,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[-7,-4,0],[-5,-1,2]],seed:21,density:0.36,accent:0.06,lead:"box",heart:false,hat:false},
+    // Quick exam nights: E minor with a heartbeat, Em C Am B
+    night:{bpm:74,root:52,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[-7,-4,0],[-5,-1,2]],seed:11,density:0.42,accent:0.1,lead:"pulse",heart:true,hat:false},
+    // Mini-games: C minor, a little livelier, Cm Ab Eb G, with a soft hi-hat
+    arcade:{bpm:86,root:60,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[3,7,10],[-5,-1,2]],seed:5,density:0.5,accent:0.05,lead:"pulse",heart:false,hat:true}};
   let ac=null,master=null,pulse=null,noise=null,cur=null,want=null,timer=null,step=0,nextT=0,fadeT=null;
   const vol=()=>(S.settings.musicVol==null?0.5:S.settings.musicVol)*0.8,on=()=>S.settings.music!==false;
+  const sfxOn=()=>S.settings.sfx!==false,sfxVol=()=>(S.settings.sfxVol==null?0.5:S.settings.sfxVol)*0.7;
+  let sbus=null;const lastSfx={};
   const hz=m=>440*Math.pow(2,(m-69)/12);
-  // a melody for a track: 8 bars of 16 steps, pentatonic, moving by small steps, landing on chord tones on the beat
+  // a melody for a track: 8 bars of 16 steps, moving by small steps, landing on the chord's root on each downbeat
   const melodies={};
   function melody(k){if(melodies[k])return melodies[k];const T=TRACKS[k];let sd=T.seed*9301+49297;const r=()=>(sd=(sd*9301+49297)%233280)/233280;
-    const sc=T.minor?[0,3,5,7,10]:[0,2,4,7,9],pool=[];for(let o=0;o<2;o++)sc.forEach(d=>pool.push(d+12*o));
+    const pool=[];for(let o=0;o<2;o++)T.scale.forEach(d=>pool.push(d+12*o));
     let idx=4;const out=[];
     for(let bar=0;bar<8;bar++){const ch=T.prog[bar%4];
       for(let st=0;st<16;st++){let n=null;
-        if(st===0){const tone=((ch[0]%12)+12)%12;let best=0,bd=99;pool.forEach((p,i)=>{const d=Math.abs(((p-tone)%12+12)%12);if(d===0&&Math.abs(i-idx)<bd){bd=Math.abs(i-idx);best=i;}});if(bd<99)idx=best;n=pool[idx];}
-        else if(st%2===0&&r()<T.density*(st%4===0?1:0.55)){idx=Math.max(0,Math.min(pool.length-1,idx+[-2,-1,-1,1,1,2][Math.floor(r()*6)]));n=pool[idx];}
-        out.push(n==null?null:{n,len:st%4===0&&r()<0.5?4:2});}}
+        if(st===0){const tone=((ch[0]%12)+12)%12;let best=0,bd=99;pool.forEach((p,i)=>{if(((p-tone)%12+12)%12===0&&Math.abs(i-idx)<bd){bd=Math.abs(i-idx);best=i;}});if(bd<99){idx=best;n=pool[idx];}}
+        else if(st%2===0&&r()<T.density*(st%4===0?1:0.5)){idx=Math.max(0,Math.min(pool.length-1,idx+[-2,-1,-1,1,1,2][Math.floor(r()*6)]));n=pool[idx]+(r()<T.accent?1:0);} // the odd eerie half-step
+        out.push(n==null?null:{n,len:st%4===0&&r()<0.6?6:3});}}
     return melodies[k]=out;}
-  function voice(type,freq,t,dur,v,wave){const o=ac.createOscillator(),g=ac.createGain();if(wave)o.setPeriodicWave(wave);else o.type=type;o.frequency.value=freq;
-    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.012);g.gain.exponentialRampToValueAtTime(Math.max(0.0001,v*0.35),t+dur*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  // one note: "box" is a music-box pluck that rings out; otherwise a short, soft note
+  function voice(type,freq,t,dur,v,wave,box){const o=ac.createOscillator(),g=ac.createGain();if(wave)o.setPeriodicWave(wave);else o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+(box?0.004:0.015));
+    if(box)g.gain.exponentialRampToValueAtTime(0.0001,t+dur);else{g.gain.exponentialRampToValueAtTime(Math.max(0.0001,v*0.35),t+dur*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);}
     o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.02);}
+  // a slow-swelling drone for a whole bar: the chord root two octaves down, with a slightly detuned twin
+  function pad(freq,t,dur,v){for(const det of [-6,6]){const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=freq;o.detune.value=det;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+dur*0.35);g.gain.linearRampToValueAtTime(v*0.8,t+dur*0.8);g.gain.linearRampToValueAtTime(0,t+dur+0.3);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.35);}}
+  // a faint heartbeat: a low thump that drops in pitch
+  function thump(t,v){const o=ac.createOscillator(),g=ac.createGain();o.type="sine";o.frequency.setValueAtTime(75,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.connect(g);g.connect(master);o.start(t);o.stop(t+0.27);}
   function hat(t){const src=ac.createBufferSource(),g=ac.createGain(),f=ac.createBiquadFilter();src.buffer=noise;f.type="highpass";f.frequency.value=7000;
-    g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);src.connect(f);f.connect(g);g.connect(master);src.start(t);src.stop(t+0.06);}
-  function play(k,st,t){const T=TRACKS[k],q=60/T.bpm/4,bar=Math.floor(st/16)%8,s16=st%16,ch=T.prog[bar%4],m=melody(k)[(st)%128];
-    if(m)voice(null,hz(T.root+12+m.n),t,q*m.len*0.95,0.11,pulse); // lead: 25% pulse wave
-    if(s16%8===0)voice("triangle",hz(T.root-12+ch[0]),t,q*7,0.22); // bass on beats 1 and 3
-    if(s16%2===0)voice("triangle",hz(T.root+ch[(s16/2)%3]),t,q*1.6,0.05); // soft arpeggio in eighths
+    g.gain.setValueAtTime(0.035,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);src.connect(f);f.connect(g);g.connect(master);src.start(t);src.stop(t+0.06);}
+  function play(k,st,t){const T=TRACKS[k],q=60/T.bpm/4,bar=Math.floor(st/16)%8,s16=st%16,ch=T.prog[bar%4],m=melody(k)[st%128];
+    if(m){if(T.lead==="box")voice("triangle",hz(T.root+24+m.n),t,q*m.len*1.6,0.12,null,true);else voice(null,hz(T.root+12+m.n),t,q*m.len*0.9,0.075,pulse);}
+    if(s16===0)pad(hz(T.root-12+ch[0]),t,q*16,0.1); // drone
+    if(s16%8===0)voice("triangle",hz(T.root-12+ch[0]),t,q*6,0.16); // soft bass on beats 1 and 3
+    if(s16%2===0){const tones=[ch[0],ch[1],ch[2],ch[1]];voice("triangle",hz(T.root+12+tones[(s16/2)%4]),t,q*3,0.035,null,true);} // music-box broken chord
+    if(T.heart&&(s16===0||s16===3))thump(t,s16?0.12:0.18); // lub-dub, once a bar
     if(T.hat&&s16%4===2)hat(t);}
   function tick(){if(!ac||!cur)return;const T=TRACKS[cur],q=60/T.bpm/4;while(nextT<ac.currentTime+0.2){play(cur,step,nextT);nextT+=q;step=(step+1)%128;}}
   function apply(){if(!ac)return;const m=on()?want:null;if(m===cur)return;
-    const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+0.5);
-    clearTimeout(fadeT);fadeT=setTimeout(()=>{cur=m;step=0;nextT=ac.currentTime+0.05;if(m){const t2=ac.currentTime;master.gain.cancelScheduledValues(t2);master.gain.setValueAtTime(0,t2);master.gain.linearRampToValueAtTime(vol(),t2+1.2);}},cur?520:0);}
-  function start(){if(ac||!on())return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
-    try{ac=new C();}catch(e){return;}
-    const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2600;lp.connect(ac.destination); // softens the square edges
+    const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+0.6);
+    clearTimeout(fadeT);fadeT=setTimeout(()=>{cur=m;step=0;nextT=ac.currentTime+0.05;if(m){const t2=ac.currentTime;master.gain.cancelScheduledValues(t2);master.gain.setValueAtTime(0,t2);master.gain.linearRampToValueAtTime(vol(),t2+1.5);}},cur?620:0);}
+  // the audio graph: master gain → low-pass (softens square edges) → speakers, plus a dark echo (delay with filtered feedback)
+  function build(){const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2200;lp.connect(ac.destination);
     master=ac.createGain();master.gain.value=0;master.connect(lp);
-    const n=32,re=new Float32Array(n),im=new Float32Array(n);for(let i=1;i<n;i++)im[i]=2*Math.sin(Math.PI*i*0.25)/(Math.PI*i);pulse=ac.createPeriodicWave(re,im); // 25% duty
-    noise=ac.createBuffer(1,ac.sampleRate*0.1,ac.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
-    timer=setInterval(tick,40);apply();}
+    const dl=ac.createDelay(2),fb=ac.createGain(),df=ac.createBiquadFilter(),wet=ac.createGain();dl.delayTime.value=0.48;fb.gain.value=0.38;df.type="lowpass";df.frequency.value=1500;wet.gain.value=0.32;
+    lp.connect(dl);dl.connect(df);df.connect(fb);fb.connect(dl);df.connect(wet);wet.connect(ac.destination);
+    const n=32,re=new Float32Array(n),im=new Float32Array(n);for(let i=1;i<n;i++)im[i]=2*Math.sin(Math.PI*i*0.125)/(Math.PI*i);pulse=ac.createPeriodicWave(re,im); // 12.5% duty: thin and hollow
+    noise=ac.createBuffer(1,ac.sampleRate*0.6,ac.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    sbus=ac.createGain();sbus.gain.value=sfxOn()?sfxVol():0;const sl=ac.createBiquadFilter();sl.type="lowpass";sl.frequency.value=5000;sbus.connect(sl);sl.connect(ac.destination);}
+  // ---- Sound effects (the owner asked for very quiet ones): synthesized, panned by field position, and rate-limited
+  // per sound so a busy night stays quiet. GAP is the shortest time between two of the same sound, in seconds.
+  const GAP={gun:0.07,rifle:0.09,cannon:0.15,thump:0.2,boom:0.1,bigboom:0.25,zap:0.18,flame:0.22,rail:0.3,jet:1,squish:0.06,thud:0.45,spit:0.3,groan:0.5,roar:1,bossdie:1};
+  function sNoise(t,dur,v,type,freq,q,out){const src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();src.buffer=noise;src.playbackRate.value=0.8+Math.random()*0.4;
+    f.type=type;f.frequency.value=freq;f.Q.value=q||0.7;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);src.connect(f);f.connect(g);g.connect(out);src.start(t,Math.random()*0.3);src.stop(t+dur+0.02);return f;}
+  function sTone(t,type,f0,f1,dur,v,out,att){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+(att||0.005));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+0.02);return o;}
+  function sfx(name,pan){if(!ac||!sbus||!sfxOn()||ac.state!=="running")return;const t=ac.currentTime;if(lastSfx[name]&&t-lastSfx[name]<(GAP[name]||0.1))return;lastSfx[name]=t;
+    const p=ac.createStereoPanner?ac.createStereoPanner():null,out=p||sbus;if(p){p.pan.value=Math.max(-1,Math.min(1,pan||0));p.connect(sbus);}const r=(a,b)=>a+Math.random()*(b-a);
+    switch(name){
+      case "gun":sNoise(t,0.05,0.09,"bandpass",r(1400,1900),1.2,out);sTone(t,"square",r(220,260),90,0.04,0.025,out);break; // autocannon tick
+      case "rifle":sNoise(t,0.035,0.05,"bandpass",r(2200,2800),1.5,out);break;
+      case "cannon":sNoise(t,0.3,0.12,"lowpass",700,0.7,out);sTone(t,"sine",110,45,0.25,0.12,out);break;
+      case "thump":sTone(t,"sine",160,60,0.18,0.08,out);sNoise(t,0.08,0.04,"lowpass",900,0.7,out);break; // mortar leaving the tube
+      case "boom":sNoise(t,0.45,0.1,"lowpass",r(380,520),0.8,out);sTone(t,"sine",80,35,0.35,0.1,out);break;
+      case "bigboom":sNoise(t,0.9,0.14,"lowpass",300,0.8,out);sTone(t,"sine",60,28,0.7,0.14,out);break;
+      case "zap":{const o=sTone(t,"sawtooth",r(1500,2000),r(250,400),0.16,0.035,out);o.detune.setValueAtTime(0,t);o.detune.linearRampToValueAtTime(r(-400,400),t+0.08);sNoise(t,0.12,0.03,"highpass",3000,0.7,out);break;}
+      case "flame":{const f=sNoise(t,0.3,0.05,"bandpass",700,0.6,out);f.frequency.exponentialRampToValueAtTime(400,t+0.3);break;}
+      case "rail":sTone(t,"square",1400,120,0.32,0.035,out);sNoise(t,0.2,0.05,"highpass",2500,0.7,out);break;
+      case "jet":{const f=sNoise(t,1.6,0.04,"bandpass",500,0.8,out);f.frequency.exponentialRampToValueAtTime(1800,t+0.8);f.frequency.exponentialRampToValueAtTime(400,t+1.6);break;}
+      case "squish":sNoise(t,0.12,0.06,"lowpass",r(600,900),2,out);sTone(t,"sine",r(150,190),55,0.12,0.05,out);break;
+      case "thud":sTone(t,"sine",r(70,90),40,0.16,0.06,out);sNoise(t,0.06,0.025,"lowpass",500,0.7,out);break; // a zombie hitting the wall
+      case "spit":sNoise(t,0.18,0.04,"bandpass",1200,3,out);break;
+      case "groan":case "roar":{const big=name==="roar",dur=big?1.8:r(0.8,1.3),base=big?r(55,65):r(85,120),f=ac.createBiquadFilter(),g=ac.createGain();f.type="lowpass";f.frequency.value=big?380:520;f.Q.value=4;
+        g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(big?0.1:0.035,t+dur*0.3);g.gain.linearRampToValueAtTime(0,t+dur);f.connect(g);g.connect(out);
+        for(const det of [-12,9]){const o=ac.createOscillator(),lfo=ac.createOscillator(),lg=ac.createGain();o.type="sawtooth";o.frequency.setValueAtTime(base,t);o.frequency.linearRampToValueAtTime(base*0.8,t+dur);o.detune.value=det;
+          lfo.frequency.value=r(4,7);lg.gain.value=base*0.04;lfo.connect(lg);lg.connect(o.frequency);o.connect(f);o.start(t);o.stop(t+dur+0.05);lfo.start(t);lfo.stop(t+dur+0.05);}break;}
+      case "bossdie":sNoise(t,1.4,0.14,"lowpass",350,0.8,out);sTone(t,"sawtooth",90,30,1.2,0.06,out);break;}}
+  function start(){if(ac||(!on()&&!sfxOn()))return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    try{ac=new C();}catch(e){return;}build();timer=setInterval(tick,40);apply();}
   ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{start();if(ac&&ac.state==="suspended"&&!document.hidden)ac.resume();},{capture:true}));
   document.addEventListener("visibilitychange",()=>{if(!ac)return;if(document.hidden)ac.suspend();else ac.resume();});
-  return {mode(m){want=m||null;apply();},
-    refresh(){if(!ac){start();return;}apply();if(ac&&cur){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(vol(),t+0.2);}},
+  return {mode(m){want=m||null;apply();},sfx,
+    refresh(){if(!ac){start();return;}if(sbus){const t=ac.currentTime;sbus.gain.cancelScheduledValues(t);sbus.gain.setValueAtTime(sbus.gain.value,t);sbus.gain.linearRampToValueAtTime(sfxOn()?sfxVol():0,t+0.1);}apply();if(ac&&cur){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(vol(),t+0.2);}},
     playing:()=>cur,ctx:()=>ac};
 })();
 // The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
