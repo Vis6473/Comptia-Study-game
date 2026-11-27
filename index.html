@@ -87,6 +87,10 @@ nav.tabs a:hover{color:var(--ink)}
 .dom .meter i{display:block;height:100%}
 .dom .w,.dom .acc{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
 .dom .w{color:var(--muted)}
+.bw-list{display:flex;flex-direction:column;gap:6px}
+.bw{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.bw small{display:block;color:var(--muted);margin-top:2px}
+.bw input{margin-top:3px}
 .dom .dstat{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin-top:-4px}
 .dom .dstat b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 .dom .dstat a{color:inherit;text-decoration:underline;text-underline-offset:2px}
@@ -875,7 +879,7 @@ const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered","night","bestNight"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0,night:1,bestNight:0};} // night: each exam has its own night counter (the owner asked)
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ach:{},ex:perExam(()=>exFresh()),
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ach:{},borrow:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -895,7 +899,7 @@ function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem
   const up=(r.base&&r.base.up)||{};
   const perEx=EXAM_IDS.some(id=>up[id]); // older saves kept Network+ upgrade levels flat in base.up
   d.base.up=perExam(id=>perEx?Object.assign({},up[id]):(id==="net"?Object.assign({},up):{}));
-  d.ach=Object.assign({},r.ach||{});
+  d.ach=Object.assign({},r.ach||{});d.borrow=Object.assign({},r.borrow||{});
   // Saves from before each exam had its own night counter: the shared night goes to the exam played last.
   if(!d.base.perNight){const last=EXAM_IDS.includes(d.exam)?d.exam:"net";d.ex[last].night=Math.max(d.ex[last].night||1,d.base.night||1);d.ex[last].bestNight=Math.max(d.ex[last].bestNight||0,d.base.bestNight||0);d.base.perNight=1;}
   // Mocks passed before achievements existed unlock their achievement (without the bonus).
@@ -1099,9 +1103,15 @@ function buySupply(k){
   save();renderHud();return true;
 }
 const upSet=()=>S.base.up[S.exam]||(S.base.up[S.exam]={});
-const upL=k=>upSet()[k]||0;
+// Borrowed weapons (a mock exam reward, designed by the owner): passing a mock lets you send one of that exam's unique
+// weapons (those with a special mode) to another exam. S.borrow[target]={from,k}: it replaces the target's weapon in
+// slot k, at the level it has in its home exam (at least 1), and is upgraded there, not here.
+const uniqueWeapons=id=>(EXAMS[id].WPN||[]).filter(w=>wMode(w));
+function borrowOf(id){const b=S.borrow&&S.borrow[id];if(!b||!EXAMS[b.from])return null;const w=EXAMS[b.from].WPN.find(x=>x.k===b.k);return w&&wMode(w)?Object.assign({},b,{w}):null;}
+const homeL=(id,k)=>Math.max(1,(S.base.up[id]||{})[k]||0);
+const upL=k=>{const bo=borrowOf(S.exam);if(bo&&bo.k===k)return homeL(bo.from,k);return upSet()[k]||0;};
 function buy(k){
-  const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);
+  const u=UPG.find(x=>x.k===k),w=WPN.find(x=>x.k===k),l=upL(k);if(w&&w.borrowed)return false; // upgraded in its home exam
   if(w&&l===0){if(xpAvail()<w.xp)return false;spendXP(w.xp);upSet()[k]=1;save();renderHud();return true;}
   const it=u||w;if(!it||l>=it.max)return false;
   const c=it.cost(l);if(!hasScrap(c))return false;
@@ -1110,7 +1120,8 @@ function buy(k){
 function pips(l,m){let s="";for(let i=0;i<m;i++)s+=`<i class="${i<l?"on":""}"></i>`;return `<span class="up-p" aria-label="Level ${l} of ${m}">${s}</span>`;}
 function shopHTML(){
   const wp=WPN.map(w=>{const l=upL(w.k);let price,dis;
-    if(l===0){price=`UNLOCK · ${w.xp} XP`;dis=xpAvail()<w.xp;}
+    if(w.borrowed){price=`BORROWED FROM ${EXAMS[w.borrowed].name.toUpperCase()} · UPGRADE IT THERE`;dis=true;}
+    else if(l===0){price=`UNLOCK · ${w.xp} XP`;dis=xpAvail()<w.xp;}
     else if(l>=w.max){price="MAXED";dis=true;}
     else{const c=w.cost(l);price=`UPGRADE · ${c} SCRAP`;dis=!hasScrap(c);}
     return `<button class="up${l?" owned":""}" data-k="${w.k}"${dis?" disabled":""}><span class="up-top"><span class="up-n">${w.n}</span>${l?pips(l,w.max):`<span class="up-lock">LOCKED</span>`}</span><span class="up-d">${w.d}</span><span class="up-c${l===0?" xp":""}">${price}</span></button>`;}).join("");
@@ -1971,6 +1982,7 @@ const D=(function(){
 function setExam(id){
   EX=EXAMS[id];S.exam=id;P=S.ex[id];
   ({DOMAINS,Q,OBJ,GUIDE,TIER,MOCK_SPLIT,PASS,UPG,WPN}=EX);
+  const bo=borrowOf(id);if(bo)WPN=WPN.map(w=>w.k===bo.k?Object.assign({},bo.w,{borrowed:bo.from}):w);
 }
 function gameCards(){
   return EX.games.map(k=>{const g=GAMES[k];return `<a class="mode" href="#${k}" style="--c:${g.c}"><span class="label">${g.lbl}</span><h3>${g.n}</h3><p>${g.d}</p><span class="best">${g.fmt(g.rec(P))}</span></a>`;}).join("");
@@ -2334,7 +2346,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
   const I=D.info(),c=I.cfg,n=P.night||1,ramp=1+0.04*(n-1);
-  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
+  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)}`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
     .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
@@ -2911,7 +2923,8 @@ function mockResults(){
       ${R?`<div class="reward"><span class="label">Exam passed · rewards</span>
         <div class="rw-chips"><span>+${R.scrap} scrap</span><span>+${R.ammo} rounds stockpiled for your next night</span></div>
         ${R.ach.length?`<div class="achs">${R.ach.map(a=>`<div class="ach on"><span class="ach-i" aria-hidden="true">★</span><div><b>Achievement unlocked: ${esc(a.n)}</b><small>${esc(a.d)}</small></div></div>`).join("")}</div>`:""}</div>`
-      :!L.pass?`<p class="small" style="margin:0;text-align:center">Pass a mock exam to earn ${MOCK_REWARD.scrap} scrap and ${MOCK_REWARD.ammo} rounds of ammo, plus achievement bonuses.</p>`:""}
+      :!L.pass?`<p class="small" style="margin:0;text-align:center">Pass a mock exam to earn ${MOCK_REWARD.scrap} scrap and ${MOCK_REWARD.ammo} rounds of ammo, plus achievement bonuses, and to carry one of this exam's unique weapons into another exam.</p>`:""}
+      ${L.pass?borrowHTML(L):""}
       <div class="mstats">
         <div><span class="label">${pbq.length?"Multiple choice":"Correct"}</span><b>${L.correct}/${L.n}</b></div>
         ${pbq.length?`<div><span class="label">Performance-based</span><b>${pr}/${po}</b></div>`:""}
@@ -2934,7 +2947,25 @@ function mockResults(){
           <div class="muted">${esc(expand(ex))}</div></div></details>`;}).join("")}</div>`:""}
   </div>`;
   document.getElementById("mnew").onclick=()=>{P.mockLast=null;P.mock=buildMock();save();enterFullscreen();runMock();};
+  bindBorrow(L);
 }
+function borrowHTML(L){
+  const ws=uniqueWeapons(EX.id),to=EXAM_IDS.filter(id=>id!==EX.id&&EXAMS[id].ready!==false);
+  if(!ws.length)return `<div class="reward"><span class="label">Weapon transfer</span><p class="small" style="margin:6px 0 0">${esc(EX.name)} has no unique weapons to carry into another exam. Pass another exam's mock to send one of its weapons here.</p></div>`;
+  if(L.borrowPick){const w=EXAMS[EX.id].WPN.find(x=>x.k===L.borrowPick.k);return `<div class="reward"><span class="label">Weapon transfer</span><p style="margin:6px 0 0"><b>${esc(w.n)}</b> is now defending ${esc(EXAMS[L.borrowPick.to].name)}, at level ${homeL(EX.id,w.k)}.</p></div>`;}
+  return `<div class="reward" id="borrow"><span class="label">Weapon transfer · pick one</span>
+    <p class="small" style="margin:6px 0 10px">Send one of ${esc(EX.name)}'s unique weapons to another exam. It replaces that exam's weapon in the same slot, at the level it has here (at least 1), and you keep upgrading it in ${esc(EX.name)}.</p>
+    <div class="bw-list">${ws.map((w,i)=>`<label class="bw"><input type="radio" name="bw" value="${w.k}"${i?"":" checked"}><span><b>${esc(w.n)}</b> · level ${homeL(EX.id,w.k)}<small>${esc(w.d)}</small></span></label>`).join("")}</div>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:10px">${to.map(id=>{const cur=borrowOf(id),own=(EXAMS[id].WPN||[]).find(x=>x.k===ws[0].k);
+      return `<button class="btn" data-to="${id}">Send to ${esc(EXAMS[id].name)}</button>`;}).join("")}</div>
+    <p class="small muted" id="bwNote" style="margin:8px 0 0"></p></div>`;
+}
+function bindBorrow(L){const box=document.getElementById("borrow");if(!box)return;
+  const note=()=>{const k=(box.querySelector('input[name="bw"]:checked')||{}).value;const n=document.getElementById("bwNote");
+    n.textContent=k?"Replaces: "+EXAM_IDS.filter(id=>id!==EX.id&&EXAMS[id].ready!==false).map(id=>{const own=borrowOf(id)&&borrowOf(id).k===k?borrowOf(id).w:(EXAMS[id].WPN||[]).find(x=>x.k===k);return `${EXAMS[id].name}: ${own?own.n:"—"}`;}).join(" · "):"";};
+  box.querySelectorAll('input[name="bw"]').forEach(r=>r.onchange=note);note();
+  box.querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const k=box.querySelector('input[name="bw"]:checked').value,to=b.dataset.to;
+    S.borrow[to]={from:EX.id,k};L.borrowPick={k,to};save();mockResults();});}
 
 /* ---------------- Port Blitz ---------------- */
 function viewPorts(){

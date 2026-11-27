@@ -60,6 +60,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Every pass** pays 150 scrap and 200 rounds of ammo, stockpiled for your next night.
 - **Achievements** pay a one-time bonus: passing each exam's mock (250 scrap, 300 ammo), passing with distinction at 85% or better (150 scrap, 150 ammo), and Clean sweep for passing every exam's mock (500 scrap, 500 ammo).
 - High Scores lists every achievement, and the score card shows how many you've unlocked. Mocks you passed before achievements existed unlock their achievement without the bonus.
+- **Weapon transfer:** passing a mock exam also lets you send one of that exam's unique weapons to another exam: Security+'s EDR pulse or Honeypot mine, A+ Core 1's Toner bomb jets, A+ Core 2's Disk wipe stun mortar, or CISSP's Incident response team or Cryptographic mine. (Network+ has no unique weapons.) It replaces the other exam's weapon in the same slot, at the level it has in its home exam (at least 1), and you keep upgrading it there. Each exam holds one borrowed weapon, and you get one pick per pass, so a later pass can swap it.
 
 ## Outpost Defense
 
