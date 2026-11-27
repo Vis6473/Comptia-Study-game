@@ -91,6 +91,7 @@ nav.tabs a:hover{color:var(--ink)}
 .bw{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
 .bw small{display:block;color:var(--muted);margin-top:2px}
 .bw input{margin-top:3px}
+.btn.sm{padding:3px 8px;font-size:11px;margin-left:6px;vertical-align:middle}
 .dom .dstat{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin-top:-4px}
 .dom .dstat b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 .dom .dstat a{color:inherit;text-decoration:underline;text-underline-offset:2px}
@@ -1050,7 +1051,7 @@ const NET_UPG=[ // bought with scrap
 const NET_WPN=[ // unlocked with XP, then upgraded with scrap
  {k:"flame",n:"Flame bunker",d:"Burns hostiles that reach the wall. Uses no ammo.",xp:150,max:3,cost:l=>90+70*(l-1)},
  {k:"tesla",n:"Tesla coil",d:"Chain lightning that jumps between hostiles.",xp:300,max:3,cost:l=>130+90*(l-1)},
- {k:"mortar",n:"Mortar pit",d:"Shells the densest pack for splash damage.",xp:450,max:3,cost:l=>150+100*(l-1)},
+ {k:"mortar",n:"Tank bunker",d:"Tanks roll out to fight, then return to the bunker to reload.",xp:450,max:3,cost:l=>150+100*(l-1),tank:true},
  {k:"rail",n:"Railgun",d:"A beam that pierces every hostile in its lane.",xp:650,max:3,cost:l=>180+120*(l-1)}
 ];
 // Weapon stats by level (set by the owner): every exam's weapons share these mechanics under their own names.
@@ -1073,12 +1074,15 @@ const WSTAT={
   mine:L=>({dmg:WR(L,5,15),radius:WR(L,34,58),reload:WR(L,30,12),count:5+5*Math.max(1,Math.min(3,L)),trigger:9}),
   // Toner jets (WPN entry with jets:true, A+ Core 1): a small jet flies over the busiest pack and drops a string of toner bombs.
   toner:L=>({dmg:WR(L,2,6.8),radius:WR(L,24,37),reload:WR(L,10,4.5),bombs:WRI(L,2,5),carpet:WRI(L,4,10),cdmg:WR(L,1,3.4),cr:WR(L,16,25)}), // aimed bombs plus a CMYK carpet of bomblets
+  // Tanks (WPN entry with tank:true, Network+): roll out to the busiest lane, fire splash shells at zombies in range, and
+  // drive back into the bunker to reload when the magazine is empty. Range is in U px (3.84 a metre).
+  tank:L=>({count:WRI(L,1,3),dmg:WR(L,4,12),radius:WR(L,16,26),rate:WR(L,2.4,1.1),mag:WRI(L,4,8),reload:WR(L,9,4),speed:WR(L,35,65),range:WR(L,150,230)}),
   // Stun mortar (WPN entry with stun:true, A+ Core 2): a lighter shell that freezes everything in the blast.
   wipe:L=>({dmg:WR(L,2,6.5),radius:WR(L,30,54),reload:WR(L,8,3),stun:WR(L,0.8,2.5)})
 };
 // Weapons only engage zombies inside this share of the field, so the horde walks into view before it's hit.
 const WEAPON_RANGE=0.6;
-const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":w.squad?"squad":null);
+const wMode=w=>w&&(w.mine?"mine":w.jets?"toner":w.stun?"wipe":w.stunOnly?"pulse":w.squad?"squad":w.tank?"tank":null);
 const fieldM=x=>Math.round(x/3.84);
 function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFixed(1),D={
   mine:()=>`Buries ${s.count} mines in the zombies' lanes. Once armed, each blows up under the first zombie to reach it, dealing ${f(s.dmg)} splash damage across ${fieldM(s.radius)} m. A new mine is then buried in another lane and takes ${f(s.reload)} s to arm.`,
@@ -1086,6 +1090,7 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
+  tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombie${s.targets>1?"s":""} and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
   tesla:()=>`Charges up, then arcs through ${s.targets} zombie${s.targets>1?"s":""} for ${f(s.dmg)} damage each and stuns them for ${s.stun} s. Recharges in ${f(s.reload)} s.`,
   mortar:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that knocks zombies back. Reloads in ${f(s.reload)} s.`,
@@ -1198,7 +1203,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,tanks:[],tshells:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1501,6 +1506,30 @@ const D=(function(){
       }
     }
     // Mortar pit: lobs a shell at the densest pack; the blast knocks zombies back and leaves a crater.
+    // Tank bunker: tanks leave through a gate in the wall, hold a firing position in the busiest lane, and go back to
+    // reload when they run dry. They can't be hurt.
+    if(G.c.mortar&&w3==="tank"){
+      const st=WSTAT.tank(G.c.mortar),gx=line+4*u;
+      while(G.tanks.length<st.count){const i=G.tanks.length;G.tanks.push({x:gx,y:fTop()+(fBot()-fTop())*(i+1)/(st.count+1),a:0,state:"out",ammo:st.mag,cd:0.5,rt:0,idle:0,i});}
+      const lane=()=>{if(!vis.length)return null;let by=vis[0].y,bn=0;for(const e of vis){let n=0;for(const o of vis)if(Math.abs(o.y-e.y)<18*u)n++;if(n>bn){bn=n;by=e.y;}}return by;};
+      const go=(t,tx,ty)=>{const dx=tx-t.x,dy=ty-t.y,d=Math.hypot(dx,dy),step=st.speed*u*dt;if(d<=step){t.x=tx;t.y=ty;return true;}t.x+=dx/d*step;t.y+=dy/d*step;t.a=Math.atan2(dy,dx);return false;};
+      for(const t of G.tanks){
+        if(t.state==="reload"){t.rt-=dt;if(t.rt<=0){t.ammo=st.mag;t.state="out";t.ty=null;}continue;}
+        if(t.state==="back"){if(go(t,gx,t.y)){t.state="reload";t.rt=st.reload;}continue;}
+        if(t.state==="out"){if(t.ty==null){const ly=lane();t.ty=ly==null?t.y:Math.min(fBot()-6*u,Math.max(fTop()+10*u,ly+(t.i-1)*10*u));t.tx=line+(48+30*t.i)*u;}
+          if(go(t,t.tx,t.ty)){t.state="fight";t.idle=0;}continue;}
+        // fight: shoot the nearest zombie in range ahead; with nothing to shoot for a while, move to a busier lane
+        let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
+        if(tg){t.idle=0;t.a=Math.atan2(tg.y-t.y,tg.x-t.x);t.cd-=dt;
+          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y);G.tshells.push({x0:t.x+Math.cos(t.a)*12*u,y0:t.y-6*u+Math.sin(t.a)*12*u,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
+            G.fx.push({k:"hit",x:t.x+Math.cos(t.a)*14*u,y:t.y-6*u+Math.sin(t.a)*14*u,life:0.12,m:0.12});
+            if(t.ammo<=0){t.state="back";text(t.x,t.y-24*u,"RELOADING","#FFB020");}}}
+        else{t.idle+=dt;if(t.idle>3){t.state="out";t.ty=null;t.idle=0;}}
+      }
+    }
+    for(let i=G.tshells.length-1;i>=0;i--){const p=G.tshells[i];p.t+=dt;if(p.e&&p.e.hp>0){p.x1=p.e.x;p.y1=p.e.y;}
+      if(p.t>=p.T){const st=WSTAT.tank(p.L),r=st.radius*u;for(const e of G.enemies){const d=Math.hypot(e.x-p.x1,e.y-p.y1);if(d<r){hurt(e,st.dmg*(d<r*0.5?1:0.6),"tank");e.hit=0.12;}}
+        G.fx.push({k:"b",x:p.x1,y:p.y1,r,life:0.3,m:0.3});G.tshells.splice(i,1);}}
     // Toner jets: a jet crosses the field along the busiest pack's lane and drops toner bombs as it passes over.
     if(G.c.mortar&&w3==="toner"){
       const st=WSTAT.toner(G.c.mortar);G.mcd-=dt;
@@ -1691,7 +1720,7 @@ const D=(function(){
     else if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fcool>0?1-clamp01(G.fcool/st.cool):clamp01((G.fuel===undefined?st.fuel:G.fuel)/st.fuel));} // fuel left, or cooldown progress
     if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
     if(G.c.mortar){const [x,y]=mortarPos(),m=wMode(WPN.find(w=>w.k==="mortar"))||"mortar";
-      const fr=m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
+      const fr=m==="tank"?(G.tanks.length?G.tanks.reduce((a,t)=>a+(t.state==="reload"?1-t.rt/WSTAT.tank(G.c.mortar).reload:t.ammo/WSTAT.tank(G.c.mortar).mag),0)/G.tanks.length:1):m==="mine"?(G.mines.length?G.mines.filter(q=>q.rearm<=0).length/G.mines.length:0):1-clamp01(G.mcd/WSTAT[m](G.c.mortar).reload);
       cdBar(x-bw/2,y+(m==="toner"?16:15)*s,bw,bh,fr);}
   }
   function drawBase(L){
@@ -1725,6 +1754,10 @@ const D=(function(){
       ctx.fillStyle=`rgba(${c},${0.2+0.6*ch})`;ctx.beginPath();ctx.arc(x+7*s,y,(4+3*ch)*s,0,7);ctx.fill();ctx.fillStyle="#E8FDFF";ctx.beginPath();ctx.arc(x+7*s,y,2*s,0,7);ctx.fill();}
     // mortar pit: a ring of sandbags around a tube aimed at the field
     const m3=wMode(WPN.find(w=>w.k==="mortar"));
+    if(G.c.mortar&&m3==="tank"){const [x,y]=mortarPos();ctx.fillStyle="#2B3036";ctx.beginPath();ctx.moveTo(x-22*s,y+8*s);ctx.lineTo(x-16*s,y-6*s);ctx.lineTo(x+16*s,y-6*s);ctx.lineTo(x+22*s,y+8*s);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#14181C";ctx.fillRect(x-9*s,y-1*s,18*s,9*s);ctx.fillStyle="rgba(255,176,32,.7)";for(let k=0;k<4;k++)ctx.fillRect(x-9*s+k*5*s,y-1*s,2.5*s,1.2*s);
+      const n=G.tanks.filter(t=>t.state==="reload").length;if(n){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+" RELOADING",x,y+18*s);}}
+    else
     if(G.c.mortar&&m3==="toner"){const [x,y]=mortarPos();ctx.fillStyle="#1C2228";ctx.fillRect(x-20*s,y-4*s,40*s,9*s);
       ctx.fillStyle="rgba(255,214,0,.6)";for(let k=0;k<4;k++)ctx.fillRect(x-17*s+k*10*s,y,5*s,1*s);
       const ready=1-Math.max(0,Math.min(1,G.mcd/WSTAT.toner(G.c.mortar).reload));if(ready>0.85)drawJet({x:x+2*s,alt:y-3*s,lane:y+3*s},s*0.8);
@@ -1847,6 +1880,14 @@ const D=(function(){
     if(q.state==="evac"){const p=Math.min(1,q.t/1.8),hx=q.t<1.8?-30*u+(x+30*u)*(1-Math.pow(1-p,2)):q.t<2.4?x:x+(q.t-2.4)*260*u;drawHeli(hx,y-44*k,u,c);
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
+  // Tank: tracked hull with a turret and barrel that turn toward its target, in the exam color.
+  function drawTank(t,u){const d=depth(t.y),k=u*d*1.4,c=wcol(),x=t.x,y=t.y;
+    ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
+    ctx.fillStyle="#1E2226";ctx.fillRect(x-13*k,y-4*k,26*k,4.5*k);ctx.fillStyle="#3A4046";for(let i=0;i<6;i++)ctx.fillRect(x-12*k+i*4.6*k+((G.time*8)%1)*1*k,y-3*k,2*k,2.5*k);
+    ctx.fillStyle="#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
+    ctx.save();ctx.translate(x,y-10*k);ctx.rotate(t.a||0);ctx.fillStyle="#2E3430";ctx.fillRect(0,-1.1*k,15*k,2.2*k);ctx.restore();
+    ctx.fillStyle="#5E6B58";ctx.beginPath();ctx.ellipse(x,y-10*k,6*k,3.6*k,0,0,7);ctx.fill();
+    if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}}
   // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
   function drawJet(j,u){const x=j.x,y=j.alt,c=wcol();
     ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,j.lane,9*u,1.6*u,0,0,7);ctx.fill();
@@ -1926,6 +1967,8 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
+    for(const t of G.tanks)if(t.state!=="reload")drawTank(t,u);
+    for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+(p.y1-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
     for(const q of G.squads)drawSquad(q,u);
     {const bz=G.enemies.find(e=>e.v==="boss");if(bz){const bw=Math.min(W*0.5,420*u),bx=(W-bw)/2,by=fTop()+4*u;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-2,by-2,bw+4,10*u+4);
@@ -2346,7 +2389,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
   const I=D.info(),c=I.cfg,n=P.night||1,ramp=1+0.04*(n-1);
-  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)}`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
+  const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)} <button class="btn sm" data-return="${w.k}">Send back</button>`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
     .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
@@ -2381,6 +2424,8 @@ function viewArmory(){
     </div>
   </div>`;
   bindShop(document.getElementById("outpost"),viewArmory);
+  // send a borrowed weapon back to its home exam; this exam gets its own weapon back in that slot
+  document.querySelectorAll("[data-return]").forEach(b=>b.onclick=()=>{delete S.borrow[S.exam];setExam(S.exam);save();viewArmory();});
 }
 
 /* ---------------- Quiz ---------------- */
