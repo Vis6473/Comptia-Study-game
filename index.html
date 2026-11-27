@@ -1205,7 +1205,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,tanks:[],tshells:[]};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,tanks:[],tshells:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1242,8 +1242,8 @@ const D=(function(){
     if(e.under)return false;
     if(e.v==="zeroday"){const t=e.imm[src];if(t===undefined){e.imm[src]=G.time+0.4;if(!e.immT||G.time-e.immT>0.8){e.immT=G.time;text(e.x,e.y-34*U(),"IMMUNE","#D9C7FF");}return false;}if(G.time<t)return false;}
     if(e.sh>0&&(src==="gun"||src==="squad"||src==="rail")){e.sh-=d;
-      if(e.sh<=0){if(!e.sh2){e.sh2=true;e.shMax*=0.5;e.sh=e.shMax;text(e.x,e.y-34*U(),"BACKUP SHIELD","#FFB020");} // second chance (the owner's rule)
-        else text(e.x,e.y-34*U(),"SHIELD BROKEN","#FFB020");}
+      if(e.sh<=0){e.sh=0;e.run=true;G.debris.push({x:e.x-8*U()*depth(e.y),y:e.y,life:6}); // drops the broken shield and starts running (the owner's rule)
+        text(e.x,e.y-34*U(),"SHIELD DROPPED","#FFB020");}
       return true;}
     e.hp-=d;if(e.v==="soceng")e.rev=true;return true;
   }
@@ -1413,7 +1413,7 @@ const D=(function(){
       if(e.under&&e.x<=line+70*U()){e.under=false;for(let k=0;k<10;k++)G.fx.push({k:"smk",x:e.x,y:e.y,vx:rnd(-50,50)*U(),vy:rnd(-40,-10)*U(),life:rnd(0.6,1),m:1});text(e.x,e.y-34*U(),"BURROWER","#FFB020");}
       if(e.v==="spitter"&&spit(e,dt,line))continue;
       let mul=1;if(scr.length&&e.v!=="scream"&&scr.some(z=>Math.abs(z.x-e.x)<60*U()&&Math.abs(z.y-e.y)<40*U()))mul=1.3;
-      if(e.v==="overclock")mul*=1+1.5*(1-Math.max(0,e.hp)/e.max);e.boost=mul>1;
+      if(e.v==="overclock")mul*=1+1.5*(1-Math.max(0,e.hp)/e.max);if(e.run)mul*=1.8;e.boost=mul>1;
       if(e.x>line){e.x-=e.spd*mul*dt;e.ph+=dt*e.spd*mul*0.12;}else{e.x=line;e.ph+=dt*9;
       if(e.v==="keylog"){e.kl=(e.kl||0)+dt;if(e.kl>=1){e.kl=0;if(S.base.scrap>0&&!infScrap()){S.base.scrap--;if(!G.klT||G.time-G.klT>2.5){G.klT=G.time;text(wallX()+46*U(),e.y-30*U(),"SCRAP STOLEN","#9CFF57");}}}}
       if(e.v==="ransom"){e.lk+=dt;if(e.lk>=1){e.lk=0;if(G.ammo>0){G.ammo=Math.max(0,G.ammo-3);if(!G.lkT||G.time-G.lkT>2.5){G.lkT=G.time;text(wallX()+46*U(),e.y-30*U(),"AMMO ENCRYPTED","#FF2BD6");}}}}G.wall-=e.dps*dt;}}
@@ -1839,7 +1839,7 @@ const D=(function(){
     if(V==="shield"){ctx.fillStyle="#141A22";ctx.fillRect(x-3.8*s,y-17.5*s,7.6*s,7.5*s);ctx.fillStyle="#2A3442";for(const px of [-2.6,-0.2,2.2])ctx.fillRect(x+px*s,y-13.5*s,1.8*s,2.2*s); // tactical vest with pouches
       ctx.fillStyle="#10151C";ctx.beginPath();ctx.arc(x-1.5*s,y-22.6*s,3.6*s,Math.PI*1.05,Math.PI*2.05);ctx.fill();ctx.fillRect(x-5*s,y-23.4*s,7*s,1.2*s); // helmet
       ctx.fillStyle="rgba(120,170,220,.75)";ctx.fillRect(x-5.2*s,y-22.4*s,3.6*s,1.4*s);} // visor
-    if(e.sh>0){const f=Math.max(0,e.sh/(e.shMax||e.max*2.5)),sx=x-11.5*s;ctx.fillStyle=e.hit>0?"#C8D4DE":(e.sh2?"#3B4652":"#2A3440");ctx.beginPath();ctx.moveTo(sx,y-25*s);ctx.lineTo(sx+3.4*s,y-24*s);ctx.lineTo(sx+3.4*s,y-3*s);ctx.lineTo(sx,y-4*s);ctx.closePath();ctx.fill(); // riot shield
+    if(e.sh>0){const f=Math.max(0,e.sh/(e.shMax||e.max*2.5)),sx=x-11.5*s;ctx.fillStyle=e.hit>0?"#C8D4DE":"#2A3440";ctx.beginPath();ctx.moveTo(sx,y-25*s);ctx.lineTo(sx+3.4*s,y-24*s);ctx.lineTo(sx+3.4*s,y-3*s);ctx.lineTo(sx,y-4*s);ctx.closePath();ctx.fill(); // riot shield
       ctx.strokeStyle="rgba(200,220,240,.55)";ctx.lineWidth=0.5*s;ctx.stroke();ctx.fillStyle="rgba(150,200,240,.55)";ctx.fillRect(sx+0.7*s,y-22*s,2*s,3*s); // viewport
       ctx.fillStyle="rgba(240,244,248,.8)";ctx.fillRect(sx+0.4*s,y-15*s,2.6*s,1*s); // white band
       if(f<0.5){ctx.strokeStyle="#C8D4DE";ctx.lineWidth=0.5*s;ctx.beginPath();ctx.moveTo(sx+0.5*s,y-18*s);ctx.lineTo(sx+2.5*s,y-14*s);ctx.lineTo(sx+0.8*s,y-10*s);ctx.stroke();}}
@@ -1950,6 +1950,8 @@ const D=(function(){
     for(const s of G.splats){ctx.fillStyle=`rgba(110,220,70,${0.28*Math.min(1,s.life/3)})`;ctx.beginPath();ctx.ellipse(s.x,s.y,s.r*1.6,s.r*0.6,0,0,7);ctx.fill();}
     {const rx=wallX()+8*u+WEAPON_RANGE*(W-wallX()-8*u);ctx.save();ctx.setLineDash([4*u,6*u]);ctx.strokeStyle="rgba(255,176,32,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(rx,fTop());ctx.lineTo(rx,fBot());ctx.stroke();ctx.restore();
       ctx.fillStyle="rgba(255,176,32,.4)";ctx.font=`600 ${Math.round(9*Math.min(1.3,u))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText("MAX RANGE",rx+4*u,fTop()+12*u);}
+    for(const d of G.debris){d.life-=1/60;const a=Math.max(0,Math.min(1,d.life/2)),k=u*depth(d.y);ctx.globalAlpha=a;ctx.fillStyle="#2A3440";ctx.save();ctx.translate(d.x,d.y);ctx.rotate(-0.35);ctx.fillRect(-9*k,-1.6*k,18*k,3.2*k);ctx.fillStyle="rgba(150,200,240,.55)";ctx.fillRect(-6*k,-1*k,3*k,2*k);ctx.restore();ctx.globalAlpha=1;}
+    G.debris=G.debris.filter(d=>d.life>0);
     for(const c of G.craters){ctx.fillStyle=c.c?`rgba(${c.c},.28)`:"rgba(12,9,6,.55)";ctx.beginPath();ctx.ellipse(c.x,c.y,c.r*1.6,c.r*0.6,0,0,7);ctx.fill();}
     if(G.mines.length&&G.c.mortar){const st=WSTAT.mine(G.c.mortar),mc=wcol();
       for(const m of G.mines){const d=depth(m.y);
@@ -2410,7 +2412,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   phish:["Phisher","The standard Core 2 zombie."],rootkit:["Rootkit","Flickers half out of sight, with 25% more health."],trojan:["Trojan brute","Releases two phishers when it's destroyed."],
   insider:["Insider","The standard CISSP zombie."],spy:["Spy","Fast and fragile."],apt:["APT brute","Heals 3% of its health every second unless you finish it off."],
   spitter:["Spitter","Stops about 40 m out (or when a team in its lane is in reach) and spits acid at the wall or the team."],
-  shield:["Shield bearer","A riot shield soaks up turret rounds, team rifles and railgun hits until it breaks. Flame, tesla, mines and bombs go around it."],
+  shield:["Shield bearer","In SWAT gear behind a riot shield that soaks up turret rounds, team rifles and railgun hits. When it breaks, they drop it and run at 1.8x speed. Flame, tesla, mines, bombs, explosive and armor-piercing rounds go around it."],
   burrow:["Burrower","Tunnels underground where nothing can hit it, then surfaces about 18 m from the wall."],
   scream:["Screamer","Zombies near it move 30% faster while it's alive."],
   bloat:["Bloater","Slow and swollen. Bursts when killed, hurting nearby teams, and the wall if it's close."],
