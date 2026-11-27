@@ -273,6 +273,9 @@ details.obj summary .chips{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
 .zc .zr{font-size:12px;color:var(--muted)}
 .zc .zr .here{color:var(--accent,#0a7);font-weight:600}
 .zc p{margin:2px 0 0;font-size:14px}
+.zc .zseen{font-size:12px;color:var(--muted);margin-top:2px}
+.zc .zseen.on{color:var(--ok);font-weight:600}
+.zc.unseen canvas{opacity:.85}
 .sharecard{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
 .sharecard img{width:100%;height:auto;display:block;border-radius:var(--r);border:1px solid var(--line);background:#07090d;aspect-ratio:1200/630}
 .sharecard .btn[hidden]{display:none}
@@ -887,7 +890,7 @@ const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered","night","bestNight"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0,night:1,bestNight:0};} // night: each exam has its own night counter (the owner asked)
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:"",music:true,musicVol:0.5,sfx:true,sfxVol:0.5},ach:{},borrow:{},ex:perExam(()=>exFresh()),
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:"",music:true,musicVol:0.5,sfx:true,sfxVol:0.5},ach:{},borrow:{},seen:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -907,7 +910,7 @@ function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem
   const up=(r.base&&r.base.up)||{};
   const perEx=EXAM_IDS.some(id=>up[id]); // older saves kept Network+ upgrade levels flat in base.up
   d.base.up=perExam(id=>perEx?Object.assign({},up[id]):(id==="net"?Object.assign({},up):{}));
-  d.ach=Object.assign({},r.ach||{});d.borrow=Object.assign({},r.borrow||{});
+  d.ach=Object.assign({},r.ach||{});d.borrow=Object.assign({},r.borrow||{});d.seen=Object.assign({},r.seen||{});
   // Saves from before each exam had its own night counter: the shared night goes to the exam played last.
   if(!d.base.perNight){const last=EXAM_IDS.includes(d.exam)?d.exam:"net";d.ex[last].night=Math.max(d.ex[last].night||1,d.base.night||1);d.ex[last].bestNight=Math.max(d.ex[last].bestNight||0,d.base.bestNight||0);d.base.perNight=1;}
   // Mocks passed before achievements existed unlock their achievement (without the bonus).
@@ -1275,7 +1278,7 @@ const D=(function(){
   const ZOMBIE_SPEED=0.8; // overall pace: at 1, walkers cross the field in 30–40 s and brutes in 60 s on night 1
   // Each night the horde gets stronger: more health (above), 4% faster, spawning more often, and NIGHT_DMG more wall damage.
   const NIGHT_DMG=0.06;
-  function mkFoe(t,v,x,y){
+  function mkFoe(t,v,x,y){if(S.seen&&!S.seen[v])S.seen[v]={d:new Date().toISOString().slice(0,10),ex:S.exam}; // encyclopedia: first encounter
     const n=effNight(G.night),b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
     const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(v==="boss"?1:Math.min(1.4,1+0.04*(n-1)))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
@@ -2983,6 +2986,7 @@ function viewArmory(){
 // Zombie encyclopedia (the owner asked): every zombie in the game, across all exams, with an animated portrait drawn by
 // the outpost's own code, what it does, where and when it shows up, and its night 1 stats.
 let codexF="all";
+const fmtSeen=d=>{try{return new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});}catch(e){return d;}};
 function codexEntries(){const C=D.codex(),ids=EXAM_IDS.filter(id=>EXAMS[id].ready!==false),E=new Map();
   const add=(v,t,role,when,id)=>{let o=E.get(v);if(!o){o={v,t,role,when,exams:[]};E.set(v,o);}if(id&&!o.exams.includes(id))o.exams.push(id);};
   ids.forEach(id=>{const V=C.VARIANTS[id]||C.VARIANTS.net;add(V[0],"w","Standard","From night 1. Most of the horde.",id);if(V[1]!==V[0])add(V[1],"w","Variant","From night 1. About 30% of the horde.",id);
@@ -2996,13 +3000,15 @@ function codexMount(){const box=document.getElementById("codex");if(!box)return;
   const cards=show.map(o=>{const f=C.FOE[o.v]||{},b=o.t==="b",hp=(b?14:2)*(f.hp||1),secs=(b?60:35)/(C.speed*(f.sp||1)),dps=(b?C.DPS.brute:(f.fast?C.DPS.fast:C.DPS.walker))*(f.dm||1),inf=FOE_INFO[o.v]||[o.v,""];
     const where=o.exams.length===EXAM_IDS.filter(id=>EXAMS[id].ready!==false).length?"Every exam":o.exams.map(id=>EXAMS[id].name).join(", ");
     const names=o.v==="boss"?`<p class="small muted">${o.exams.map(id=>`${esc(C.BOSS_NAME[id]||"Super boss")} (${esc(EXAMS[id].name)})`).join(" · ")}</p>`:"";
-    return `<div class="zc"><canvas width="176" height="176" data-z="${o.v}" data-t="${o.t}" aria-hidden="true"></canvas><div class="zb">
+    const met=S.seen&&S.seen[o.v],metTxt=met?`Encountered${met.d?" "+fmtSeen(met.d):""}${met.ex&&EXAMS[met.ex]?" in "+EXAMS[met.ex].name:""}`:"Not yet encountered";
+    return `<div class="zc${met?"":" unseen"}"><canvas width="176" height="176" data-z="${o.v}" data-t="${o.t}"${met?"":` data-unseen="1"`} aria-hidden="true"></canvas><div class="zb">
       <b>${esc(inf[0])}</b><span class="zr">${esc(o.role)} · ${esc(where)}${o.exams.includes(S.exam)&&o.exams.length>1?` · <span class="here">in ${esc(EX.name)}</span>`:""}</span>
       <p>${esc(inf[1])}</p>${names}
       <div class="foe-s"><span>Health <b>${+hp.toFixed(1)}</b></span><span>To the wall <b>~${Math.round(secs)} s</b></span><span>Wall damage <b>${+dps.toFixed(2)}/s</b></span></div>
-      <span class="zr">${esc(o.when)}</span></div></div>`;}).join("");
+      <span class="zr">${esc(o.when)}</span><span class="zseen${met?" on":""}">${met?"✓ ":""}${esc(metTxt)}</span></div></div>`;}).join("");
   const chip=(k,l)=>`<button class="chip" data-cf="${k}" aria-pressed="${codexF===k}">${esc(l)}</button>`;
   box.innerHTML=`<div><span class="label">Zombie encyclopedia</span><h3 style="font-size:22px;margin-top:2px">Know your enemy</h3></div>
+    <p style="margin:0"><b>${list.filter(o=>S.seen&&S.seen[o.v]).length} of ${list.length}</b> <span class="muted">encountered so far. A zombie counts once it shows up in one of your nights, in any exam.</span></p>
     <p class="muted small" style="margin:0">Every zombie in the game. Stats are for night 1; the horde gets stronger as the nights go on (see the horde guide above for tonight's numbers).</p>
     <div class="row">${chip("all","All zombies")}${chip("exam",EX.name)}${chip("special","Specials")}${chip("boss","Bosses")}</div>
     <div class="codex">${cards||`<p class="muted">Nothing here.</p>`}</div>`;
@@ -3010,7 +3016,8 @@ function codexMount(){const box=document.getElementById("codex");if(!box)return;
   // animate the portraits while they're on screen (one still frame when the device asks for reduced motion)
   const cvs=[...box.querySelectorAll("canvas[data-z]")],still=matchMedia("(prefers-reduced-motion: reduce)").matches;let ph=0,lt=performance.now();
   const frame=now=>{if(!cvs.length||!document.contains(cvs[0]))return;ph+=Math.min(0.1,(now-lt)/1000)*2.4;lt=now;
-    cvs.forEach((c,i)=>{try{D.portrait(c,c.dataset.z,c.dataset.t,ph+i*0.7);}catch(e){}});if(!still)requestAnimationFrame(frame);};
+    cvs.forEach((c,i)=>{try{D.portrait(c,c.dataset.z,c.dataset.t,ph+i*0.7);
+      if(c.dataset.unseen){const x=c.getContext("2d");x.save();x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-atop";x.fillStyle="#04070A";x.fillRect(0,0,c.width,c.height);x.restore();}}catch(e){}}); /* a dark silhouette until you've met it */if(!still)requestAnimationFrame(frame);};
   requestAnimationFrame(frame);}
 
 /* ---------------- Quiz ---------------- */
