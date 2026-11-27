@@ -1211,7 +1211,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,drones:[],dstock:null,dcd:0.5,drb:0,tanks:[],tshells:[]};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],debris:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null,planes:[],pallets:0,palT:0,drones:[],dstock:null,dcd:0.5,drb:0,tanks:[],tshells:[]};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1293,8 +1293,9 @@ const D=(function(){
   const spawnGap=()=>1/Math.min(1.6,0.28+0.06*(capN(G.night)-1))*rnd(0.6,1.4);
   const packChance=()=>Math.min(0.6,0.06*(capN(G.night)-1));
   const bruteGap=()=>Math.max(22,45-2*capN(G.night))*rnd(0.85,1.15);
+  function supplyFlight(){if(!G)return;const p=G.planes.find(p=>p.t<1.6);if(p)p.cargo++;else if(G.planes.length<3)G.planes.push({t:0,cargo:1,drop:false});}
   function correct(rw,streak){
-    if(!G||G.status!=="live")return;
+    if(!G||G.status!=="live")return;supplyFlight();
     const a=rw.ammo+G.c.bonusAmmo;G.ammo+=a;
     text(wallX()+46*U(),fTop()+14*U(),"+"+a+" AMMO","#FFB020");
     if(rw.scrap)text(wallX()+46*U(),fTop()+32*U(),"+"+rw.scrap+" SCRAP","#19F0FF");
@@ -1379,6 +1380,8 @@ const D=(function(){
 
   function update(dt){
     G.time+=dt;if(G.shake>0)G.shake=Math.max(0,G.shake-dt);
+    for(let i=G.planes.length-1;i>=0;i--){const p=G.planes[i];p.t+=dt;if(!p.drop&&p.t>=3.3){p.drop=true;G.pallets=Math.min(8,G.pallets+p.cargo);}if(p.t>=6)G.planes.splice(i,1);}
+    if(G.pallets>0){G.palT+=dt;if(G.palT>=5){G.palT=0;G.pallets--;}}else G.palT=0;
     for(let i=G.q.length-1;i>=0;i--)if(G.q[i].at<=G.time){spawn(G.q[i].t);G.q.splice(i,1);}
     if(G.spawning&&G.status==="live"&&G.enemies.length<120){
       G.sT-=dt;if(G.sT<=0){spawn("w");if(Math.random()<packChance()){spawn("w");if(Math.random()<packChance()*0.5)spawn("w");}G.sT=spawnGap();}
@@ -1741,10 +1744,14 @@ const D=(function(){
     [x,y]=L.depot;R(x,y,46,24,"#17202A");R(x,y,46,3,"#2A3642");
     b.fillStyle="#2B2418";b.fillRect(x+8*s,y+8*s,30*s,16*s);b.strokeStyle="rgba(255,176,32,.55)";b.lineWidth=1;
     for(let k=0;k<4;k++){b.beginPath();b.moveTo(x+8*s,y+(11+k*4)*s);b.lineTo(x+38*s,y+(11+k*4)*s);b.stroke();}lab("AMMO",x+2*s,y-2*s);
-    // barracks
-    [x,y]=L.barracks;R(x,y,62,18,"#141D25");R(x,y,62,3,"#263440");
-    b.fillStyle="rgba(255,176,32,.7)";for(let k=0;k<5;k++)b.fillRect(x+(5+k*11)*s,y+8*s,6*s,3*s);
-    b.fillStyle="#3B3527";for(let k=0;k<6;k++){b.beginPath();b.ellipse(x+(6+k*10)*s,y+21*s,5*s,2.4*s,0,0,7);b.fill();}
+    // airstrip (cargo planes land here with ammo; drawn live in drawPlanes)
+    [x,y]=L.barracks;R(x,y+4,72,10,"#1B2026");R(x,y+4,72,0.8,"#2E3640");R(x,y+13.2,72,0.8,"#2E3640");
+    b.fillStyle="rgba(232,240,246,.55)";for(let k=0;k<7;k++)b.fillRect(x+(7+k*9)*s,y+8.6*s,4.5*s,0.8*s); // centerline
+    for(let k=0;k<4;k++){b.fillRect(x+2*s,y+(5.4+k*2.1)*s,3*s,1*s);b.fillRect(x+67*s,y+(5.4+k*2.1)*s,3*s,1*s);} // threshold bars
+    b.fillStyle="rgba(255,176,32,.8)";for(let k=0;k<9;k++){b.fillRect(x+(1+k*8.7)*s,y+3*s,1*s,1*s);b.fillRect(x+(1+k*8.7)*s,y+14.4*s,1*s,1*s);} // edge lights
+    b.strokeStyle="#8A96A0";b.lineWidth=Math.max(1,0.6*s);b.beginPath();b.moveTo(x+4*s,y+2*s);b.lineTo(x+4*s,y-6*s);b.stroke();
+    b.fillStyle="#FF8A1A";b.beginPath();b.moveTo(x+4*s,y-6*s);b.lineTo(x+10*s,y-5*s);b.lineTo(x+4*s,y-3.6*s);b.fill(); // windsock
+    lab("AIRSTRIP",x+24*s,y-2*s);
     // generator housing (the core glow is drawn live)
     [x,y]=L.gen;R(x,y,26,20,"#18232C");R(x,y,26,3,"#2A3B47");b.strokeStyle="rgba(214,244,255,.12)";
     for(let k=0;k<3;k++){b.beginPath();b.moveTo(x+3*s,y+(7+k*4)*s);b.lineTo(x+11*s,y+(7+k*4)*s);b.stroke();}
@@ -1972,8 +1979,29 @@ const D=(function(){
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
   // Base crew (cosmetic): soldiers and little wheeled bots haul crates from the ammo depot to the wall turrets and the
-  // unlocked weapon structures, and walk back empty; a couple shuttle between the barracks and the generator.
+  // unlocked weapon structures, and walk back empty; one shuttles pallets from the airstrip to the depot.
   const CREW=[{bot:0,r:0,sp:16,ph:0.1},{bot:1,r:1,sp:13,ph:0.7},{bot:0,r:2,sp:15,ph:1.3},{bot:1,r:3,sp:12,ph:0.4},{bot:0,r:4,sp:14,ph:1.6},{bot:1,r:5,sp:11,ph:1.0}];
+  // Cargo plane (cosmetic): flies in for each ammo delivery, lands on the airstrip, drops a pallet beside it, takes off.
+  // Phases by p.t: approach 0-1.8 s, rollout 1.8-2.8, unload 2.8-3.8, take-off 3.8-6.
+  function drawPlanes(L){const s=L.ys,[bx,by]=L.barracks,ry=by+9*s;
+    for(let k=0;k<Math.min(G.pallets,8);k++){const px=bx+(50+(k%4)*5)*s,py=by-(1+Math.floor(k/4)*3)*s;ctx.fillStyle="#7A5A2E";ctx.fillRect(px,py-2.6*s,4*s,2.6*s);ctx.fillStyle="#3A2A16";ctx.fillRect(px,py,4*s,0.7*s);}
+    for(const p of G.planes){const t=p.t;let x,alt,ang=0;
+      if(t<1.8){const k=t/1.8;x=-30*s+(bx+12*s+30*s)*k;alt=(1-k)*(1-k)*34*s;ang=0.12*(1-k);}
+      else if(t<2.8){const k=(t-1.8);x=bx+12*s+30*s*(1-Math.pow(1-k,2));alt=0;}
+      else if(t<3.8){x=bx+42*s;alt=0;}
+      else{const k=(t-3.8)/2.2;x=bx+42*s+k*k*120*s;alt=Math.max(0,k-0.25)*Math.max(0,k-0.25)*90*s;ang=-0.18*Math.min(1,k*2);}
+      ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(x+alt*0.3,ry+1*s,10*s*(1-alt/(80*s)),2*s,0,0,7);ctx.fill(); // ground shadow
+      ctx.save();ctx.translate(x,ry-alt-2*s);ctx.rotate(ang);
+      ctx.fillStyle="#5E6A72";ctx.beginPath();ctx.ellipse(0,0,10*s,2.4*s,0,0,7);ctx.fill(); // fuselage
+      ctx.fillStyle="#48525A";ctx.beginPath();ctx.moveTo(-1*s,-1*s);ctx.lineTo(-5*s,-9*s);ctx.lineTo(-2*s,-9*s);ctx.lineTo(3*s,-1*s);ctx.closePath();ctx.fill(); // far wing
+      ctx.fillRect(-10*s,-5*s,2.2*s,4.5*s); // tail fin
+      ctx.fillStyle="#BFE9FF";ctx.fillRect(6*s,-1.4*s,2.4*s,1.2*s); // cockpit
+      ctx.fillStyle=`rgb(${wcol()})`;ctx.fillRect(-6*s,-0.2*s,9*s,0.8*s); // stripe
+      ctx.fillStyle="#3E474E";ctx.beginPath();ctx.moveTo(-1*s,1*s);ctx.lineTo(-4*s,6*s);ctx.lineTo(-1.5*s,6*s);ctx.lineTo(3*s,1*s);ctx.closePath();ctx.fill(); // near wing
+      if(Math.sin(G.time*12)>0){ctx.fillStyle="#FF3B3B";ctx.beginPath();ctx.arc(-4*s,6*s,0.6*s,0,7);ctx.fill();}
+      ctx.restore();
+      if(t>=2.8&&t<3.8){ctx.fillStyle="#7A5A2E";const k=Math.min(1,(t-2.8)/0.5);ctx.fillRect(bx+42*s-2*s,ry-1*s-k*5*s,4*s,2.6*s);} // pallet coming off the ramp
+    }}
   function crewRoutes(L){const s=L.ys,dep=[L.depot[0]+30*s,L.depot[1]+24*s],wallX=L.wx-12*s,R=[];
     const ty=G.turrets.length?G.turrets.map(t=>t.y):[L.Y(.3),L.Y(.7)];
     R.push([dep,[wallX,ty[0]]],[dep,[wallX,ty[ty.length-1]]]);
@@ -1981,7 +2009,7 @@ const D=(function(){
     if(G.c.tesla)R.push([dep,[L.tesla[0]+7*s,L.tesla[1]+50*s]]);
     if(G.c.mortar){const m=mortarPos();R.push([dep,[m[0],m[1]+16*s]]);}
     if(ty.length>2)R.push([dep,[wallX,ty[Math.floor(ty.length/2)]]]);
-    R.push([[L.barracks[0]+30*s,L.barracks[1]-2*s],[L.gen[0]+19*s,L.gen[1]+24*s]]);
+    R.push([[L.barracks[0]+56*s,L.barracks[1]-2*s],dep]); // pallets from the airstrip to the ammo depot
     return R;}
   function drawCrew(L){const s=L.ys,z=s*1.5,R=crewRoutes(L),t=G.time;
     CREW.forEach((c,i)=>{const [A,B]=R[c.r%R.length],len=Math.max(1,Math.hypot(B[0]-A[0],B[1]-A[1]));
@@ -2054,7 +2082,7 @@ const D=(function(){
           ctx.strokeStyle=`rgba(${mc},.55)`;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(m.x,m.y,7*u*d,-Math.PI/2,-Math.PI/2+2*Math.PI*pr);ctx.stroke();continue;}
         ctx.fillStyle="#2B3036";ctx.beginPath();ctx.ellipse(m.x,m.y,5*u*d,2.4*u*d,0,0,7);ctx.fill();ctx.fillStyle="#454D55";ctx.beginPath();ctx.ellipse(m.x,m.y-0.8*u*d,3*u*d,1.4*u*d,0,0,7);ctx.fill();
         if(Math.sin(G.time*5+m.x)>0){ctx.fillStyle=`rgba(${mc},.95)`;ctx.beginPath();ctx.arc(m.x,m.y-1.2*u*d,1*u*d,0,7);ctx.fill();}}}
-    {const Ly=yard();drawBase(Ly);drawCrew(Ly);drawCooldowns(Ly);}
+    {const Ly=yard();drawBase(Ly);drawPlanes(Ly);drawCrew(Ly);drawCooldowns(Ly);}
     // wall: wider and armored with each Wall plating level
     const pl=upL("plating"),top=ft-14*u,w=(10+1.6*pl)*u,p=G.wall/G.c.wallMax;
     ctx.fillStyle="#1A242C";ctx.fillRect(wx-w/2,top,w,H-top);
@@ -2150,7 +2178,7 @@ const D=(function(){
     saveT+=dt;if(saveT>3){saveT=0;save();}
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
-  function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
+  function addAmmo(n){if(!live())return false;G.ammo+=n;supplyFlight();text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
   return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:(P.night||1),info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
