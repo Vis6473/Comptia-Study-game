@@ -1057,7 +1057,9 @@ const NET_WPN=[ // unlocked with XP, then upgraded with scrap
 // Weapon stats by level (set by the owner): every exam's weapons share these mechanics under their own names.
 // Ranges and radii are in outpost units (U px); 3.84 units is about 1 m on the field ruler.
 // Zombie strength (health, speed, wall damage) climbs every night up to night 10, then only every 5 nights (the owner's rule).
-const effNight=n=>n<=10?n:10+Math.floor((n-10)/5);
+// All zombie growth stops at night GROWTH_CAP (the owner's rule): later nights play like night 150.
+const GROWTH_CAP=150,capN=n=>Math.min(n,GROWTH_CAP);
+const effNight=n=>{n=capN(n);return n<=10?n:10+Math.floor((n-10)/5);};
 // Every weapon starts much weaker and slower at level 1 and reaches full strength only at its top level (3), as the
 // owner asked: WR(L,first,full) runs from the level 1 value to the fully upgraded one.
 const WR=(L,a,b)=>a+(b-a)*Math.min(1,Math.max(0,(L-1)/2)),WRI=(L,a,b)=>Math.round(WR(L,a,b));
@@ -1222,7 +1224,7 @@ const D=(function(){
     spitter:{hp:0.9,sp:0.9},shield:{hp:1,sp:0.75},burrow:{hp:1,sp:1.1},scream:{hp:0.8,sp:0.85},bloat:{hp:2.2,sp:0.6},
     storm:{hp:1.2},packet:{hp:0.3,sp:1.8,fast:1},soceng:{hp:1},overclock:{hp:1.3,sp:0.8},keylog:{hp:1,sp:1.05},zeroday:{hp:1},
     // super boss (every BOSS_EVERY nights): 12 brutes' health, slow, 4x brute wall damage, summons zombies around it
-    boss:{hp:12,sp:0.35,dm:4}};
+    boss:{hp:12,sp:0.3,dm:4}};
   const BOSS_EVERY=10,BOSS_NAME={net:"Broadcast Behemoth",sec:"Botnet Overlord",a1:"Meltdown Titan",a2:"Bluescreen Colossus",cissp:"Nation-State Leviathan"};
   const bossName=()=>BOSS_NAME[S.exam]||"Super boss";
   function spawnBoss(){const u=U(),y=(fTop()+fBot())/2,e=mkFoe("b","boss",W+30*u,y);e.sum=8;e.lx=e.x;G.enemies.push(e);
@@ -1258,13 +1260,13 @@ const D=(function(){
   function mkFoe(t,v,x,y){
     const n=effNight(G.night),b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
-    const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
+    const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(v==="boss"?1:(1+0.04*(n-1)))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
     if(v==="shield"){o.sh=o.shMax=hp*2.5;}if(v==="burrow")o.under=true;if(v==="zeroday")o.imm={};if(v==="spitter")o.sc=1;
     return o;
   }
   function spawn(t){
     const V=VARIANTS[S.exam]||VARIANTS.net;let v=t==="b"?V[2]:(Math.random()<0.3?V[1]:V[0]);
-    if(t!=="b"&&G.night>=SPECIAL_NIGHT&&Math.random()<Math.min(0.45,0.12+0.03*(G.night-SPECIAL_NIGHT))){const p=specialPool();v=p[Math.floor(Math.random()*p.length)];}
+    if(t!=="b"&&G.night>=SPECIAL_NIGHT&&Math.random()<Math.min(0.45,0.12+0.03*(capN(G.night)-SPECIAL_NIGHT))){const p=specialPool();v=p[Math.floor(Math.random()*p.length)];}
     G.enemies.push(mkFoe(t,v,W+rnd(10,40),rnd(fTop()+10,fBot()-2)));
   }
   // Spitter: stops at SPIT_AT from the wall (or earlier, when a team in its lane is within reach) and spits acid every
@@ -1283,9 +1285,9 @@ const D=(function(){
   }
   // The horde grows with every night: spawns come faster, zombies increasingly arrive in pairs or threes, and specials
   // become more common (see spawn()).
-  const spawnGap=()=>1/Math.min(1.6,0.28+0.06*(G.night-1))*rnd(0.6,1.4);
-  const packChance=()=>Math.min(0.6,0.06*(G.night-1));
-  const bruteGap=()=>Math.max(22,45-2*G.night)*rnd(0.85,1.15);
+  const spawnGap=()=>1/Math.min(1.6,0.28+0.06*(capN(G.night)-1))*rnd(0.6,1.4);
+  const packChance=()=>Math.min(0.6,0.06*(capN(G.night)-1));
+  const bruteGap=()=>Math.max(22,45-2*capN(G.night))*rnd(0.85,1.15);
   function correct(rw,streak){
     if(!G||G.status!=="live")return;
     const a=rw.ammo+G.c.bonusAmmo;G.ammo+=a;
@@ -2421,14 +2423,14 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   overclock:["Overclocker","Speeds up as it takes damage, up to 2.5 times as fast."],
   keylog:["Keylogger","Steals a scrap every second while it's at the wall."],
   zeroday:["Zero-day","Shrugs off the first hit from each weapon type."],
-  boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. Killing it pays 60 scrap and 30 XP."]};
+  boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. It walks at a fixed slow pace. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
   const I=D.info(),c=I.cfg,night=P.night||1,n=effNight(night),ramp=1+0.04*(n-1);
   const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}${w.borrowed?` · borrowed from ${esc(EXAMS[w.borrowed].name)} <button class="btn sm" data-return="${w.k}">Send back</button>`:""}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
     .filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i)
-    .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*ramp*(f.sp||1)),dps=+((b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker))*(f.dm||1)*(1+I.nightDmg*(n-1))).toFixed(2),inf=v==="boss"?[I.bossName,FOE_INFO.boss[1]]:(FOE_INFO[v]||[v,""]);
+    .map(([v,t,when])=>{const f=I.FOE[v]||{},b=t==="b",hp=((b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1)),secs=(b?60:35)/(I.speed*(v==="boss"?1:ramp)*(f.sp||1)),dps=+((b?I.DPS.brute:(f.fast?I.DPS.fast:I.DPS.walker))*(f.dm||1)*(1+I.nightDmg*(n-1))).toFixed(2),inf=v==="boss"?[I.bossName,FOE_INFO.boss[1]]:(FOE_INFO[v]||[v,""]);
       return `<div class="foe"><b>${esc(inf[0])}</b><span class="muted small">${esc(inf[1])} ${esc(when)}.</span>
         <div class="foe-s"><span>Health <b>${+hp.toFixed(1)}</b></span><span>Reaches the wall in <b>~${Math.round(secs)} s</b></span><span>Wall damage <b>${dps}/s</b></span></div></div>`;}).join("");
   $app.innerHTML=`<div class="stack">
@@ -2455,7 +2457,7 @@ function viewArmory(){
     <div class="panel stack">
       <div><span class="label">Horde guide</span><h3 style="font-size:22px;margin-top:2px">What's coming on night ${night}</h3></div>
       <div class="foes">${foes}</div>
-      <p class="muted small" style="margin:0">The horde gets stronger every night up to night 10, then every 5 nights (15, 20, 25…): walkers gain a quarter of their first-night health and brutes 5 health, they move 4% faster, spawn more often and deal ${Math.round(I.nightDmg*100)}% more wall damage. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
+      <p class="muted small" style="margin:0">The horde gets stronger every night up to night 10, then every 5 nights (15, 20, 25…), and stops growing at night 150: walkers gain a quarter of their first-night health and brutes 5 health, they move 4% faster, spawn more often and deal ${Math.round(I.nightDmg*100)}% more wall damage. Correct answers send ammo to the wall: ${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `${k}.0 +${t.ammo}`;}).join(", ")}.</p>
     </div>
   </div>`;
   bindShop(document.getElementById("outpost"),viewArmory);
