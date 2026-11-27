@@ -3017,7 +3017,7 @@ const Music=(()=>{
 // Every page goes on the terminal too (the owner asked): after a view renders, its content is moved into a CRT
 // monitor (moving keeps event handlers). Skipped on the title screen, while an exam is running (focus mode), and for
 // screens that already draw their own terminal (the mini-games).
-function crtify(){const b=document.body.classList;if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
+function crtify(){const b=document.body.classList;if(b.contains("focus-mode"))b.remove("crt-scroll"); /* exams keep their own bottom padding, so the page can scroll above the dock */if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
   const act=document.activeElement,keep=act&&$app.contains(act)?act:null,y=window.scrollY;
   const w=document.createElement("div");w.className="crt crt-page"+(b.contains("quiz-term")?" crt-quiz":"");w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
   const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);
