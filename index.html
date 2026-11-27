@@ -1526,14 +1526,15 @@ const D=(function(){
           if(go(t,t.tx,t.ty)){t.state="fight";t.idle=0;}continue;}
         // fight: shoot the nearest zombie in range ahead; with nothing to shoot for a while, move to a busier lane
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
-        if(tg){t.idle=0;t.a=Math.atan2(tg.y-t.y,tg.x-t.x);t.cd-=dt;
-          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y);G.tshells.push({x0:t.x+Math.cos(t.a)*12*u,y0:t.y-6*u+Math.sin(t.a)*12*u,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
-            G.fx.push({k:"hit",x:t.x+Math.cos(t.a)*14*u,y:t.y-6*u+Math.sin(t.a)*14*u,life:0.12,m:0.12});
+        if(tg){t.idle=0;t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*1.4),tg.x-t.x);t.cd-=dt;
+          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*1.4,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
+            G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
+            G.fx.push({k:"hit",x:mx,y:my,life:0.12,m:0.12});
             if(t.ammo<=0){t.state="back";text(t.x,t.y-24*u,"RELOADING","#FFB020");}}}
         else{t.idle+=dt;if(t.idle>3){t.state="out";t.ty=null;t.idle=0;}}
       }
     }
-    for(let i=G.tshells.length-1;i>=0;i--){const p=G.tshells[i];p.t+=dt;if(p.e&&p.e.hp>0){p.x1=p.e.x;p.y1=p.e.y;}
+    for(let i=G.tshells.length-1;i>=0;i--){const p=G.tshells[i];p.t+=dt;if(p.e&&p.e.hp>0){p.x1=p.e.x;p.y1=p.e.y;}const by=p.y1-10*U()*depth(p.y1);p.by=by;
       if(p.t>=p.T){const st=WSTAT.tank(p.L),r=st.radius*u;for(const e of G.enemies){const d=Math.hypot(e.x-p.x1,e.y-p.y1);if(d<r){hurt(e,st.dmg*(d<r*0.5?1:0.6),"tank");e.hit=0.12;}}
         G.fx.push({k:"b",x:p.x1,y:p.y1,r,life:0.3,m:0.3});G.tshells.splice(i,1);}}
     // Toner jets: a jet crosses the field along the busiest pack's lane and drops toner bombs as it passes over.
@@ -1891,8 +1892,10 @@ const D=(function(){
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
     ctx.fillStyle="#1E2226";ctx.fillRect(x-13*k,y-4*k,26*k,4.5*k);ctx.fillStyle="#3A4046";for(let i=0;i<6;i++)ctx.fillRect(x-12*k+i*4.6*k+((G.time*8)%1)*1*k,y-3*k,2*k,2.5*k);
     ctx.fillStyle=t.hit>0?"#C9D2C0":"#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
-    ctx.save();ctx.translate(x,y-10*k);ctx.rotate(t.a||0);ctx.fillStyle="#2E3430";ctx.fillRect(0,-1.1*k,15*k,2.2*k);ctx.restore();
     ctx.fillStyle="#5E6B58";ctx.beginPath();ctx.ellipse(x,y-10*k,6*k,3.6*k,0,0,7);ctx.fill();
+    // barrel drawn over the turret, ending in a muzzle brake at 15k: the point shells leave from
+    ctx.save();ctx.translate(x,y-10*k);ctx.rotate(t.a||0);ctx.fillStyle="#8A9584";ctx.fillRect(1*k,-1.3*k,14*k,2.6*k);ctx.fillStyle="#C2CBBC";ctx.fillRect(1*k,-1.3*k,14*k,0.7*k);
+    ctx.fillStyle="#3A403A";ctx.fillRect(12.5*k,-1.9*k,2.5*k,3.8*k);ctx.restore();
     if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}
     const st=WSTAT.tank(G.c.mortar);ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-21*k,16*k,2.4*k);ctx.fillStyle="#FF3B5C";ctx.fillRect(x-8*k,y-21*k,16*k*Math.max(0,t.hp/st.hp),2.4*k);}
   // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
@@ -1975,7 +1978,7 @@ const D=(function(){
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
     for(const t of G.tanks)if(t.state!=="reload"&&t.state!=="dead")drawTank(t,u);
-    for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+(p.y1-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
+    for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+((p.by||p.y1)-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
     for(const q of G.squads)drawSquad(q,u);
     {const bz=G.enemies.find(e=>e.v==="boss");if(bz){const bw=Math.min(W*0.5,420*u),bx=(W-bw)/2,by=fTop()+4*u;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-2,by-2,bw+4,10*u+4);
