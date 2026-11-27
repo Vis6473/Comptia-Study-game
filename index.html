@@ -1241,7 +1241,10 @@ const D=(function(){
   function hurt(e,d,src){
     if(e.under)return false;
     if(e.v==="zeroday"){const t=e.imm[src];if(t===undefined){e.imm[src]=G.time+0.4;if(!e.immT||G.time-e.immT>0.8){e.immT=G.time;text(e.x,e.y-34*U(),"IMMUNE","#D9C7FF");}return false;}if(G.time<t)return false;}
-    if(e.sh>0&&(src==="gun"||src==="squad"||src==="rail")){e.sh-=d;if(e.sh<=0)text(e.x,e.y-34*U(),"SHIELD BROKEN","#FFB020");return true;}
+    if(e.sh>0&&(src==="gun"||src==="squad"||src==="rail")){e.sh-=d;
+      if(e.sh<=0){if(!e.sh2){e.sh2=true;e.shMax*=0.5;e.sh=e.shMax;text(e.x,e.y-34*U(),"BACKUP SHIELD","#FFB020");} // second chance (the owner's rule)
+        else text(e.x,e.y-34*U(),"SHIELD BROKEN","#FFB020");}
+      return true;}
     e.hp-=d;if(e.v==="soceng")e.rev=true;return true;
   }
   // Can a weapon pick this zombie as a target? (Splash still reaches social engineers that haven't been spotted.)
@@ -1256,7 +1259,7 @@ const D=(function(){
     const n=effNight(G.night),b=t==="b",span=W-wallX(),f=FOE[v]||{};
     const hp=(b?14+5*(n-1):2+0.5*(n-1))*(f.hp||1);
     const o={t,v,x,y,hp,max:hp,spd:ZOMBIE_SPEED*span/(b?60:rnd(30,40))*(1+0.04*(n-1))*(f.sp||1),dps:(b?DPS.brute:(f.fast?DPS.fast:DPS.walker))*(f.dm||1)*(1+NIGHT_DMG*(n-1)),ph:rnd(0,6),hit:0,lk:0};
-    if(v==="shield")o.sh=hp*2.5;if(v==="burrow")o.under=true;if(v==="zeroday")o.imm={};if(v==="spitter")o.sc=1;
+    if(v==="shield"){o.sh=o.shMax=hp*2.5;}if(v==="burrow")o.under=true;if(v==="zeroday")o.imm={};if(v==="spitter")o.sc=1;
     return o;
   }
   function spawn(t){
@@ -1536,7 +1539,10 @@ const D=(function(){
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
         if(tg){t.idle=0;
           // a zombie closing in (within ~25 m ahead): drive forward to meet it, stopping ~6 m short, never past 100 m from the wall
-          if(tg.x>t.x&&tg.x-t.x<96*u&&tg.x-t.x>24*u&&t.x<line+384*u){const step=st.speed*0.6*u*dt;t.x=Math.min(line+384*u,t.x+step);t.tx=t.x;}
+          const k=u*depth(t.y)*TANK_SCALE,block=G.enemies.some(e=>(e.t==="b")&&!e.under&&e.x>t.x&&e.x-t.x<20*k&&Math.abs(e.y-t.y)<10*k);
+          if(tg.x>t.x&&tg.x-t.x<96*u&&!block&&t.x<line+384*u){const step=st.speed*0.6*u*dt;t.x=Math.min(line+384*u,t.x+step);t.tx=t.x;
+            // running over zombies in its path (it doesn't steer toward them); brutes and bosses are too big to crush
+            for(const e of G.enemies)if(e.t!=="b"&&!e.under&&e.hp>0&&Math.abs(e.x-(t.x+6*k))<10*k&&Math.abs(e.y-t.y)<8*k){e.hp=0;G.splats.push({x:e.x,y:e.y,r:6*u*depth(e.y),life:8});if(!G.crT||G.time-G.crT>1){G.crT=G.time;text(e.x,e.y-30*u,"CRUSHED","#9CFF57");}}}
           t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*TANK_SCALE),tg.x-t.x);t.cd-=dt;
           if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
             G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
@@ -1830,8 +1836,13 @@ const D=(function(){
     if(V==="soceng"){ctx.fillStyle="#E8E2D0";ctx.fillRect(x-1*s,y-18.5*s,2*s,4*s);ctx.fillStyle="#2E6FD0";ctx.fillRect(x-0.6*s,y-17.5*s,1.2*s,4.5*s);ctx.fillStyle="#C9B48A";ctx.fillRect(x-8*s,y-17*s,3*s,4*s);
       if(e.rev||e.x<=wallX()+8*u+SOC_REVEAL*u){ctx.fillStyle="#FF3B3B";ctx.beginPath();ctx.arc(x-3.5*s,y-22.5*s,0.9*s,0,7);ctx.fill();}}
     if(V==="zeroday"&&Math.sin(G.time*8+e.ph)>0){ctx.strokeStyle="rgba(217,199,255,.7)";ctx.setLineDash([2*s,2*s]);ctx.lineWidth=0.7*s;ctx.beginPath();ctx.ellipse(x,y-14*s,7*s,13*s,0,0,7);ctx.stroke();ctx.setLineDash([]);}
-    if(e.sh>0){const f=Math.max(0,e.sh/(e.max*2.5));ctx.fillStyle=e.hit>0?"#E8EEF2":"#7D8A95";ctx.fillRect(x-10*s,y-21*s,2.6*s,16*s);ctx.fillStyle="rgba(200,230,255,.45)";ctx.fillRect(x-9.6*s,y-20*s,0.9*s,14*s);
-      if(f<0.5){ctx.strokeStyle="#2A3036";ctx.lineWidth=0.6*s;ctx.beginPath();ctx.moveTo(x-10*s,y-16*s);ctx.lineTo(x-8*s,y-13*s);ctx.lineTo(x-9.5*s,y-10*s);ctx.stroke();}}
+    if(V==="shield"){ctx.fillStyle="#141A22";ctx.fillRect(x-3.8*s,y-17.5*s,7.6*s,7.5*s);ctx.fillStyle="#2A3442";for(const px of [-2.6,-0.2,2.2])ctx.fillRect(x+px*s,y-13.5*s,1.8*s,2.2*s); // tactical vest with pouches
+      ctx.fillStyle="#10151C";ctx.beginPath();ctx.arc(x-1.5*s,y-22.6*s,3.6*s,Math.PI*1.05,Math.PI*2.05);ctx.fill();ctx.fillRect(x-5*s,y-23.4*s,7*s,1.2*s); // helmet
+      ctx.fillStyle="rgba(120,170,220,.75)";ctx.fillRect(x-5.2*s,y-22.4*s,3.6*s,1.4*s);} // visor
+    if(e.sh>0){const f=Math.max(0,e.sh/(e.shMax||e.max*2.5)),sx=x-11.5*s;ctx.fillStyle=e.hit>0?"#C8D4DE":(e.sh2?"#3B4652":"#2A3440");ctx.beginPath();ctx.moveTo(sx,y-25*s);ctx.lineTo(sx+3.4*s,y-24*s);ctx.lineTo(sx+3.4*s,y-3*s);ctx.lineTo(sx,y-4*s);ctx.closePath();ctx.fill(); // riot shield
+      ctx.strokeStyle="rgba(200,220,240,.55)";ctx.lineWidth=0.5*s;ctx.stroke();ctx.fillStyle="rgba(150,200,240,.55)";ctx.fillRect(sx+0.7*s,y-22*s,2*s,3*s); // viewport
+      ctx.fillStyle="rgba(240,244,248,.8)";ctx.fillRect(sx+0.4*s,y-15*s,2.6*s,1*s); // white band
+      if(f<0.5){ctx.strokeStyle="#C8D4DE";ctx.lineWidth=0.5*s;ctx.beginPath();ctx.moveTo(sx+0.5*s,y-18*s);ctx.lineTo(sx+2.5*s,y-14*s);ctx.lineTo(sx+0.8*s,y-10*s);ctx.stroke();}}
     if(e.boost&&V!=="overclock"){ctx.strokeStyle="rgba(255,59,92,.5)";ctx.lineWidth=0.6*s;ctx.beginPath();ctx.moveTo(x+5*s,y-10*s);ctx.lineTo(x+9*s,y-10*s);ctx.moveTo(x+5*s,y-14*s);ctx.lineTo(x+8*s,y-14*s);ctx.stroke();}
     if(V==="boss"){const g=0.35+0.25*Math.sin(G.time*3);ctx.strokeStyle=`rgba(255,43,214,${g})`;ctx.lineWidth=1*s;ctx.beginPath();ctx.ellipse(x,y-14*s,11*s,17*s,0,0,7);ctx.stroke();
       ctx.fillStyle="#2A1A22";ctx.beginPath();ctx.moveTo(x-4*s,y-24*s);ctx.lineTo(x-7*s,y-30*s);ctx.lineTo(x-2.5*s,y-25*s);ctx.moveTo(x+1*s,y-24.5*s);ctx.lineTo(x+3*s,y-31*s);ctx.lineTo(x+2.5*s,y-24*s);ctx.fill();
@@ -1843,7 +1854,7 @@ const D=(function(){
   // Zombie colors per variant: [body, skin], and eyes: [glow, pupil].
   const PAL={walker:["#4A5E4C","#7C9A74"],brute:["#6B3B4A","#9A6A72"],bot:["#3D4A57","#8FA3B3"],ransom:["#4A2A2E","#A8786E"],
     spark:["#4D4A33","#C9B46A"],surge:["#55502F","#E0CC70"],chassis:["#5B6470","#8C8F7A"],phish:["#2F3D55","#7FA0C8"],rootkit:["#3A2A4A","#8E7AA8"],trojan:["#6B4B2A","#A88B62"],insider:["#2E3440","#B8A08A"],spy:["#1B1B22","#9C8C7A"],apt:["#3B2B5A","#8F7FB0"],
-    spitter:["#3F5A2A","#8DB86A"],shield:["#3A4450","#8C9AA5"],burrow:["#5A4630","#A88B62"],scream:["#4A2A34","#C08A96"],bloat:["#55603A","#A3B070"],
+    spitter:["#3F5A2A","#8DB86A"],shield:["#1F2A3A","#8FA37F"],burrow:["#5A4630","#A88B62"],scream:["#4A2A34","#C08A96"],bloat:["#55603A","#A3B070"],
     storm:["#1F3A4A","#6FC8E0"],packet:["#1F3A4A","#6FC8E0"],soceng:["#2F3A4F","#D8C0A0"],overclock:["#4D3A2A","#D8A070"],keylog:["#2A4A2E","#8FC88A"],zeroday:["#2A2040","#A898D0"]};
   const RED=["rgba(255,59,59,.4)","#FF8A8A"],AMB=["rgba(255,176,32,.45)","#FFD27A"],BLU=["rgba(110,150,255,.45)","#B9CCFF"],PUR=["rgba(179,136,255,.45)","#D9C7FF"];
   const EYE={walker:["rgba(156,255,87,.35)","#C8FF8A"],brute:["rgba(255,43,214,.35)","#FF7BEA"],bot:RED,ransom:RED,spark:AMB,surge:AMB,chassis:AMB,phish:BLU,rootkit:BLU,trojan:BLU,insider:PUR,spy:PUR,apt:PUR};
