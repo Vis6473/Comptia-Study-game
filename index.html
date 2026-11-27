@@ -1096,7 +1096,7 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
-  drone:()=>`The depot holds ${s.count} suicide drones. One launches every ${f(s.launch)} s at a zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. A new drone is built every ${f(s.rebuild)} s.`,
+  drone:()=>`${s.count} suicide drones launch on their own and hover 25 m out. The nearest one dives at any zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. Each drone takes its own target, except brutes and bosses, which several can hit. A new drone is built every ${f(s.rebuild)} s.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
   tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s. Each tank has ${f(s.hp)} health: zombies that reach one attack it, and a destroyed tank is rebuilt in ${f(s.rebuild)} s.`,
   pulse:()=>`Charges up, then pulses through ${s.targets} zombie${s.targets>1?"s":""} and stuns them for ${f(s.stun)} s. Deals no damage: stunned zombies stop walking and stop hitting the wall. Recharges in ${f(s.reload)} s.`,
@@ -1244,8 +1244,9 @@ const D=(function(){
   const specialPool=()=>[...SPECIALS,THEMED[S.exam],THEMED[S.exam]].filter(Boolean);
   // Every hit goes through hurt(): burrowers underground can't be hurt, zero-days ignore a weapon type's first hit,
   // and shields soak up direct fire (turret rounds, team rifles, railgun) until they break.
+  const EXAM_DMG={sec:1.15,a2:1.15}; // small boost for the two exams that fell short of night 150 (the owner approved)
   function hurt(e,d,src){
-    if(e.under)return false;
+    if(e.under)return false;d*=EXAM_DMG[S.exam]||1;
     if(e.v==="zeroday"){const t=e.imm[src];if(t===undefined){e.imm[src]=G.time+0.4;if(!e.immT||G.time-e.immT>0.8){e.immT=G.time;text(e.x,e.y-34*U(),"IMMUNE","#D9C7FF");}return false;}if(G.time<t)return false;}
     if(e.sh>0&&(src==="gun"||src==="squad"||src==="rail")){e.sh-=d;
       if(e.sh<=0){e.sh=0;e.run=true;G.debris.push({x:e.x-8*U()*depth(e.y),y:e.y,life:6}); // drops the broken shield and starts running (the owner's rule)
@@ -1487,16 +1488,24 @@ const D=(function(){
       if(G.dstock==null)G.dstock=st.count;
       if(G.dstock+G.drones.length<st.count){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;}}else G.drb=st.rebuild;
       G.dcd-=dt;
-      const pick=ex=>{let tg=null,bd=1e9;for(const e of G.enemies){if(!tgt(e)||e.x>reach||e.x>W-4||ex.has(e))continue;if(e.x<bd){bd=e.x;tg=e;}}return tg;}; // nearest the wall first
-      if(G.dcd<=0&&G.dstock>0){const tg=pick(new Set(G.drones.map(d=>d.e)));if(tg){G.drones.push({x:dx,y:dy,e:tg,tx:tg.x,ty:tg.y,a:0});G.dstock--;G.dcd=st.launch;}}
-      for(let i=G.drones.length-1;i>=0;i--){const d=G.drones[i];
-        if(!d.e||d.e.hp<=0||!G.enemies.includes(d.e))d.e=pick(new Set(G.drones.filter(o=>o!==d).map(o=>o.e)))||null;
-        if(d.e){d.tx=d.e.x;d.ty=d.e.y-10*u*depth(d.e.y);}
-        const ddx=d.tx-d.x,ddy=d.ty-d.y,dist=Math.hypot(ddx,ddy),step=st.speed*u*dt;d.a=Math.atan2(ddy,ddx);
-        if(dist<=step+2*u){const r=st.radius*u,gy=d.e?d.e.y:d.ty;
-          for(const e of G.enemies){const q=Math.hypot(e.x-d.tx,e.y-gy);if(q<r){hurt(e,st.dmg*(q<r*0.5?1:0.6),"drone");e.hit=0.12;}}
-          G.fx.push({k:"b",x:d.tx,y:gy,r,life:0.3,m:0.3});G.drones.splice(i,1);}
-        else{d.x+=ddx/dist*step;d.y+=ddy/dist*step;}}
+      // drones launch on their own and hover in a line 25 m out; the nearest hovering drone dives at a zombie within range.
+      // Each takes its own target, except brutes and bosses, which several drones can hit at once (the owner's rules).
+      const hx=line+96*u,slotY=i=>fTop()+14*u+(fBot()-fTop()-22*u)*(i+0.5)/st.count;
+      if(G.dcd<=0&&G.dstock>0){const used=new Set(G.drones.map(d=>d.slot));let sl=0;while(used.has(sl))sl++;
+        if(sl<st.count){G.drones.push({x:dx,y:dy,slot:sl,state:"go",e:null,a:0});G.dstock--;G.dcd=st.launch;}}
+      const pick=()=>{const chased=new Set(G.drones.filter(d=>d.state==="attack"&&d.e).map(d=>d.e));let tg=null,bd=1e9;
+        for(const e of G.enemies){if(!tgt(e)||e.x>reach||e.x>W-4)continue;if(chased.has(e)&&e.t!=="b")continue;if(e.x<bd){bd=e.x;tg=e;}}return tg;};
+      G.dat=(G.dat||0)-dt;
+      if(G.dat<=0){const hov=G.drones.filter(d=>d.state==="hover");if(hov.length){const tg=pick();
+        if(tg){let best=hov[0],q0=1e9;for(const d of hov){const q=Math.hypot(d.x-tg.x,d.y-tg.y);if(q<q0){q0=q;best=d;}}best.state="attack";best.e=tg;G.dat=st.launch*0.6;}}}
+      for(let i=G.drones.length-1;i>=0;i--){const d=G.drones[i],step=st.speed*u*dt;let tx,ty;
+        if(d.state==="attack"){if(!d.e||d.e.hp<=0||!G.enemies.includes(d.e)){d.e=null;const ne=pick();if(ne)d.e=ne;else d.state="go";}}
+        if(d.state==="attack"){tx=d.e.x;ty=d.e.y-10*u*depth(d.e.y);}else{tx=hx+(d.slot%2)*10*u;ty=slotY(d.slot);}
+        const ddx=tx-d.x,ddy=ty-d.y,dist=Math.hypot(ddx,ddy);if(dist>0.5)d.a=Math.atan2(ddy,ddx);
+        if(d.state==="attack"&&dist<=step+2*u){const r=st.radius*u,gy=d.e.y;
+          for(const e of G.enemies){const q=Math.hypot(e.x-tx,e.y-gy);if(q<r){hurt(e,st.dmg*(q<r*0.5?1:0.6),"drone");e.hit=0.12;}}
+          G.fx.push({k:"b",x:tx,y:gy,r,life:0.3,m:0.3});G.drones.splice(i,1);continue;}
+        if(dist<=step){d.x=tx;d.y=ty;if(d.state==="go")d.state="hover";}else{d.x+=ddx/dist*step;d.y+=ddy/dist*step;}}
     }
     if(G.c.flame&&!sqW&&!drW){
       const st=WSTAT.flame(G.c.flame),reach=line+st.range*u;
@@ -2037,7 +2046,7 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
-    for(const d of G.drones)drawDrone(d.x,d.y,u,d.a);
+    for(const d of G.drones)drawDrone(d.x,d.y+(d.state==="hover"?Math.sin(G.time*3+d.slot)*1.5*u:0),u,d.a);
     for(const t of G.tanks)if(t.state!=="reload"&&t.state!=="dead")drawTank(t,u);
     for(const p of G.tshells){const k=Math.min(1,p.t/p.T),x=p.x0+(p.x1-p.x0)*k,y=p.y0+((p.by||p.y1)-p.y0)*k;ctx.fillStyle="#FFD27A";ctx.beginPath();ctx.arc(x,y,1.8*u,0,7);ctx.fill();ctx.strokeStyle="rgba(255,200,120,.5)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-(p.x1-p.x0)*0.06,y-(p.y1-p.y0)*0.06);ctx.stroke();}
     for(const p of G.spits){const k=p.t/p.T,gx=p.x0+(p.x1-p.x0)*k,gy=p.y0+(p.y1-p.y0)*k-Math.sin(Math.PI*k)*30*u;ctx.fillStyle="rgba(140,230,60,.9)";ctx.beginPath();ctx.arc(gx,gy,2.2*u,0,7);ctx.fill();ctx.fillStyle="rgba(140,230,60,.35)";ctx.beginPath();ctx.arc(gx+3*u,gy-1*u,1.6*u,0,7);ctx.fill();}
