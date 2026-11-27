@@ -1391,7 +1391,7 @@ const D=(function(){
   // Sound effects for the fight (very quiet; see Music.sfx), panned by where they happen on the field.
   const snd=(n,x)=>Music.sfx(n,x==null?0:(x/Math.max(1,W)*2-1)*0.7);
   function update(dt){
-    G.time+=dt;if(G.shake>0)G.shake=Math.max(0,G.shake-dt);
+    G.time+=dt;if(G.status==="live"||G.status==="air")Music.mode(G.night%BOSS_EVERY===0||G.enemies.some(e=>e.v==="boss")?"boss":"night"); // boss musicif(G.shake>0)G.shake=Math.max(0,G.shake-dt);
     for(let i=G.planes.length-1;i>=0;i--){const p=G.planes[i];p.t+=dt;if(!p.drop&&p.t>=3.3){p.drop=true;G.pallets=Math.min(40,G.pallets+p.cargo);}if(p.t>=6)G.planes.splice(i,1);}
     {const b=G.cbot||(G.cbot={f:0,dir:0,load:0,wait:0});const LEG=2.4; // cargo bot: airstrip pile (f=0) to the ammo station (f=1)
       if(b.dir===0){b.wait-=dt;if(b.wait<=0&&G.pallets>0){b.load=Math.min(2,G.pallets);G.pallets-=b.load;b.dir=1;}}
@@ -2704,6 +2704,9 @@ const Music=(()=>{
     // Quick exam nights: E minor with a heartbeat, Em C Am B
     night:{bpm:74,root:52,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[-7,-4,0],[-5,-1,2]],seed:11,density:0.42,accent:0.1,lead:"pulse",heart:true,hat:false},
     // Mini-games: C minor, a little livelier, Cm Ab Eb G, with a soft hi-hat
+    // Super boss nights (the owner asked): a little more intense. E minor at 112 bpm with a half-step lurch (Em F Em D),
+    // a driving eighth-note bass, a soft snare on 2 and 4, a quicker heartbeat and a busier pulse lead.
+    boss:{bpm:112,root:52,scale:[0,3,5,7,10],prog:[[0,3,7],[1,5,8],[0,3,7],[-2,2,5]],seed:41,density:0.6,accent:0.14,lead:"pulse",heart:true,hat:true,drive:true},
     arcade:{bpm:86,root:60,scale:[0,3,5,7,10],prog:[[0,3,7],[-4,0,3],[3,7,10],[-5,-1,2]],seed:5,density:0.5,accent:0.05,lead:"pulse",heart:false,hat:true}};
   let ac=null,master=null,pulse=null,noise=null,cur=null,want=null,timer=null,step=0,nextT=0,fadeT=null;
   const vol=()=>(S.settings.musicVol==null?0.5:S.settings.musicVol)*0.8,on=()=>S.settings.music!==false;
@@ -2735,17 +2738,22 @@ const Music=(()=>{
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);o.connect(g);g.connect(master);o.start(t);o.stop(t+0.27);}
   function hat(t){const src=ac.createBufferSource(),g=ac.createGain(),f=ac.createBiquadFilter();src.buffer=noise;f.type="highpass";f.frequency.value=7000;
     g.gain.setValueAtTime(0.035,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);src.connect(f);f.connect(g);g.connect(master);src.start(t);src.stop(t+0.06);}
+  function snare(t){const src=ac.createBufferSource(),g=ac.createGain(),f=ac.createBiquadFilter();src.buffer=noise;f.type="bandpass";f.frequency.value=1800;f.Q.value=0.8;
+    g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.12);src.connect(f);f.connect(g);g.connect(master);src.start(t,Math.random()*0.3);src.stop(t+0.13);}
   function play(k,st,t){const T=TRACKS[k],q=60/T.bpm/4,bar=Math.floor(st/16)%8,s16=st%16,ch=T.prog[bar%4],m=melody(k)[st%128];
     if(m){if(T.lead==="box")voice("triangle",hz(T.root+24+m.n),t,q*m.len*1.6,0.12,null,true);else voice(null,hz(T.root+12+m.n),t,q*m.len*0.9,0.075,pulse);}
     if(s16===0)pad(hz(T.root-12+ch[0]),t,q*16,0.1); // drone
-    if(s16%8===0)voice("triangle",hz(T.root-12+ch[0]),t,q*6,0.16); // soft bass on beats 1 and 3
+    if(T.drive){if(s16%2===0)voice("triangle",hz(T.root-12+ch[0]+(s16%4===2?12:0)),t,q*1.8,0.15);} // driving octave bass in eighths
+    else if(s16%8===0)voice("triangle",hz(T.root-12+ch[0]),t,q*6,0.16); // soft bass on beats 1 and 3
+    if(T.drive&&(s16===4||s16===12))snare(t);
     if(s16%2===0){const tones=[ch[0],ch[1],ch[2],ch[1]];voice("triangle",hz(T.root+12+tones[(s16/2)%4]),t,q*3,0.035,null,true);} // music-box broken chord
-    if(T.heart&&(s16===0||s16===3))thump(t,s16?0.12:0.18); // lub-dub, once a bar
+    if(T.heart&&(s16%(T.drive?8:16)===0||s16%(T.drive?8:16)===3))thump(t,s16%8?0.12:0.18); // lub-dub, once a bar (twice on boss nights)
     if(T.hat&&s16%4===2)hat(t);}
   function tick(){if(!ac||!cur)return;const T=TRACKS[cur],q=60/T.bpm/4;while(nextT<ac.currentTime+0.2){play(cur,step,nextT);nextT+=q;step=(step+1)%128;}}
-  function apply(){if(!ac)return;const m=on()?want:null;if(m===cur)return;
+  let pend;
+  function apply(){if(!ac)return;const m=on()?want:null;if(pend!==undefined?m===pend:m===cur)return;pend=m;
     const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+0.6);
-    clearTimeout(fadeT);fadeT=setTimeout(()=>{cur=m;step=0;nextT=ac.currentTime+0.05;if(m){const t2=ac.currentTime;master.gain.cancelScheduledValues(t2);master.gain.setValueAtTime(0,t2);master.gain.linearRampToValueAtTime(vol(),t2+1.5);}},cur?620:0);}
+    clearTimeout(fadeT);fadeT=setTimeout(()=>{cur=m;pend=undefined;step=0;nextT=ac.currentTime+0.05;if(m){const t2=ac.currentTime;master.gain.cancelScheduledValues(t2);master.gain.setValueAtTime(0,t2);master.gain.linearRampToValueAtTime(vol(),t2+1.5);}},cur?620:0);}
   // the audio graph: master gain → low-pass (softens square edges) → speakers, plus a dark echo (delay with filtered feedback)
   function build(){const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2200;lp.connect(ac.destination);
     master=ac.createGain();master.gain.value=0;master.connect(lp);

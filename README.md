@@ -13,7 +13,7 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 
 ## Music
 
-Relaxing 8-bit background music with a survival-horror mood plays while you study: slow minor-key loops like a safe room between fights, with a music-box melody, a low drone, a soft echo and the odd eerie note. Each mode has its own original tune: the menu screens (main menu, High Scores, Settings), your exam pages (home, Armory, Review), quick exam nights (with a faint heartbeat) and the mini-games. The mock exam is always silent.
+Relaxing 8-bit background music with a survival-horror mood plays while you study: slow minor-key loops like a safe room between fights, with a music-box melody, a low drone, a soft echo and the odd eerie note. Each mode has its own original tune: the menu screens (main menu, High Scores, Settings), your exam pages (home, Armory, Review), quick exam nights (with a faint heartbeat), super boss nights (a slightly more intense tune with a driving bass, a soft snare and a quicker heartbeat, which also plays whenever a boss is on the field) and the mini-games. The mock exam is always silent.
 
 During quick exam nights, very quiet sound effects play for the outpost and the horde: turret fire, rifles, tank cannons, mortars, explosions, tesla zaps, the flamethrower, the railgun and jets, plus zombie groans, squishes, thuds against the wall, spitters and the super boss's roar. Sounds are panned by where they happen on the field and limited so a busy night stays quiet.
 
