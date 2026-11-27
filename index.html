@@ -1070,7 +1070,7 @@ const WSTAT={
   rail:L=>({dmg:WR(L,7,21),reload:WR(L,9,3.1),charge:WR(L,1.8,1),slide:WR(L,18,46)}), // slide: how fast it moves along the wall (U px a second)
   // Field squads (WPN entry with squad:true, CISSP's Incident response team): teams dropped between 0 and 75 m build a
   // temporary bunker and shoot from it. Zombies that touch a team attack it; a team out of supplies is airlifted out.
-  squad:L=>({ship:WR(L,45,75),size:WRI(L,2,5),dmg:WR(L,0.8,2.3),rate:WR(L,0.7,1.2),range:WR(L,192,384),supply:WRI(L,14,70),hp:WRI(L,14,46),build:2.5,max:5,impact:WR(L,2,6)}),
+  squad:L=>({ship:WR(L,45,75),size:WRI(L,2,5),dmg:WR(L,0.8,2.3),rate:WR(L,0.7,1.2),range:WR(L,192,384),supply:WRI(L,14,70),hp:WRI(L,14,46),build:2.5,max:L>=4?6:5,impact:WR(L,2,6)}),
   // Suicide drones (WPN entry with drones:true, Security+): the depot holds count drones and launches one every launch s
   // at a zombie within range (U px, 100 m) of the wall; it blows up on contact. A spent drone is rebuilt every rebuild s.
   // Cable bot (WPN entry with wires:true, A+ Core 2, the owner's design): a bot slowly strings fences between 25 m and
@@ -4911,7 +4911,7 @@ const CISSP_UPG=NET_UPG.map((u,i)=>Object.assign({},u,[
   {n:"Defense in depth",d:"+0.8 turret damage a round. Level 5 adds explosive rounds"},{n:"Continuous monitoring",d:"+0.38 shots a second per turret. Level 5 adds armor-piercing rounds"},{n:"Security architecture",d:"Adds another turret to the wall. Level 3 adds two, for 6 turrets"},
   {n:"Hardened perimeter",d:"+40 wall integrity"},{n:"Risk reserve",d:"+20 starting ammo and +5 per correct answer"}][i]));
 const CISSP_WPN=NET_WPN.map((w,i)=>Object.assign({},w,[
-  {n:"Incident response team",d:"Teams drop into the field, dig in and hold the line until their supplies run out.",squad:true},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
+  {n:"Incident response team",max:4,d:"Teams drop into the field, dig in and hold the line until their supplies run out. Level 4 adds a sixth team.",squad:true},{n:"Kill chain breaker",d:"A disruption that jumps between hostiles."},
   {n:"Cryptographic mine",max:3,d:"Mines laid in the field shatter the horde with splash damage, then slowly re-lay.",mine:true},{n:"Zero Trust lance",d:"A beam that verifies, then destroys, every hostile in its lane."}][i]));
 // Concept Match (CISSP): [description, concept]
 const CONCEPTS=[
