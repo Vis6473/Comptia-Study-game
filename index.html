@@ -1864,6 +1864,14 @@ const D=(function(){
       for(let k=0;k<show;k++){let qx=px-k*5.5*s,qy=k?by-0.8*s:py-0.6*s; // queued at the pad, nose to tail along the belt
         if(k===show-1&&slide<1&&n<=6){qx=bx0+(qx-bx0)*slide;} // the newest drone rides out of the door to its spot
         drawDrone(qx,qy,s*0.55,0);}
+      // refueling on the pad (the owner asked): a fuel post below the pad, a hose with fuel pulsing up it to the drone
+      // that's next to launch, and a gauge that fills until its launch (G.dcd counts down to the next one)
+      {const fx=px+7*s,fy=py+5*s;ctx.fillStyle="#2E353C";ctx.fillRect(fx-1.4*s,fy-4*s,2.8*s,5*s);ctx.fillStyle="#C0392B";ctx.fillRect(fx-1.4*s,fy-4*s,2.8*s,1*s);
+        if(n>0){const pr=Math.max(0,Math.min(1,1-G.dcd/st.launch)),full=pr>=1;
+          ctx.fillStyle=full?(Math.sin(t*6)>0?"#9CFF57":"rgba(156,255,87,.3)"):(Math.sin(t*10)>0?"#FFB020":"rgba(255,176,32,.3)");ctx.fillRect(fx-0.5*s,fy-2.4*s,1*s,1*s);
+          const hx=px+1.6*s,hy=py-0.4*s,cx=fx+2*s,cy=py-2*s;ctx.strokeStyle="#15191D";ctx.lineWidth=Math.max(1,0.9*s);ctx.beginPath();ctx.moveTo(fx,fy-4*s);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();
+          if(!full){ctx.save();ctx.setLineDash([1*s,2.2*s]);ctx.lineDashOffset=-t*12*s;ctx.strokeStyle="rgba(255,176,32,.95)";ctx.lineWidth=Math.max(0.8,0.5*s);ctx.beginPath();ctx.moveTo(fx,fy-4*s);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();ctx.restore();}
+          const gw=10*s;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(px-gw/2,py-7*s,gw,1.5*s);ctx.fillStyle=full?"#9CFF57":"#FFB020";ctx.fillRect(px-gw/2,py-7*s,gw*pr,1.5*s);}}
       const flying=G.drones?G.drones.length:0,building=n+flying<st.count;
       if(building){const pr=1-Math.max(0,Math.min(1,G.drb/st.rebuild)),ax=x+19*s,ay=y+14*s; // assembled just inside the door
         ctx.globalAlpha=0.35+0.65*pr;drawDrone(ax,ay,s*0.6,0);ctx.globalAlpha=1;
