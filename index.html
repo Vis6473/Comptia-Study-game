@@ -880,7 +880,7 @@ const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
 const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered","night","bestNight"];
 function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0,night:1,bestNight:0};} // night: each exam has its own night counter (the owner asked)
-function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ach:{},borrow:{},ex:perExam(()=>exFresh()),
+function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:"",music:true,musicVol:0.5},ach:{},borrow:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
   const e=exFresh();if(!src||typeof src!=="object")return e;
@@ -1359,10 +1359,11 @@ const D=(function(){
     m.innerHTML=`<div class="pt">PAUSED</div>
       <div class="ps">${G.status==="lost"?`The outpost is overrun, and your quick exam is on hold. Finishing it keeps you on night ${G.night}.`:"The horde is frozen and your quick exam is on hold."}</div>
       <div class="pst"><span>QUESTION <b>${G.wave||1}/${G.waves||"—"}</b></span><span>HOSTILES <b>${G.enemies.length}</b></span><span>WALL <b>${Math.ceil(G.wall)}</b></span><span>AMMO <b>${G.ammo}</b></span></div>
-      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button>${ADMIN&&G.status==="live"?`<button class="tpbtn" data-p="boss">Admin: spawn boss now</button>`:""}</div>
+      <div class="bb"><button class="tpbtn hot" data-p="resume">Resume</button>${restartFn?`<button class="tpbtn" data-p="restart">Restart exam</button>`:""}<button class="tpbtn" data-p="shop">Armory</button><button class="tpbtn" data-p="quit">Quit to home</button><button class="tpbtn" data-p="music">Music: ${S.settings.music!==false?"on":"off"}</button>${ADMIN&&G.status==="live"?`<button class="tpbtn" data-p="boss">Admin: spawn boss now</button>`:""}</div>
       <div class="ps">Press P or Esc to resume. Restart begins this quick exam again from question 1 with a fresh night. Quitting ends the night. Answers so far are saved either way.</div>`;
     m.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{const k=b.dataset.p;
       if(k==="resume")setPause(false);else if(k==="shop")toggleShop(true);else if(k==="restart"){setPause(false);restartFn&&restartFn();}
+      else if(k==="music"){S.settings.music=S.settings.music===false;save();Music.refresh();b.textContent="Music: "+(S.settings.music?"on":"off");}
       else if(k==="boss"){setPause(false);if(G&&G.status==="live")spawnBoss();} // admin test tool: a super boss walks on right away
       else{setPause(false);location.hash="home";}});
     m.querySelector('[data-p="resume"]').focus({preventScroll:true});
@@ -2435,6 +2436,8 @@ function viewSettings(){
       <div class="panel stack">
         <div class="row" style="justify-content:space-between"><div><span class="label">Settings</span><h2 style="font-size:28px;margin-top:4px">Settings</h2></div><a class="btn" href="#menu">Main menu</a></div>
         <label class="toggle" for="expOpt"><input type="checkbox" id="expOpt"${S.settings.expandChoices?" checked":""}><span>Spell out abbreviations in answer choices. When a question tests what a term means, its choices stay abbreviated until you answer. Questions and explanations always spell abbreviations out.</span></label>
+        <label class="toggle" for="musOpt"><input type="checkbox" id="musOpt"${S.settings.music!==false?" checked":""}><span><b>Music.</b> Relaxing 8-bit tunes, a different one for the menus, your exam pages, quick exam nights and the mini-games. Mock exams are always silent.</span></label>
+        <label class="row" for="musVol" style="gap:10px;align-items:center"><span class="small">Music volume</span><input type="range" id="musVol" min="0" max="1" step="0.05" value="${S.settings.musicVol==null?0.5:S.settings.musicVol}" style="flex:1;max-width:260px"></label>
       </div>
       ${ADMIN?`<div class="panel stack">
         <div><span class="label">Admin</span><h3 style="font-size:20px;margin:4px 0 0">Admin</h3></div>
@@ -2450,6 +2453,8 @@ function viewSettings(){
           ${armed===k?`<div class="confirm"><b>Reset ${c}?</b><span class="muted">This can't be undone.</span><div class="row"><button class="btn danger" id="yes">Reset ${c}</button><button class="btn" id="no">Cancel</button></div></div>`:""}</div>`).join("")}
       </div></div>`;
     document.getElementById("expOpt").onchange=e=>{S.settings.expandChoices=e.target.checked;save();};
+    document.getElementById("musOpt").onchange=e=>{S.settings.music=e.target.checked;save();Music.refresh();};
+    document.getElementById("musVol").oninput=e=>{S.settings.musicVol=+e.target.value;save();Music.refresh();};
     if(ADMIN){[["admXP","xp"],["admScrap","scrap"]].forEach(([el,k])=>document.getElementById(el).onchange=e=>{S.settings.admin=Object.assign({},S.settings.admin,{[k]:e.target.checked});save();renderHud();});bindAdm();}
     $app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{armed=b.dataset.r;done="";draw();});
     if(armed){document.getElementById("no").onclick=()=>{armed=null;draw();};document.getElementById("yes").onclick=()=>{done=resetPart(armed);armed=null;draw();};}
@@ -2614,6 +2619,63 @@ function setupScoreCard(){
 let cleanup = null;
 const VIEWS = {home:viewHome,mock:viewMock,quiz:viewQuizSetup,review:viewReview,ports:viewPorts,osi:viewOsi,subnet:viewSubnet,control:viewControl,attack:viewAttack,hardware:viewHardware,command:viewCommand,wintool:viewWintool,concept:viewConcept,armory:viewArmory};
 const GLOBAL_VIEWS = {menu:viewMenu,scores:viewScores,settings:viewSettings};
+/* ---------------- Music ---------------- */
+// Relaxing 8-bit background music (the owner asked), synthesized live with the Web Audio API: no audio files. Each
+// mode has its own original loop: the menu screens, an exam's home, armory and review pages, quick exam nights, and the
+// mini-games. The mock exam is silent. A loop is 8 bars: a chord progression played twice under a pulse-wave melody
+// generated once from a fixed seed (so it repeats like a tune), a triangle bass, a soft arpeggio and, on the livelier
+// tracks, a quiet hi-hat. Browsers only allow sound after a click or key press, so the music starts on the first one.
+// S.settings.music turns it on or off and S.settings.musicVol (0–1) sets the volume.
+const Music=(()=>{
+  const TRACKS={ // chords are semitones from the root note (MIDI)
+    menu:{bpm:72,root:57,minor:true,prog:[[0,3,7],[-4,0,3],[-9,-5,-2],[-2,2,5]],seed:3,density:0.45,hat:false},
+    base:{bpm:80,root:60,minor:false,prog:[[0,4,7],[-3,0,4],[-7,-3,0],[-5,-1,2]],seed:7,density:0.5,hat:false},
+    night:{bpm:88,root:55,minor:true,prog:[[0,3,7],[-2,2,5],[-4,0,3],[-5,-2,2]],seed:11,density:0.55,hat:true},
+    arcade:{bpm:96,root:62,minor:false,prog:[[0,4,7],[5,9,12],[-3,0,4],[-5,-1,2]],seed:5,density:0.6,hat:true}};
+  let ac=null,master=null,pulse=null,noise=null,cur=null,want=null,timer=null,step=0,nextT=0,fadeT=null;
+  const vol=()=>(S.settings.musicVol==null?0.5:S.settings.musicVol)*0.8,on=()=>S.settings.music!==false;
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  // a melody for a track: 8 bars of 16 steps, pentatonic, moving by small steps, landing on chord tones on the beat
+  const melodies={};
+  function melody(k){if(melodies[k])return melodies[k];const T=TRACKS[k];let sd=T.seed*9301+49297;const r=()=>(sd=(sd*9301+49297)%233280)/233280;
+    const sc=T.minor?[0,3,5,7,10]:[0,2,4,7,9],pool=[];for(let o=0;o<2;o++)sc.forEach(d=>pool.push(d+12*o));
+    let idx=4;const out=[];
+    for(let bar=0;bar<8;bar++){const ch=T.prog[bar%4];
+      for(let st=0;st<16;st++){let n=null;
+        if(st===0){const tone=((ch[0]%12)+12)%12;let best=0,bd=99;pool.forEach((p,i)=>{const d=Math.abs(((p-tone)%12+12)%12);if(d===0&&Math.abs(i-idx)<bd){bd=Math.abs(i-idx);best=i;}});if(bd<99)idx=best;n=pool[idx];}
+        else if(st%2===0&&r()<T.density*(st%4===0?1:0.55)){idx=Math.max(0,Math.min(pool.length-1,idx+[-2,-1,-1,1,1,2][Math.floor(r()*6)]));n=pool[idx];}
+        out.push(n==null?null:{n,len:st%4===0&&r()<0.5?4:2});}}
+    return melodies[k]=out;}
+  function voice(type,freq,t,dur,v,wave){const o=ac.createOscillator(),g=ac.createGain();if(wave)o.setPeriodicWave(wave);else o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.012);g.gain.exponentialRampToValueAtTime(Math.max(0.0001,v*0.35),t+dur*0.6);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.02);}
+  function hat(t){const src=ac.createBufferSource(),g=ac.createGain(),f=ac.createBiquadFilter();src.buffer=noise;f.type="highpass";f.frequency.value=7000;
+    g.gain.setValueAtTime(0.05,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);src.connect(f);f.connect(g);g.connect(master);src.start(t);src.stop(t+0.06);}
+  function play(k,st,t){const T=TRACKS[k],q=60/T.bpm/4,bar=Math.floor(st/16)%8,s16=st%16,ch=T.prog[bar%4],m=melody(k)[(st)%128];
+    if(m)voice(null,hz(T.root+12+m.n),t,q*m.len*0.95,0.11,pulse); // lead: 25% pulse wave
+    if(s16%8===0)voice("triangle",hz(T.root-12+ch[0]),t,q*7,0.22); // bass on beats 1 and 3
+    if(s16%2===0)voice("triangle",hz(T.root+ch[(s16/2)%3]),t,q*1.6,0.05); // soft arpeggio in eighths
+    if(T.hat&&s16%4===2)hat(t);}
+  function tick(){if(!ac||!cur)return;const T=TRACKS[cur],q=60/T.bpm/4;while(nextT<ac.currentTime+0.2){play(cur,step,nextT);nextT+=q;step=(step+1)%128;}}
+  function apply(){if(!ac)return;const m=on()?want:null;if(m===cur)return;
+    const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(0,t+0.5);
+    clearTimeout(fadeT);fadeT=setTimeout(()=>{cur=m;step=0;nextT=ac.currentTime+0.05;if(m){const t2=ac.currentTime;master.gain.cancelScheduledValues(t2);master.gain.setValueAtTime(0,t2);master.gain.linearRampToValueAtTime(vol(),t2+1.2);}},cur?520:0);}
+  function start(){if(ac||!on())return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    try{ac=new C();}catch(e){return;}
+    const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2600;lp.connect(ac.destination); // softens the square edges
+    master=ac.createGain();master.gain.value=0;master.connect(lp);
+    const n=32,re=new Float32Array(n),im=new Float32Array(n);for(let i=1;i<n;i++)im[i]=2*Math.sin(Math.PI*i*0.25)/(Math.PI*i);pulse=ac.createPeriodicWave(re,im); // 25% duty
+    noise=ac.createBuffer(1,ac.sampleRate*0.1,ac.sampleRate);const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    timer=setInterval(tick,40);apply();}
+  ["pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,()=>{start();if(ac&&ac.state==="suspended"&&!document.hidden)ac.resume();},{capture:true}));
+  document.addEventListener("visibilitychange",()=>{if(!ac)return;if(document.hidden)ac.suspend();else ac.resume();});
+  return {mode(m){want=m||null;apply();},
+    refresh(){if(!ac){start();return;}apply();if(ac&&cur){const t=ac.currentTime;master.gain.cancelScheduledValues(t);master.gain.setValueAtTime(master.gain.value,t);master.gain.linearRampToValueAtTime(vol(),t+0.2);}},
+    playing:()=>cur,ctx:()=>ac};
+})();
+// The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
+const musicFor=name=>GLOBAL_VIEWS[name]?"menu":name==="mock"?null:name==="quiz"?"night":GAMES[name]?"arcade":"base";
+
 function route(){
   if(cleanup){cleanup();cleanup=null;}
   D.unmount();
@@ -2622,9 +2684,10 @@ function route(){
   if(S.exam&&EXAMS[S.exam]&&EXAMS[S.exam].ready&&(!EX||EX.id!==S.exam))setExam(S.exam);
   document.body.classList.toggle("menu-mode",name==="menu");
   document.body.classList.toggle("global-mode",name==="scores"||name==="settings");
-  if(GLOBAL_VIEWS[name]){renderChrome(name);window.scrollTo(0,0);return GLOBAL_VIEWS[name]();}
+  if(GLOBAL_VIEWS[name]){Music.mode(musicFor(name));renderChrome(name);window.scrollTo(0,0);return GLOBAL_VIEWS[name]();}
   if(!EX){location.hash="menu";return;}
   if(!VIEWS[name]||(GAMES[name]&&!EX.games.includes(name)))name="home";
+  Music.mode(musicFor(name));
   renderChrome(name);
   VIEWS[name]();
 }

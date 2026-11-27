@@ -12,6 +12,8 @@ A browser study game for CompTIA exams, with a tower-defense game ("the outpost"
 - The menu, Settings and High Scores are global (`body.menu-mode` hides the header and tabs on the menu; `body.global-mode` hides the tabs). The menu is a deliberately dark title screen with an animated horde on a canvas, which stays still when the device asks for reduced motion.
 - Every view that adds timers or key listeners sets the global `cleanup`. `route()` calls it and also calls `D.unmount()`.
 
+- **Music** (the owner asked): the `Music` module, just before the Router, synthesizes relaxing 8-bit loops with the Web Audio API (no audio files). `TRACKS` holds one original loop per mode: `menu` (global views), `base` (exam home, armory, review), `night` (quick exams) and `arcade` (mini-games). Each loop is 8 bars: a chord progression twice, a pentatonic melody generated once from the track's `seed` (`melody(k)`), triangle bass, soft arpeggio and, for night and arcade, a quiet hi-hat. Everything goes through a master gain and a 2.6 kHz low-pass. `musicFor(name)` maps a route to a track and returns `null` for `mock`, which is always silent; `route()` calls `Music.mode()`. The AudioContext starts on the first pointer or key press (browser autoplay rules), switches tracks with a short fade, and suspends while the tab is hidden. `S.settings.music` (default on) and `S.settings.musicVol` (0–1, default 0.5, master gain `vol × 0.8`) are set in Settings and the night's pause menu (Music: on/off); call `Music.refresh()` after changing them.
+
 ### Main sections of the script (in order)
 
 | Section | What it holds |

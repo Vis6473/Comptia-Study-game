@@ -11,6 +11,10 @@ A browser study game for **CompTIA Network+ (N10-009)**, **CompTIA Security+ (SY
 - **Score card:** High Scores draws a 1200×630 image of your records, with an optional name. Save it as a PNG, copy it, share it from a phone through the share sheet, or open a post on X with your scores as text and attach the image. Scores stay on your device; there is no online leaderboard yet.
 - **Progress:** each exam keeps its own stats, review queue, mock exams and high scores. XP, your level, your streak and the outpost are shared, but each exam has its own base upgrades and weapons.
 
+## Music
+
+Relaxing 8-bit background music plays while you study, with a different original tune for the menu screens (main menu, High Scores, Settings), your exam pages (home, Armory, Review), quick exam nights and the mini-games. The mock exam is always silent. The music is synthesized in the browser, so there are no audio files. It starts after your first click or key press, because browsers don't allow sound before that, and it pauses while the tab is in the background. Turn it off or change the volume in Settings, or with the Music button in a night's pause menu.
+
 ## Network+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds drawn from 365 practice questions across all five exam domains, with an explanation after every answer. Every question is tagged with its N10-009 objective. Each quick exam is also a night of defense in the bottom half of the screen. The undead spawn without end until you answer the last question, and correct answers resupply the guns. Then a bomber makes a slow pass, dropping a bomb on each zombie it flies over, timed to land where that zombie will be. It also carpet-bombs the whole field with three rows of large cyan, magenta, yellow and black toner bombs. Once the field is clear, the next night begins. Press 1–4 to answer and Enter to continue.
