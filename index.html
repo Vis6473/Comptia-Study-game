@@ -873,8 +873,8 @@ const KEY = "netplus-patch-bay-v1";
 // except base upgrades and weapons, which each exam has its own set of (S.base.up.<exam>).
 const EXAM_IDS=["net","sec","a1","a2","cissp"];
 const perExam=f=>Object.fromEntries(EXAM_IDS.map(id=>[id,f(id)]));
-const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered"];
-function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0};}
+const EX_FIELDS=["qs","dom","review","reviewHits","missedEver","mock","mockLast","mockHistory","best","missedPorts","answered","night","bestNight"];
+function exFresh(){return {qs:{},dom:{},review:[],reviewHits:{},missedEver:[],mock:null,mockLast:null,mockHistory:[],best:{ports:0,osi:0,subnet:0,quick:0,control:0,attack:0,hardware:0,command:0,wintool:0,concept:0,mock:null},missedPorts:{},answered:0,night:1,bestNight:0};} // night: each exam has its own night counter (the owner asked)
 function freshState(){return {xp:0,streak:0,lastDay:null,exam:null,settings:{expandChoices:true,playerName:""},ach:{},ex:perExam(()=>exFresh()),
   base:{scrap:0,up:perExam(()=>({})),night:1,bestNight:0,xpSpent:0,stock:0,kills:0,bestKills:0}};}
 function mergeEx(src){
@@ -896,6 +896,8 @@ function load(){const d=freshState();try{const r=JSON.parse(localStorage.getItem
   const perEx=EXAM_IDS.some(id=>up[id]); // older saves kept Network+ upgrade levels flat in base.up
   d.base.up=perExam(id=>perEx?Object.assign({},up[id]):(id==="net"?Object.assign({},up):{}));
   d.ach=Object.assign({},r.ach||{});
+  // Saves from before each exam had its own night counter: the shared night goes to the exam played last.
+  if(!d.base.perNight){const last=EXAM_IDS.includes(d.exam)?d.exam:"net";d.ex[last].night=Math.max(d.ex[last].night||1,d.base.night||1);d.ex[last].bestNight=Math.max(d.ex[last].bestNight||0,d.base.bestNight||0);d.base.perNight=1;}
   // Mocks passed before achievements existed unlock their achievement (without the bonus).
   EXAM_IDS.forEach(id=>{const m=d.ex[id].best.mock;if(m&&m.pass&&!d.ach["pass_"+id])d.ach["pass_"+id]={date:m.date||"",retro:1};});
 }}catch(e){}return d;}
@@ -1185,7 +1187,7 @@ const D=(function(){
   }
   function newRound(){
     const c=cfg();
-    G={c,night:S.base.night,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null};
+    G={c,night:P.night||1,ammo:c.ammo0,wall:c.wallMax,enemies:[],fx:[],splats:[],shells:[],q:[],status:"live",spawning:false,sT:1.5,bT:30,bomber:null,bombs:[],kills:0,time:0,tcd:3,mcd:4,rcd:5,turrets:[],wave:0,waves:0,rounds:[],quizDone:false,bonus:0,railY:0,fcd:0,fburst:0,craters:[],railBy:null,rcharge:0,spits:[],mines:[],jets:[],tbombs:[],squads:[],sqcd:0,ship:null};
     const stock=S.base.stock||0;if(stock){G.ammo+=stock;S.base.stock=0;save();text(wallX()+46*U(),fTop()+14*U(),"+"+stock+" FROM STOCKPILE","#FFB020");}
     layout();hideBanner();toggleShop(false);setPause(false);hud();
     G.bossDue=G.night%BOSS_EVERY===0;G.bossT=12; // a super boss arrives 12 s into every 10th night
@@ -1285,12 +1287,14 @@ const D=(function(){
   }
   function win(){
     G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
-    S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);S.base.night=G.night+1;save();showBanner("won");
+    P.bestNight=Math.max(P.bestNight||0,G.night);S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);P.night=G.night+1;
+    G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry; // leftover ammo carries over to the next night
+    save();showBanner("won");
   }
-  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
+  function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.spits=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
     const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
-    if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
+    if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}${G.carry?` · ${G.carry} ammo carried over`:""}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
     else b.innerHTML=`<div class="bt">OUTPOST OVERRUN</div><div class="bs">${G.quizDone?`The wall fell on night ${G.night}. Spend scrap and XP in the armory, then try again.`:`The wall is down. You can keep answering, and correct answers still earn scrap and XP, but you'll stay on night ${G.night}. Or restart the exam with a fresh night.`}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${G.quizDone?(nextFn?`<button class="tpbtn hot" data-b="next">Retry night ${G.night}</button>`:""):`<button class="tpbtn" data-b="pause">Pause</button>${restartFn?`<button class="tpbtn hot" data-b="restart">Restart exam</button>`:""}`}</div>`;
     b.hidden=false;
     b.querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const k=x.dataset.b;if(k==="shop")toggleShop(true);else if(k==="pause")setPause(true);else if(k==="restart"){if(restartFn)restartFn();}else if(nextFn)nextFn();});
@@ -1961,7 +1965,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n){if(!live())return false;G.ammo+=n;text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:S.base.night,info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
+  return {mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:(P.night||1),info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -1989,11 +1993,11 @@ function viewMenu(){
     const t=examStats(id);
     return `<button class="ocard" data-ex="${id}" style="--oc:${X.color}"><span class="ocode">${X.badge||X.code}</span><h2>${X.name}</h2><span class="osub">${X.tagline}</span>
       <div class="ostats"><div><b>${t.acc===null?"—":t.acc+"%"}</b><span>Accuracy</span></div><div><b>${t.seen}/${t.total}</b><span>Seen</span></div><div><b>${t.review}</b><span>To review</span></div><div><b>${t.mock?t.mock.scaled:"—"}</b><span>Best mock</span></div></div>
-      <span class="ogo">Defend with ${X.name} →</span></button>`;};
+      <span class="ogo">Night ${(S.ex[id]&&S.ex[id].night)||1} · Defend with ${X.name} →</span></button>`;};
   $app.innerHTML=`<section class="tp menu"><canvas id="mz" aria-hidden="true"></canvas><div class="menu-in">
     <div><span class="tp-label">CompTIA study game</span><div class="mhead"><h1 class="czt"><span>CYBER</span><span class="l2"><span class="z">ZOMBIE</span> ATTACK</span></h1>
       <p class="tag">Hold the outpost and pass your exam. Every right answer sends ammo to the wall.</p></div></div>
-    <div class="ostrip"><span>NIGHT <b>${S.base.night}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
+    <div class="ostrip"><span>BEST NIGHT <b>${S.base.bestNight||0}</b></span><span>LEVEL <b>${level()}</b></span><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>DAY STREAK <b>${S.streak}</b></span></div>
     <div class="ocards">${EXAM_IDS.map(card).join("")}</div>
     <div class="mrow" style="justify-content:center"><a class="tpbtn" href="#scores">High scores</a><a class="tpbtn" href="#settings">Settings</a></div>
   </div></section>`;
@@ -2090,7 +2094,7 @@ function viewScores(){
       <div class="row" style="justify-content:space-between"><div><span class="label">High scores</span><h2 style="font-size:28px;margin-top:4px">High scores</h2></div><a class="btn" href="#menu">Main menu</a></div>
       <span class="label">The outpost · shared by every exam</span>
       <div class="board">
-        <div><small>Highest night survived</small><b>${B.bestNight||"—"}</b><small>Now on night ${B.night}</small></div>
+        <div><small>Highest night survived</small><b>${B.bestNight||"—"}</b><small>Now on: ${EXAM_IDS.filter(id=>EXAMS[id].ready!==false).map(id=>`${esc(EXAMS[id].name)} night ${S.ex[id].night||1}`).join(", ")}</small></div>
         <div><small>Most undead in one night</small><b>${B.bestKills||"—"}</b><small>Single quick exam</small></div>
         <div><small>Undead destroyed</small><b>${B.kills||0}</b><small>All time</small></div>
         <div><small>Level</small><b>${level()}</b><small>${S.xp} XP earned</small></div>
@@ -2300,8 +2304,8 @@ function viewHome(){
       </div>
     </section>
     <section class="tp outpost" id="outpost">
-      <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${S.base.night}</h3></div>
-        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
+      <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${P.night||1}</h3></div>
+        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${P.bestNight||0}</b></span></div></div>
       <p>Every quick exam is a night of defense against the horde. Each correct answer sends ammo to the wall, and Hard and Elite sections also send scrap for base upgrades. Spend XP to bolt new weapons onto the base. ${EX.foes} Each exam has its own upgrades and weapons.</p>
       <div class="tiers">${Object.keys(DOMAINS).map(k=>{const t=reward(k);return `<span><b>${k}.0</b> ${t.n}: +${t.ammo} ammo${t.scrap?`, +${t.scrap} scrap`:""}</span>`;}).join("")}</div>
       ${shopHTML()}
@@ -2329,7 +2333,7 @@ const FOE_INFO={walker:["Walker","The standard zombie."],brute:["Brute","Big and
   zeroday:["Zero-day","Shrugs off the first hit from each weapon type."],
   boss:["Super boss","A giant with 12 brutes' worth of health. It can't be stunned or knocked back, summons three zombies every 12 seconds, and hits the wall four times as hard as a brute. Killing it pays 60 scrap and 30 XP."]};
 function viewArmory(){
-  const I=D.info(),c=I.cfg,n=S.base.night,ramp=1+0.04*(n-1);
+  const I=D.info(),c=I.cfg,n=P.night||1,ramp=1+0.04*(n-1);
   const wpn=WPN.map(w=>{const l=upL(w.k);return `<div><small>${esc(w.n)}</small><b>${l?"Level "+l:"Locked"}</b><small>${esc(wDesc(w.k,l,w))}${l?"":` Unlocks for ${w.xp} XP.`}</small></div>`;}).join("");
   const foes=[[I.V[0],"w","Most of the horde"],[I.V[1],"w","About 30% of the horde"],[I.V[2],"b","Every 22–45 seconds, and after each wrong answer"],
     ...I.specials.map(v=>[v,"w",`Special: mixed into the horde from night ${I.specialNight}`]),["boss","b",`Super boss: arrives on every ${I.bossEvery}th night (night ${I.bossEvery}, ${I.bossEvery*2}, and so on)`]]
@@ -2355,7 +2359,7 @@ function viewArmory(){
     </div>
     <section class="tp outpost" id="outpost">
       <div class="op-head"><div><span class="tp-label">Outpost armory</span><h3>Night ${n}</h3></div>
-        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${S.base.bestNight}</b></span></div></div>
+        <div class="op-stats"><span>XP <b class="x">${xpTxt()}</b></span><span>SCRAP <b>${scrapTxt()}</b></span><span>BEST NIGHT <b>${P.bestNight||0}</b></span></div></div>
       ${shopHTML()}
     </section>
     <div class="panel stack">
