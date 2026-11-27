@@ -1753,7 +1753,7 @@ const D=(function(){
     b.fillStyle="rgba(255,176,32,.8)";for(let k=0;k<9;k++){b.fillRect(x+(1+k*8.7)*s,y+3*s,1*s,1*s);b.fillRect(x+(1+k*8.7)*s,y+14.4*s,1*s,1*s);} // edge lights
     b.strokeStyle="#8A96A0";b.lineWidth=Math.max(1,0.6*s);b.beginPath();b.moveTo(x+4*s,y+2*s);b.lineTo(x+4*s,y-6*s);b.stroke();
     b.fillStyle="#FF8A1A";b.beginPath();b.moveTo(x+4*s,y-6*s);b.lineTo(x+10*s,y-5*s);b.lineTo(x+4*s,y-3.6*s);b.fill(); // windsock
-    lab("AIRSTRIP",x+12*s,y-2*s);
+    lab("AIRSTRIP",x+2*s,y+21*s); // below the runway
     // generator housing (the core glow is drawn live)
     [x,y]=L.gen;R(x,y,26,20,"#18232C");R(x,y,26,3,"#2A3B47");b.strokeStyle="rgba(214,244,255,.12)";
     for(let k=0;k<3;k++){b.beginPath();b.moveTo(x+3*s,y+(7+k*4)*s);b.lineTo(x+11*s,y+(7+k*4)*s);b.stroke();}
