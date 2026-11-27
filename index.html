@@ -1484,9 +1484,9 @@ const D=(function(){
     // Drone depot: launches suicide drones at zombies within range; each one homes in and blows up with splash.
     const drW=wMode(WPN.find(w=>w.k==="flame"))==="drone";
     if(G.c.flame&&drW){
-      const st=WSTAT.drone(G.c.flame),reach=line+st.range*u,Ly=yard(),dx=Ly.flame[0]+17*Ly.ys,dy=Ly.flame[1]+8*Ly.ys;
+      const st=WSTAT.drone(G.c.flame),reach=line+st.range*u,Ly=yard(),dx=Ly.flame[0]+DRONE_PAD[0]*Ly.ys,dy=Ly.flame[1]+DRONE_PAD[1]*Ly.ys; // take off from the launch pad
       if(G.dstock==null)G.dstock=st.count;
-      if(G.dstock+G.drones.length<st.count){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;}}else G.drb=st.rebuild;
+      if(G.dstock+G.drones.length<st.count){G.drb-=dt;if(G.drb<=0){G.dstock++;G.drb=st.rebuild;G.dOut=G.time;}}else G.drb=st.rebuild; // dOut: a finished drone rolls out
       G.dcd-=dt;
       // drones launch on their own and hover in a line 25 m out; the nearest hovering drone dives at a zombie within range.
       // Each takes its own target, except brutes and bosses, which several drones can hit at once (the owner's rules).
@@ -1686,6 +1686,7 @@ const D=(function(){
   // a narrow phone yard as well as a wide desktop one.
   const WCOL={net:"25,240,255",sec:"120,240,255",a1:"255,176,32",a2:"156,255,87",cissp:"179,136,255"};
   const wcol=()=>WCOL[S.exam]||WCOL.net;
+  const DRONE_PAD=[50,19.5]; // launch pad at the end of the drone belt, in yard units from the depot
   const TANK_SCALE=1.15; // tank size, the same for every tank (no depth scaling); drawTank and update() both use it
   const TONER=["0,200,255","255,43,214","255,214,0","70,70,78"]; // cyan, magenta, yellow, black
   function yard(){
@@ -1802,22 +1803,26 @@ const D=(function(){
       // drone factory: hangar, a conveyor belt carrying the drones waiting to launch, and robot arms that weld new ones
       ctx.fillStyle="#232A30";ctx.beginPath();ctx.moveTo(x,y+18*s);ctx.lineTo(x+4*s,y+2*s);ctx.lineTo(x+34*s,y+2*s);ctx.lineTo(x+38*s,y+18*s);ctx.closePath();ctx.fill();
       ctx.fillStyle="#14181C";ctx.fillRect(x+12*s,y+8*s,14*s,10*s);ctx.fillStyle=`rgba(${c},.8)`;ctx.fillRect(x+12*s,y+7*s,14*s,1.2*s);
-      const by=y+21*s;ctx.fillStyle="#1A1F24";ctx.fillRect(x-2*s,by,42*s,3.2*s);ctx.fillStyle="#3A434C";
-      const off=(t*10)%4;for(let k=0;k<11;k++)ctx.fillRect(x-2*s+(k*4+off)*s,by+0.6*s,1.2*s,2*s); // moving belt treads
-      ctx.fillStyle="#2B3138";ctx.beginPath();ctx.arc(x-2*s,by+1.6*s,1.8*s,0,7);ctx.arc(x+40*s,by+1.6*s,1.8*s,0,7);ctx.fill();
-      const n=G.dstock==null?st.count:G.dstock,show=Math.min(n,6);
-      for(let k=0;k<show;k++){const px=x+(2+((k*6.5+t*6)%39))*s;drawDrone(px,by-1.6*s,s*0.55,0);}
+      const by=y+18.5*s,bx0=x+19*s,px=x+DRONE_PAD[0]*s,py=y+DRONE_PAD[1]*s;
+      ctx.fillStyle="#1A1F24";ctx.fillRect(bx0,by,px-bx0-3*s,2.6*s);ctx.fillStyle="#3A434C"; // belt from the hangar door to the pad
+      const off=(t*10)%4;for(let k=0;k<Math.floor((px-bx0)/(4*s));k++)ctx.fillRect(bx0+(k*4+off)*s,by+0.5*s,1.2*s,1.6*s);
+      ctx.fillStyle="#2B3138";ctx.beginPath();ctx.ellipse(px,py+1*s,6*s,2.4*s,0,0,7);ctx.fill(); // launch pad
+      ctx.strokeStyle=`rgba(${c},${0.5+0.4*Math.sin(t*4)})`;ctx.lineWidth=0.7*s;ctx.beginPath();ctx.ellipse(px,py+1*s,4.6*s,1.7*s,0,0,7);ctx.stroke();
+      const n=G.dstock==null?st.count:G.dstock,show=Math.min(n,6),slide=G.dOut!=null?Math.min(1,(t-G.dOut)/1.2):1;
+      for(let k=0;k<show;k++){let qx=px-k*5.5*s,qy=k?by-0.8*s:py-0.6*s; // queued at the pad, nose to tail along the belt
+        if(k===show-1&&slide<1&&n<=6){qx=bx0+(qx-bx0)*slide;} // the newest drone rides out of the door to its spot
+        drawDrone(qx,qy,s*0.55,0);}
       const flying=G.drones?G.drones.length:0,building=n+flying<st.count;
-      if(building){const pr=1-Math.max(0,Math.min(1,G.drb/st.rebuild)),ax=x+19*s,ay=by-2*s;
+      if(building){const pr=1-Math.max(0,Math.min(1,G.drb/st.rebuild)),ax=x+19*s,ay=y+14*s; // assembled just inside the door
         ctx.globalAlpha=0.35+0.65*pr;drawDrone(ax,ay,s*0.6,0);ctx.globalAlpha=1;
-        for(const side of [-1,1]){const bx=ax+side*9*s,a1=-1.2+0.35*Math.sin(t*7+side),a2=a1+0.9+0.4*Math.sin(t*11+side*2);
-          const ex=bx+Math.cos(a1)*6*s*-side,ey=y+12*s+Math.sin(a1)*6*s,tx=ex+Math.cos(a2)*5*s*-side,ty=ey+Math.sin(a2)*5*s;
-          ctx.strokeStyle="#8A96A0";ctx.lineWidth=1.3*s;ctx.beginPath();ctx.moveTo(bx,y+12*s);ctx.lineTo(ex,ey);ctx.lineTo(tx,ty);ctx.stroke();
-          ctx.fillStyle="#C9D2DA";ctx.beginPath();ctx.arc(bx,y+12*s,1.1*s,0,7);ctx.arc(ex,ey,0.8*s,0,7);ctx.fill();
-          if(Math.sin(t*23+side*3)>-0.2){ctx.strokeStyle="rgba(255,210,90,.95)";ctx.lineWidth=0.6*s;ctx.beginPath(); // sparks
+        for(const side of [-1,1]){const bx=ax+side*6*s,a1=-1.2+0.35*Math.sin(t*7+side),a2=a1+0.9+0.4*Math.sin(t*11+side*2);
+          const ex=bx+Math.cos(a1)*4*s*-side,ey=y+9*s+Math.sin(a1)*3*s,tx=ex+Math.cos(a2)*4*s*-side,ty=ey+Math.sin(a2)*4*s+2*s;
+          ctx.strokeStyle="#8A96A0";ctx.lineWidth=1.1*s;ctx.beginPath();ctx.moveTo(bx,y+9*s);ctx.lineTo(ex,ey);ctx.lineTo(tx,ty);ctx.stroke();
+          ctx.fillStyle="#C9D2DA";ctx.beginPath();ctx.arc(bx,y+9*s,0.9*s,0,7);ctx.arc(ex,ey,0.7*s,0,7);ctx.fill();
+          if(Math.sin(t*23+side*3)>-0.2){ctx.strokeStyle="rgba(255,210,90,.95)";ctx.lineWidth=0.6*s;ctx.beginPath(); // sparks out of the door
             for(let q=0;q<4;q++){const sa=Math.random()*Math.PI*2,sl=(1.5+Math.random()*3)*s;ctx.moveTo(tx,ty);ctx.lineTo(tx+Math.cos(sa)*sl,ty+Math.sin(sa)*sl);}ctx.stroke();
             ctx.fillStyle="rgba(255,245,200,.9)";ctx.beginPath();ctx.arc(tx,ty,0.9*s,0,7);ctx.fill();}}}
-      ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+st.count,x+42*s,y+14*s);}
+      ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+"/"+st.count,x+DRONE_PAD[0]*s,y+11*s);}
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
       ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=Math.max(1,1.2*s);ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,13*s,6*s,0,0,7);ctx.stroke();
       ctx.fillStyle=`rgba(${c},.9)`;ctx.fillRect(x+13*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+19.4*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+13*s,y+13.2*s,8*s,1.4*s);
