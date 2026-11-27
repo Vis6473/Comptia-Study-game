@@ -1897,7 +1897,9 @@ const D=(function(){
     const m3=wMode(WPN.find(w=>w.k==="mortar"));
     if(G.c.mortar&&m3==="tank"){const [x,y]=mortarPos();ctx.fillStyle="#2B3036";ctx.beginPath();ctx.moveTo(x-22*s,y+8*s);ctx.lineTo(x-16*s,y-6*s);ctx.lineTo(x+16*s,y-6*s);ctx.lineTo(x+22*s,y+8*s);ctx.closePath();ctx.fill();
       ctx.fillStyle="#14181C";ctx.fillRect(x-9*s,y-1*s,18*s,9*s);ctx.fillStyle="rgba(255,176,32,.7)";for(let k=0;k<4;k++)ctx.fillRect(x-9*s+k*5*s,y-1*s,2.5*s,1.2*s);
-      const n=G.tanks.filter(t=>t.state==="reload"||t.state==="dead").length;if(n){ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText(n+" IN BUNKER",x,y+18*s);}}
+      const nd=G.tanks.filter(t=>t.state==="dead").length; // refueling tanks show on the apron; destroyed ones are rebuilt inside
+      if(nd&&s>=0.8){ctx.fillStyle="#FF2BD6";ctx.font=`600 ${Math.round(5*s)}px "IBM Plex Mono", monospace`;ctx.textAlign="center";ctx.fillText("REBUILDING "+nd,x,y+6.2*s);}
+      drawRefuel(x,y,s);}
     else
     if(G.c.mortar&&m3==="toner"){const [x,y]=mortarPos();ctx.fillStyle="#1C2228";ctx.fillRect(x-20*s,y-4*s,40*s,9*s);
       ctx.fillStyle="rgba(255,214,0,.6)";for(let k=0;k<4;k++)ctx.fillRect(x-17*s+k*10*s,y,5*s,1*s);
@@ -2076,7 +2078,7 @@ const D=(function(){
       const box=(p,a,b,c,d)=>{const pad=6.5*s;for(let j=Math.max(0,Math.floor((p[1]+b*s-pad-L.ft)/cs));j<=Math.min(ny-1,Math.floor((p[1]+d*s+pad-L.ft)/cs));j++)
         for(let i=Math.max(0,Math.floor((p[0]+a*s-pad)/cs));i<=Math.min(nx-1,Math.floor((p[0]+c*s+pad)/cs));i++)blk[j*nx+i]=1;};
       box(L.hq,0,-4,56,40);box(L.depot,0,-4,46,24);box(L.props,0,0,62,32);box(L.barracks,0,2,72,16);box(L.gen,0,0,26,20);
-      if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),-22,-12,22,12);
+      if(G.c.flame)box(L.flame,0,0,40,26);if(G.c.tesla)box(L.tesla,0,-6,14,48);if(G.c.mortar)box(mortarPos(),wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-30:-22,wMode(WPN.find(w=>w.k==="mortar"))==="tank"?-34:-12,22,12); // the tank bunker's service apron too
       yardPaths={key,cs,nx,ny,blk,memo:{}};}
     const Y=yardPaths,mk=A.map(Math.round).join()+">"+B.map(Math.round).join();if(Y.memo[mk])return Y.memo[mk];
     const {cs,nx,ny,blk}=Y,cell=p=>[Math.max(0,Math.min(nx-1,Math.floor(p[0]/cs))),Math.max(0,Math.min(ny-1,Math.floor((p[1]-L.ft)/cs)))];
@@ -2166,6 +2168,26 @@ const D=(function(){
     ctx.fillStyle="#3A403A";ctx.fillRect(12.5*k,-1.9*k,2.5*k,3.8*k);ctx.restore();
     if(t.state!=="back"&&t.ammo!=null){const mag=WSTAT.tank(G.c.mortar).mag;ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-18*k,16*k,2.4*k);ctx.fillStyle="#FFB020";ctx.fillRect(x-8*k,y-18*k,16*k*Math.max(0,t.ammo/mag),2.4*k);}
     const st=WSTAT.tank(G.c.mortar);ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-8*k,y-21*k,16*k,2.4*k);ctx.fillStyle="#FF3B5C";ctx.fillRect(x-8*k,y-21*k,16*k*Math.max(0,t.hp/st.hp),2.4*k);}
+  // Tank refueling (the owner asked): a service apron above the bunker with one fuel pump per tank. A tank that comes
+  // back to reload parks at a pump; a hose runs to its rear deck with fuel pulsing along it, the pump light blinks, a
+  // gauge fills over the reload time, and a shell is lowered into the turret hatch. Destroyed tanks stay in the bunker.
+  const tankBay=(x,y,s,i)=>[x-20*s+(i%3)*20*s,y-15*s-Math.floor(i/3)*13*s];
+  function drawRefuel(x,y,s){const st=WSTAT.tank(G.c.mortar),t=G.time,rel=G.tanks.filter(q=>q.state==="reload");
+    for(let i=0;i<st.count;i++){const [bx,by]=tankBay(x,y,s,i),q=rel[i];
+      ctx.fillStyle="rgba(255,176,32,.18)";ctx.fillRect(bx-8*s,by+1.5*s,16*s,0.8*s); // bay line
+      const px=bx-9*s,py=by-4*s;ctx.fillStyle="#2E353C";ctx.fillRect(px-1.6*s,py-3*s,3.2*s,6*s);ctx.fillStyle="#C0392B";ctx.fillRect(px-1.6*s,py-3*s,3.2*s,1.2*s); // fuel pump
+      ctx.fillStyle=q&&Math.sin(t*8+i)>0?"#9CFF57":"rgba(156,255,87,.25)";ctx.fillRect(px-0.6*s,py-0.8*s,1.2*s,1.2*s);
+      if(!q)continue;const k=s*0.42,pr=Math.max(0,Math.min(1,1-q.rt/st.reload));
+      ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(bx,by+0.5*k,14*k,3*k,0,0,7);ctx.fill();
+      ctx.fillStyle="#1E2226";ctx.fillRect(bx-13*k,by-4*k,26*k,4.5*k);ctx.fillStyle="#4E5A4A";ctx.fillRect(bx-12*k,by-9*k,24*k,6*k);ctx.fillStyle=`rgb(${wcol()})`;ctx.fillRect(bx-12*k,by-6*k,24*k,1*k);
+      ctx.fillStyle="#8A9584";ctx.fillRect(bx+1*k,by-11.3*k,14*k,2.6*k);ctx.fillStyle="#5E6B58";ctx.beginPath();ctx.ellipse(bx,by-10*k,6*k,3.6*k,0,0,7);ctx.fill();
+      // hose from the pump to the rear deck, with fuel pulses running along it
+      const hx=bx-11*k,hy=by-7*k,cx=(px+hx)/2,cy=Math.max(py,hy)+3*s;ctx.strokeStyle="#15191D";ctx.lineWidth=Math.max(1,1.1*s);ctx.beginPath();ctx.moveTo(px+1.6*s,py);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();
+      ctx.save();ctx.setLineDash([1.2*s,2.6*s]);ctx.lineDashOffset=-t*14*s;ctx.strokeStyle="rgba(255,176,32,.9)";ctx.lineWidth=Math.max(0.8,0.6*s);ctx.beginPath();ctx.moveTo(px+1.6*s,py);ctx.quadraticCurveTo(cx,cy,hx,hy);ctx.stroke();ctx.restore();
+      // a shell being lowered into the turret hatch
+      const sp=(t*0.8+i*0.37)%1;ctx.fillStyle="#D9B54A";ctx.fillRect(bx-0.7*k,by-(10+9*(1-sp))*k,1.4*k,3.2*k);
+      // fuel gauge
+      const gw=16*s*0.7;ctx.fillStyle="rgba(5,8,12,.85)";ctx.fillRect(bx-gw/2,by+3*s,gw,1.8*s);ctx.fillStyle="#FFB020";ctx.fillRect(bx-gw/2,by+3*s,gw*pr,1.8*s);}}
   // Toner jet: a small swept-wing jet in the exam color, with its shadow on the lane below and an afterburner.
   function drawJet(j,u){const x=j.x,y=j.alt,c=wcol();
     ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(x,j.lane,9*u,1.6*u,0,0,7);ctx.fill();
