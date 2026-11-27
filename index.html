@@ -1076,7 +1076,7 @@ const WSTAT={
   // Cable bot (WPN entry with wires:true, A+ Core 2, the owner's design): a bot slowly strings fences between 25 m and
   // 150 m. Zombies in a fence move at slow× speed and take dmg a second, and wear its durability (hp) down. Level 1 is
   // thin RJ11, 2 twisted RJ45, 3 fiber and 4 a laser fence. build is the seconds the bot takes to string one fence.
-  wire:L=>{const l=Math.max(1,Math.min(4,L))-1;return {kind:["rj11","rj45","fiber","laser"][l],count:[4,6,8,8][l],slow:[0.6,0.5,0.4,0.3][l],dmg:[0.2,0.35,0.5,0.8][l],hp:[40,70,110,160][l],build:[9,7,5,4][l],speed:[26,30,34,38][l],lo:96,hi:576};},
+  wire:L=>{const l=Math.max(1,Math.min(4,L))-1;return {kind:["rj11","rj45","fiber","laser"][l],count:[4,6,8,8][l],slow:[0.6,0.5,0.4,0.3][l],dmg:[0.2,0.35,0.5,0.8][l],hp:[40,70,110,160][l],build:[9,7,5,4][l],speed:[26,30,34,38][l],bhp:[30,45,60,80][l],rebuild:[25,20,15,12][l],lo:96,hi:576};},
   drone:L=>({count:5*Math.max(1,Math.min(3,L)),dmg:WR(L,6,14),radius:WR(L,14,22),launch:WR(L,1.2,0.5),rebuild:WR(L,4,2),speed:WR(L,220,300),range:384}),
   // Stun-only tesla (WPN entry with stunOnly:true, Security+'s EDR pulse): no damage, a much longer stun.
   pulse:L=>({targets:WRI(L,1,4),reload:WR(L,6,1.8),stun:WR(L,1,2.4)}),
@@ -1100,7 +1100,7 @@ function wDesc(k,L,w){k=wMode(w)||k;const s=WSTAT[k](Math.max(1,L)),f=n=>+n.toFi
   toner:()=>`Every ${f(s.reload)} s a jet flies over the busiest pack, anywhere on the field. It aims ${s.bombs} toner bombs at zombies in its lane (${f(s.dmg)} damage across ${fieldM(s.radius)} m each) and carpet-bombs the pack with ${s.carpet} CMYK bomblets (${f(s.cdmg)} damage across ${fieldM(s.cr)} m each).`,
   wipe:()=>`Shells the densest pack: ${f(s.dmg)} damage in a ${fieldM(s.radius)} m blast that stuns every zombie in it for ${f(s.stun)} s. Reloads in ${f(s.reload)} s.`,
   flame:()=>`Burns zombies within ${fieldM(s.range)} m of the wall for ${f(s.dmg)} damage a second and sets them on fire (${f(s.burn)} damage a second for ${s.burnT} s). Carries ${s.fuel} s of fuel, used only while firing, then cools down for ${f(s.cool)} s to refuel.`,
-  wire:()=>`A cable bot drives out and slowly strings ${s.count} ${s.kind==="laser"?"laser fences":{rj11:"thin RJ11",rj45:"twisted RJ45",fiber:"fiber-optic"}[s.kind]+" barbed-wire fences"} across the field between 25 and 150 m, taking ${f(s.build)} s for each. Zombies in a fence move at ${Math.round(s.slow*100)}% speed and take ${f(s.dmg)} damage a second. Each fence has ${s.hp} durability: zombies wear it down as they push through, and the bot rebuilds cut fences and patches damaged ones.`,
+  wire:()=>`A cable bot drives out and slowly strings ${s.count} ${s.kind==="laser"?"laser fences":{rj11:"thin RJ11",rj45:"twisted RJ45",fiber:"fiber-optic"}[s.kind]+" barbed-wire fences"} across the field between 25 and 150 m, taking ${f(s.build)} s for each. Zombies in a fence move at ${Math.round(s.slow*100)}% speed and take ${f(s.dmg)} damage a second. Each fence has ${s.hp} durability: zombies wear it down as they push through, and the bot rebuilds cut fences and patches damaged ones. Zombies go after the bot, which has ${s.bhp} health; a destroyed bot is rebuilt in its shed in ${s.rebuild} s.`,
   drone:()=>`${s.count} suicide drones launch on their own and hover 25 m out. The nearest one dives at any zombie within ${fieldM(s.range)} m of the wall and blows up on it: ${f(s.dmg)} damage across ${fieldM(s.radius)} m. Each drone takes its own target, except brutes and bosses, which several can hit. A new drone is built every ${f(s.rebuild)} s.`,
   squad:()=>`An orbital ship flies slowly over the field and drops a pod for every open slot: ${s.size}-person teams land somewhere between 0 and 75 m and build a temporary bunker. A lost or extracted team is replaced on the ship's next pass. It fires at zombies up to ${fieldM(s.range)} m in front of it for ${f(s.dmg)} damage a shot, with ${s.supply} rounds of supplies and ${s.hp} health. Zombies that reach a team attack it and can wipe it out. A team out of supplies is airlifted out. Up to ${s.max} teams in the field at once.`,
   tank:()=>`${s.count} tank${s.count>1?"s":""} roll out through the wall to the busiest lane and fire shells at zombies up to ${fieldM(s.range)} m away: ${f(s.dmg)} damage across ${fieldM(s.radius)} m, one every ${f(s.rate)} s. After ${s.mag} shells a tank drives back to the bunker and reloads for ${f(s.reload)} s. Each tank has ${f(s.hp)} health: zombies that reach one attack it, and a destroyed tank is rebuilt in ${f(s.rebuild)} s.`,
@@ -1426,7 +1426,10 @@ const D=(function(){
       if(G.squads.length&&!e.under){const q=G.squads.find(q=>q.state!=="inbound"&&q.state!=="gone"&&e.x>q.x-4*U()&&e.x-q.x<12*U()&&Math.abs(e.y-q.y)<14*U()*depth(q.y));
         if(q){q.hp-=e.dps*dt;q.hit=0.1;e.ph+=dt*9;continue;}}
       if(G.tanks.length&&!e.under){const tk=G.tanks.find(t=>t.state!=="reload"&&t.state!=="dead"&&e.x>t.x-6*U()&&e.x-t.x<16*U()&&Math.abs(e.y-t.y)<12*U()*depth(t.y));
-        if(tk){tk.hp-=e.dps*dt;tk.hit=0.1;e.ph+=dt*9;continue;}} // zombies touching a tank attack it // a zombie touching a field team attacks it instead of walking on
+        if(tk){tk.hp-=e.dps*dt;tk.hit=0.1;e.ph+=dt*9;continue;}}
+      if(G.wbot&&G.wbot.state!=="dead"&&!e.under&&G.c.flame){const wb=G.wbot,ux=U();
+        if(e.x>wb.x-6*ux&&e.x-wb.x<10*ux&&Math.abs(e.y-wb.y)<10*ux*depth(wb.y)){wb.hp-=e.dps*dt;wb.hit=0.1;e.ph+=dt*9;continue;} // zombies touching the cable bot attack it
+        if(e.v!=="boss"&&e.x>wb.x&&e.x-wb.x<60*ux){const dy=wb.y-e.y;e.y+=Math.sign(dy)*Math.min(Math.abs(dy),e.spd*0.6*dt);}} // and veer toward it when it's close ahead // zombies touching a tank attack it // a zombie touching a field team attacks it instead of walking on
       // burrowers surface about 18 m from the wall; spitters stop and spit; screamers and damage speed others up
       if(e.under&&e.x<=line+70*U()){e.under=false;for(let k=0;k<10;k++)G.fx.push({k:"smk",x:e.x,y:e.y,vx:rnd(-50,50)*U(),vy:rnd(-40,-10)*U(),life:rnd(0.6,1),m:1});text(e.x,e.y-34*U(),"BURROWER","#FFB020");}
       if(e.v==="spitter"&&spit(e,dt,line))continue;
@@ -1530,19 +1533,23 @@ const D=(function(){
         for(let i=0;i<st.count;i++)G.wires.push({x:lo+(hi-lo)*i/Math.max(1,st.count-1),y:fTop()+6*u+fh*([0,2,1][i%3]+0.5),h:fh*0.92,hp:0,p:0,up:false,hit:0});}
       for(const f of G.wires){f.hit-=dt;if(f.up&&f.hp<=0){f.up=false;f.p=0;f.hp=0;text(f.x,f.y-f.h/2-10*u,"WIRE CUT","#FFB020");
         for(let k=0;k<8;k++)G.fx.push({k:"smk",x:f.x,y:f.y+rnd(-0.5,0.5)*f.h,vx:rnd(-30,30)*u,vy:rnd(-30,-8)*u,life:rnd(0.4,0.8),m:0.8});}}
-      const home=[line+12*u,(fTop()+fBot())/2],b=G.wbot||(G.wbot={x:line+4*u,y:home[1],a:0,job:null,mode:null});
+      const home=[line+12*u,(fTop()+fBot())/2],b=G.wbot||(G.wbot={x:line+4*u,y:home[1],a:0,job:null,mode:null,hp:st.bhp,hit:0,state:"live",rt:0});
+      b.hit-=dt;b.work=false;
+      if(b.state==="live"&&b.hp<=0){b.state="dead";b.rt=st.rebuild;b.job=null;b.at=false;text(b.x,b.y-24*u,"CABLE BOT DESTROYED","#FF2BD6");
+        G.fx.push({k:"b",x:b.x,y:b.y,r:14*u,life:0.35,m:0.35});G.craters.push({x:b.x,y:b.y,r:4*u});if(G.craters.length>24)G.craters.shift();}
+      if(b.state==="dead"){b.rt-=dt;if(b.rt<=0){b.state="live";b.hp=st.bhp;b.x=line+4*u;b.y=home[1];text(line+30*u,home[1]-20*u,"CABLE BOT REBUILT","#9CFF57");}}
+      if(b.state==="live"){
       if(b.job&&((b.mode==="build"&&b.job.up)||(b.mode==="fix"&&(!b.job.up||b.job.hp>=st.hp))))b.job=null;
       if(!b.job){b.job=G.wires.find(f=>!f.up)||null;b.mode="build";
         if(!b.job){let w0=null;for(const f of G.wires)if(f.hp<st.hp*0.6&&(!w0||f.hp<w0.hp))w0=f;b.job=w0;b.mode="fix";}}
       const go=(tx,ty)=>{const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy),step=st.speed*u*dt;if(d>0.5)b.a=Math.atan2(dy,dx);if(d<=step){b.x=tx;b.y=ty;return true;}b.x+=dx/d*step;b.y+=dy/d*step;return false;};
-      b.work=false;
       if(!b.job)go(home[0],home[1]);
       else if(b.mode==="build"){const f=b.job,y0=f.y-f.h/2;
         if(f.p===0&&!b.at){if(go(f.x-4*u,y0))b.at=true;}
         else{b.at=true;f.p=Math.min(1,f.p+dt/st.build);b.x=f.x-4*u;b.y=y0+f.h*f.p;b.a=Math.PI/2;b.work=true;
           if(f.p>=1){f.up=true;f.hp=st.hp;b.at=false;b.job=null;}}}
       else{const f=b.job;if(go(f.x-4*u,f.y)){b.work=true;f.hp=Math.min(st.hp,f.hp+st.hp/st.build*dt);}}
-    }
+    }}
     if(G.c.flame&&!sqW&&!drW&&!wiW){
       const st=WSTAT.flame(G.c.flame),reach=line+st.range*u;
       // Burns continuously while zombies are in reach, using fuel only while firing; an empty tank cools down and refuels.
@@ -1816,7 +1823,8 @@ const D=(function(){
   const clamp01=v=>Math.max(0,Math.min(1,v));
   function drawCooldowns(L){const s=L.ys,bw=Math.max(14,26*s),bh=Math.max(2.5,2.6*s);
     if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="drone"){const [x,y]=L.flame,st=WSTAT.drone(G.c.flame);cdBar(x+4*s,y+28*s,bw,bh,G.dstock==null?1:G.dstock/st.count);}
-    else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="wire"){const [x,y]=L.flame,st=WSTAT.wire(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.wires.length?G.wires.reduce((a,f)=>a+(f.up?f.hp:0),0)/(st.hp*G.wires.length):0);} // fence durability left
+    else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="wire"){const [x,y]=L.flame,st=WSTAT.wire(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.wires.length?G.wires.reduce((a,f)=>a+(f.up?f.hp:0),0)/(st.hp*G.wires.length):0); // fence durability left
+      const wb=G.wbot;cdBar(x+4*s,y+25*s+bh+3,bw,bh,!wb?1:wb.state==="dead"?1-clamp01(wb.rt/st.rebuild):clamp01(wb.hp/st.bhp));} // second bar: bot health, or its rebuild cooldown
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;cdBar(x+4*s,y+25*s,bw,bh,G.ship?clamp01(G.ship.x/W):1);}
     else if(G.c.flame){const [x,y]=L.flame,st=WSTAT.flame(G.c.flame);cdBar(x+4*s,y+25*s,bw,bh,G.fcool>0?1-clamp01(G.fcool/st.cool):clamp01((G.fuel===undefined?st.fuel:G.fuel)/st.fuel));} // fuel left, or cooldown progress
     if(G.c.tesla){const [x,y]=L.tesla,m=wMode(WPN.find(w=>w.k==="tesla"))==="pulse"?"pulse":"tesla",st=WSTAT[m](G.c.tesla);cdBar(x+7*s-bw/2,y+50*s,bw,bh,1-clamp01(G.tcd/st.reload));}
@@ -1867,7 +1875,8 @@ const D=(function(){
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="wire"){const [x,y]=L.flame,st=WSTAT.wire(G.c.flame);ctx.fillStyle="#232A30";ctx.fillRect(x,y+6*s,34*s,16*s);ctx.fillStyle="#2E3842";ctx.fillRect(x-1*s,y+4*s,36*s,3*s);
       const cols={rj11:"#C9C2B0",rj45:"#2F6FD6",fiber:"#2EC4C4",laser:"#FF3B5C"};["rj11","rj45","fiber"].forEach((q,i)=>{const cx=x+(7+i*10)*s,cy=y+16*s;ctx.fillStyle="#14181C";ctx.beginPath();ctx.arc(cx,cy,4.2*s,0,7);ctx.fill();
         ctx.strokeStyle=cols[st.kind==="laser"?"laser":q];ctx.lineWidth=Math.max(1,1.6*s);ctx.beginPath();ctx.arc(cx,cy,3*s,0,7);ctx.stroke();});
-      const n=G.wires.filter(f=>f.up).length;ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+st.count,x+38*s,y+17*s);}
+      const n=G.wires.filter(f=>f.up).length;ctx.fillStyle="rgba(232,253,255,.75)";ctx.font=`600 ${Math.max(8,Math.round(8*s))}px "IBM Plex Mono", monospace`;ctx.textAlign="left";ctx.fillText(n+"/"+st.count,x+38*s,y+17*s);
+      if(G.wbot&&G.wbot.state==="dead"){ctx.fillStyle="#FF2BD6";ctx.textAlign="center";ctx.fillText("BOT "+Math.ceil(G.wbot.rt)+"s",x+17*s,y+40*s);}}
     else if(G.c.flame&&wMode(WPN.find(w=>w.k==="flame"))==="squad"){const [x,y]=L.flame;ctx.fillStyle="#232A30";ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,17*s,8*s,0,0,7);ctx.fill();
       ctx.strokeStyle=`rgba(${c},.8)`;ctx.lineWidth=Math.max(1,1.2*s);ctx.beginPath();ctx.ellipse(x+17*s,y+14*s,13*s,6*s,0,0,7);ctx.stroke();
       ctx.fillStyle=`rgba(${c},.9)`;ctx.fillRect(x+13*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+19.4*s,y+11*s,1.6*s,6*s);ctx.fillRect(x+13*s,y+13.2*s,8*s,1.4*s);
@@ -2095,10 +2104,11 @@ const D=(function(){
   function drawWireBot(b,u){const d=depth(b.y),k=u*d*1.3,x=b.x,y=b.y,K=WSTAT.wire(G.c.flame).kind,c=wcol(),col={rj11:"#C9C2B0",rj45:"#2F6FD6",fiber:"#2EC4C4",laser:"#FF3B5C"}[K];
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,7*k,2*k,0,0,7);ctx.fill();
     ctx.fillStyle="#1E2226";ctx.fillRect(x-6*k,y-2.5*k,12*k,3*k);ctx.fillStyle="#3A4046";for(let i=0;i<4;i++)ctx.fillRect(x-5.5*k+i*3*k+((G.time*6)%1)*k,y-2*k,1.4*k,2*k);
-    ctx.fillStyle="#46525C";ctx.fillRect(x-5*k,y-7*k,10*k,4.6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-5*k,y-7*k,10*k,0.9*k);
+    ctx.fillStyle=b.hit>0?"#C9D2C0":"#46525C";ctx.fillRect(x-5*k,y-7*k,10*k,4.6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-5*k,y-7*k,10*k,0.9*k);
     ctx.fillStyle="#2B3138";ctx.beginPath();ctx.arc(x+0.5*k,y-9.5*k,3.4*k,0,7);ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=1.3*k;ctx.beginPath();ctx.arc(x+0.5*k,y-9.5*k,2.4*k,0,7);ctx.stroke();
     if(Math.sin(G.time*8)>0){ctx.fillStyle="#FFB020";ctx.beginPath();ctx.arc(x-4*k,y-8*k,0.8*k,0,7);ctx.fill();}
-    if(b.work){ctx.strokeStyle=col;ctx.lineWidth=0.7*k;ctx.beginPath();ctx.moveTo(x+0.5*k,y-7*k);ctx.lineTo(x+4*k,y-3.5*k);ctx.stroke();}}
+    if(b.work){ctx.strokeStyle=col;ctx.lineWidth=0.7*k;ctx.beginPath();ctx.moveTo(x+0.5*k,y-7*k);ctx.lineTo(x+4*k,y-3.5*k);ctx.stroke();}
+    const mx=WSTAT.wire(G.c.flame).bhp;if(b.hp<mx){ctx.fillStyle="rgba(5,8,12,.8)";ctx.fillRect(x-6*k,y-16*k,12*k,1.8*k);ctx.fillStyle="#FF3B5C";ctx.fillRect(x-6*k,y-16*k,12*k*Math.max(0,b.hp/mx),1.8*k);}}
   // Suicide drone: a small quad-rotor with a warhead and a blinking light.
   function drawDrone(x,y,u,a){const c=wcol(),k=u*1.1;ctx.save();ctx.translate(x,y);
     ctx.strokeStyle="#3A434C";ctx.lineWidth=1.2*k;ctx.beginPath();ctx.moveTo(-4*k,-3*k);ctx.lineTo(4*k,3*k);ctx.moveTo(-4*k,3*k);ctx.lineTo(4*k,-3*k);ctx.stroke();
@@ -2198,7 +2208,7 @@ const D=(function(){
       ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(b.x,b.y1,(1.5+2*k)*u,(0.8+0.8*k)*u,0,0,7);ctx.fill();
       const z=b.small?0.6:1;ctx.fillStyle=`rgb(${b.c})`;ctx.beginPath();ctx.ellipse(b.x,y,1.8*u*z,3.2*u*z,0,0,7);ctx.fill();ctx.fillStyle="#E8E8E8";ctx.fillRect(b.x-1.8*u*z,y-4.2*u*z,3.6*u*z,1.2*u*z);}
     for(const j of G.jets)drawJet(j,u);
-    if(G.wbot&&G.c.flame)drawWireBot(G.wbot,u);
+    if(G.wbot&&G.wbot.state!=="dead"&&G.c.flame)drawWireBot(G.wbot,u);
     for(const d of G.drones){const lp=d.state==="lift"?Math.min(1,d.lt/0.7):1;
       if(d.state==="lift"){ctx.fillStyle=`rgba(0,0,0,${0.3*(1-lp)})`;ctx.beginPath();ctx.ellipse(d.x,d.y0+2*u,5*u*(1-lp*0.5),1.4*u,0,0,7);ctx.fill();} // shadow left on the pad
       drawDrone(d.x,d.y+(d.state==="hover"?Math.sin(G.time*3+d.slot)*1.5*u:0),u*(0.55+0.45*lp),d.a);}
