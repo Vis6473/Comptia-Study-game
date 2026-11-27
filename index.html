@@ -1429,7 +1429,7 @@ const D=(function(){
       if(e.v==="boss"){e.stun=0;if(e.x>e.lx)e.x=e.lx;e.lx=e.x; // bosses can't be stunned or knocked back, and summon zombies around them
         e.sum-=dt;if(e.sum<=0){e.sum=12;const V=VARIANTS[S.exam]||VARIANTS.net;for(let k=0;k<3;k++)G.enemies.push(mkFoe("w",V[k%2],e.x+rnd(-20,30)*U(),Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-40,40)*U()))));text(e.x,e.y-90*U(),"SUMMON","#FF2BD6");}}
       if(e.stun>0){e.stun-=dt;continue;} // stunned zombies neither move nor damage the wall
-      if(G.squads.length&&!e.under){const q=G.squads.find(q=>q.state!=="inbound"&&q.state!=="gone"&&e.x>q.x-4*U()&&e.x-q.x<12*U()&&Math.abs(e.y-q.y)<14*U()*depth(q.y));
+      if(G.squads.length&&!e.under){const q=G.squads.find(q=>q.state!=="ship"&&q.state!=="inbound"&&q.state!=="gone"&&e.x>q.x-4*U()&&e.x-q.x<12*U()&&Math.abs(e.y-q.y)<14*U()*depth(q.y));
         if(q){q.hp-=e.dps*dt;q.hit=0.1;e.ph+=dt*9;continue;}}
       if(G.tanks.length&&!e.under){const tk=G.tanks.find(t=>t.state!=="reload"&&t.state!=="dead"&&e.x>t.x-6*U()&&e.x-t.x<16*U()&&Math.abs(e.y-t.y)<12*U()*depth(t.y));
         if(tk){tk.hp-=e.dps*dt;tk.hit=0.1;e.ph+=dt*9;continue;}}
