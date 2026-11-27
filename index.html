@@ -1539,12 +1539,12 @@ const D=(function(){
         let tg=null,bd=st.range*u;for(const e of G.enemies){if(!tgt(e)||e.x<t.x-10*u||e.x>W-4)continue;const d=Math.hypot(e.x-t.x,e.y-t.y);if(d<bd){bd=d;tg=e;}}
         if(tg){t.idle=0;
           // a zombie closing in (within ~25 m ahead): drive forward to meet it, stopping ~6 m short, never past 100 m from the wall
-          const k=u*depth(t.y)*TANK_SCALE,block=G.enemies.some(e=>(e.t==="b")&&!e.under&&e.x>t.x&&e.x-t.x<20*k&&Math.abs(e.y-t.y)<10*k);
+          const k=u*TANK_SCALE,block=G.enemies.some(e=>(e.t==="b")&&!e.under&&e.x>t.x&&e.x-t.x<20*k&&Math.abs(e.y-t.y)<10*k);
           if(tg.x>t.x&&tg.x-t.x<96*u&&!block&&t.x<line+384*u){const step=st.speed*0.6*u*dt;t.x=Math.min(line+384*u,t.x+step);t.tx=t.x;
             // running over zombies in its path (it doesn't steer toward them); brutes and bosses are too big to crush
             for(const e of G.enemies)if(e.t!=="b"&&!e.under&&e.hp>0&&Math.abs(e.x-(t.x+6*k))<10*k&&Math.abs(e.y-t.y)<8*k){e.hp=0;G.splats.push({x:e.x,y:e.y,r:6*u*depth(e.y),life:8});if(!G.crT||G.time-G.crT>1){G.crT=G.time;text(e.x,e.y-30*u,"CRUSHED","#9CFF57");}}}
-          t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*depth(t.y)*TANK_SCALE),tg.x-t.x);t.cd-=dt;
-          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*depth(t.y)*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
+          t.a=Math.atan2(tg.y-10*u*depth(tg.y)-(t.y-10*u*TANK_SCALE),tg.x-t.x);t.cd-=dt;
+          if(t.cd<=0){t.cd=st.rate;t.ammo--;const d=Math.hypot(tg.x-t.x,tg.y-t.y),k=u*TANK_SCALE,mx=t.x+Math.cos(t.a)*15*k,my=t.y-10*k+Math.sin(t.a)*15*k; // muzzle: the tip of the barrel drawn by drawTank
             G.tshells.push({x0:mx,y0:my,e:tg,x1:tg.x,y1:tg.y,t:0,T:Math.max(0.08,d/(700*u)),L:G.c.mortar});
             G.fx.push({k:"hit",x:mx,y:my,life:0.12,m:0.12});
             if(t.ammo<=0){t.state="back";text(t.x,t.y-24*u,"RELOADING","#FFB020");}}}
@@ -1653,7 +1653,7 @@ const D=(function(){
   // a narrow phone yard as well as a wide desktop one.
   const WCOL={net:"25,240,255",sec:"120,240,255",a1:"255,176,32",a2:"156,255,87",cissp:"179,136,255"};
   const wcol=()=>WCOL[S.exam]||WCOL.net;
-  const TANK_SCALE=1.15; // tank size; drawTank and the muzzle position in update() both use it
+  const TANK_SCALE=1.15; // tank size, the same for every tank (no depth scaling); drawTank and update() both use it
   const TONER=["0,200,255","255,43,214","255,214,0","70,70,78"]; // cyan, magenta, yellow, black
   function yard(){
     const u=U(),wx=wallX(),ft=fTop(),fh=Math.max(40,H-ft-6),YW=Math.max(30,wx-12*u),ys=Math.max(0.35,Math.min(u,YW/150));
@@ -1911,7 +1911,7 @@ const D=(function(){
       if(q.t>1.8&&q.t<2.4){ctx.strokeStyle="rgba(220,220,200,.6)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-2*k,y-40*k);ctx.lineTo(x-2*k,y-4*k);ctx.stroke();}}
   }
   // Tank: tracked hull with a turret and barrel that turn toward its target, in the exam color.
-  function drawTank(t,u){const d=depth(t.y),k=u*d*TANK_SCALE,c=wcol(),x=t.x,y=t.y;
+  function drawTank(t,u){const k=u*TANK_SCALE,c=wcol(),x=t.x,y=t.y;
     ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(x,y+1*k,14*k,3.5*k,0,0,7);ctx.fill();
     ctx.fillStyle="#1E2226";ctx.fillRect(x-13*k,y-4*k,26*k,4.5*k);ctx.fillStyle="#3A4046";for(let i=0;i<6;i++)ctx.fillRect(x-12*k+i*4.6*k+((G.time*8)%1)*1*k,y-3*k,2*k,2.5*k);
     ctx.fillStyle=t.hit>0?"#C9D2C0":"#4E5A4A";ctx.fillRect(x-12*k,y-9*k,24*k,6*k);ctx.fillStyle=`rgb(${c})`;ctx.fillRect(x-12*k,y-6*k,24*k,1*k);
