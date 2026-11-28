@@ -27,6 +27,10 @@ Every page, from your exam's home, Quick Exams setup, Mock Exam, Armory and Revi
 
 Every mini-game is played on an old CRT terminal: Port Blitz, OSI Stack, Subnet Sprint, Control Sort, Attack Match, Hardware Match, Command Match, Tool Match and Concept Match. It's in the game's own look: a dark monitor bezel with a hazard stripe and an amber power light, and a curved, scanlined screen with glowing cyan text. In the match games, boot lines type out, answers are numbered `[1]`–`[4]` entries (keys 1–4 still work), and the timer is an ASCII bar that turns amber in the last 10 seconds. Across all of them, and in quick exams, right answers glow green and misses glow magenta-red, and the gameplay is the same as before.
 
+## Home page status
+
+Each exam's home page has a terminal-style status readout: weighted accuracy and how much of the bank you've seen, with ASCII progress bars, plus your review queue, answers logged, best quick exam, recent average and day streak. Below it, a chart plots your last 20 quick exam scores against the 5/10 pass line and a target line at the real exam's pass mark, so you can see yourself improve. Hover a point for its date and score, failed nights show as hollow dots, a trend line compares your latest exams with your earliest, and there's a table view. The chart starts filling in from your next quick exam.
+
 ## Network+ modes
 
 - **Quick Exams + Outpost Defense:** 10-question rounds drawn from 365 practice questions across all five exam domains, with an explanation after every answer. Every question is tagged with its N10-009 objective. Each quick exam is also a night of defense in the bottom half of the screen. The undead spawn without end until you answer the last question, and correct answers resupply the guns. Then a bomber makes a slow pass, dropping a bomb on each zombie it flies over, timed to land where that zombie will be. It also carpet-bombs the whole field with three rows of large cyan, magenta, yellow and black toner bombs. Once the field is clear, the next night begins. Press 1–4 to answer and Enter to continue.
