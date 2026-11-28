@@ -1503,23 +1503,29 @@ const D=(function(){
     G.q.push({at:G.time+0.4,t:"b"});text(W-70*U(),fTop()+16*U(),"BRUTE INBOUND","#FF2BD6");
   }
   // Last question answered: a bomber flies over and clears the field.
-  function final(){
-    if(!G)return;G.quizDone=true;
+  // A night needs at least half the questions right (5 of 10, the owner's rule). final(true) marks it failed: the bomber
+  // still clears the field, but its kills pay no scrap or XP, there's no night bonus, and the night isn't advanced.
+  function final(fail){
+    if(!G)return;G.quizDone=true;G.failed=!!fail;
     if(G.status==="live"){
       G.status="air";G.spawning=false;G.q=[];
       G.bomber={x:-90*U(),drop:wallX()+20*U(),done:false};G.bombs=[];
-      text(W/2,fTop()+18*U(),"AIR STRIKE INBOUND","#19F0FF");
+      text(W/2,fTop()+18*U(),"AIR STRIKE INBOUND","#19F0FF");if(G.failed)text(W/2,fTop()+34*U(),"EXAM FAILED · NO LOOT THIS NIGHT","#FF2BD6");
     } else if(G.status==="lost")showBanner("lost");
   }
   function win(){
-    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.helis=[];G.grens=[];G.spits=[];G.drones=[];const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
+    G.status="won";G.rounds=[];G.fburst=0;G.rcharge=0;G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.helis=[];G.grens=[];G.spits=[];G.drones=[];
+    if(G.failed){G.bonus=0;G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;save();showBanner("failed");return;} // failed exam: same night again
+    const bonus=20+5*G.night;G.bonus=bonus;S.base.scrap+=bonus;
     P.bestNight=Math.max(P.bestNight||0,G.night);S.base.bestNight=Math.max(S.base.bestNight,G.night);S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);P.night=G.night+1;
     G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry; // leftover ammo carries over to the next night
     save();showBanner("won");
   }
   function lose(){G.status="lost";G.q=[];G.rounds=[];G.jets=[];G.tbombs=[];G.squads=[];G.ship=null;G.sortie=null;G.helis=[];G.grens=[];G.spits=[];G.drones=[];G.carry=Math.max(0,Math.floor(G.ammo));S.base.stock=(S.base.stock||0)+G.carry;G.ammo=0;S.base.bestKills=Math.max(S.base.bestKills||0,G.kills);save();showBanner("lost");}
   function showBanner(kind){
-    const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"?" lost":"");
+    const b=$("dBanner");if(!b)return;b.className="dbanner"+(kind==="lost"||kind==="failed"?" lost":"");
+    if(kind==="failed"){b.innerHTML=`<div class="bt">NIGHT ${G.night} FAILED</div><div class="bs">Fewer than half your answers were right, so the outpost holds but earns nothing from the air strike and stays on night ${G.night}.${G.carry?` ${G.carry} ammo carried over.`:""}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button><button class="tpbtn hot" data-b="next">Retry night ${G.night}</button></div>`;
+      b.hidden=false;b.querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{if(x.dataset.b==="shop")toggleShop(true);else if(nextFn)nextFn();});return;}
     if(kind==="won")b.innerHTML=`<div class="bt">NIGHT ${G.night} SURVIVED</div><div class="bs">${G.kills} undead destroyed · +${G.bonus} scrap bonus · wall ${Math.ceil(G.wall)}/${G.c.wallMax}${G.carry?` · ${G.carry} ammo carried over`:""}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${nextFn?`<button class="tpbtn hot" data-b="next">Start night ${G.night+1}</button>`:""}</div>`;
     else b.innerHTML=`<div class="bt">OUTPOST OVERRUN</div><div class="bs">${G.quizDone?`The wall fell on night ${G.night}. Spend scrap and XP in the armory, then try again.`:`The wall is down. You can keep answering, and correct answers still earn scrap and XP, but you'll stay on night ${G.night}. Or restart the exam with a fresh night.`}</div><div class="bb"><button class="tpbtn" data-b="shop">Armory</button>${G.quizDone?(nextFn?`<button class="tpbtn hot" data-b="next">Retry night ${G.night}</button>`:""):`<button class="tpbtn" data-b="pause">Pause</button>${restartFn?`<button class="tpbtn hot" data-b="restart">Restart exam</button>`:""}`}</div>`;
     b.hidden=false;
@@ -1917,12 +1923,13 @@ const D=(function(){
         if(e.x<line+30*u)G.wall-=dm;}
       if(e.v==="storm"){for(let k=0;k<3;k++)born.push(mkFoe("w","packet",e.x+rnd(-8,8)*u,Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-14,14)*u))));text(e.x,e.y-40*u,"PACKET STORM","#19F0FF");}
       if(e.v==="trojan"){for(let k=0;k<2;k++)born.push(mkFoe("w","phish",e.x+rnd(-8,8),Math.min(fBot()-2,Math.max(fTop()+10,e.y+rnd(-16,16)))));text(e.x,e.y-52*u,"PAYLOAD RELEASED","#9CFF57");}
-      if(e.v==="boss"){S.base.scrap+=60;award(30);text(e.x,e.y-70*u,`${bossName().toUpperCase()} DESTROYED · +60 SCRAP · +30 XP`,"#FFB020");
+      const noLoot=G.failed&&G.status!=="live"; // the bomber's kills on a failed night pay nothing
+      if(e.v==="boss"&&!noLoot){S.base.scrap+=60;award(30);text(e.x,e.y-70*u,`${bossName().toUpperCase()} DESTROYED · +60 SCRAP · +30 XP`,"#FFB020");
         G.fx.push({k:"b",x:e.x,y:e.y,r:70*u,life:0.6,m:0.6},{k:"shock",x:e.x,y:e.y,r:120*u,life:0.7,m:0.7});if(!matchMedia("(prefers-reduced-motion: reduce)").matches)G.shake=0.6;}
-      snd(e.v==="boss"?"bossdie":"squish",e.x);G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=e.t==="b"?6:1;S.base.scrap+=sc;
+      snd(e.v==="boss"?"bossdie":"squish",e.x);G.kills++;S.base.kills=(S.base.kills||0)+1;const sc=noLoot?0:e.t==="b"?6:1;S.base.scrap+=sc;
       if(G.splats.length>70)G.splats.shift();
       G.splats.push({x:e.x,y:e.y,r:(e.t==="b"?10:5)*u*depth(e.y),life:8});
-      if(e.t==="b")text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
+      if(e.t==="b"&&!noLoot)text(e.x,e.y-40*u,"+6 SCRAP","#FFB020");
       return false;
     });
     if(born.length)G.enemies.push(...born);
@@ -2611,7 +2618,7 @@ const D=(function(){
   }
   const live=()=>!!(G&&(G.status==="live"||G.status==="air"));
   function addAmmo(n,boxes){if(!live())return false;G.ammo+=n;supplyFlight(boxes||1);text(wallX()+46*U(),fTop()+14*U(),"+"+n+" AMMO","#FFB020");hud();return true;}
-  return {codex:()=>({VARIANTS,SPECIALS,THEMED,FOE,BOSS_NAME,DPS,speed:ZOMBIE_SPEED,specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY}),portrait,mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),night:()=>G?G.night:(P.night||1),info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
+  return {codex:()=>({VARIANTS,SPECIALS,THEMED,FOE,BOSS_NAME,DPS,speed:ZOMBIE_SPEED,specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY}),portrait,mount,unmount,newRound,wave,correct,wrong,final,live,addAmmo,lost:()=>!!(G&&G.status==="lost"),failed:()=>!!(G&&G.failed),night:()=>G?G.night:(P.night||1),info:()=>({cfg:cfg(),V:VARIANTS[S.exam]||VARIANTS.net,FOE,DPS,speed:ZOMBIE_SPEED,nightDmg:NIGHT_DMG,specials:[...SPECIALS,THEMED[S.exam]].filter(Boolean),specialNight:SPECIAL_NIGHT,bossEvery:BOSS_EVERY,bossName:bossName()}),isPaused:()=>paused,setNext:f=>{nextFn=f;},setRestart:f=>{restartFn=f;}};
 })();
 
 function setExam(id){
@@ -3439,7 +3446,8 @@ function showQ(st){
   });
 }
 function quizResult(st){
-  D.final();
+  const need=Math.ceil(st.pool.length/2),passed=st.correct>=need; // at least half right (5 of 10) or the night is failed
+  D.final(!passed);
   if(st.label==="Quick Exam"&&st.pool.length===10)P.best.quick=Math.max(P.best.quick||0,st.correct);
   const p=Math.round(100*st.correct/st.pool.length);
   const msg=p>=90?"Exam-ready on this set.":p>=72?`Solid. The real exam needs ${PASS} on a ${scaleTxt()} scale, so aim for ${passPct()+3}% or better in practice.`:"Your misses are now in the review queue. Clear them next.";
@@ -3447,7 +3455,7 @@ function quizResult(st){
     <span class="label">${esc(st.label)} complete</span>
     <div class="big">${st.correct}<span class="muted" style="font-size:32px"> / ${st.pool.length}</span></div>
     <p class="muted" style="margin:0 auto;max-width:48ch">${msg}</p>
-    <p class="small" style="margin:0 auto;max-width:48ch">${D.lost()?`The outpost fell, so you stay on night ${D.night()}. Your next quick exam retries it. Your answers, XP and scrap still count.`:"A bomber is clearing the field below. Once it passes, the next night begins."}</p>
+    <p class="small" style="margin:0 auto;max-width:48ch">${D.lost()?`The outpost fell, so you stay on night ${D.night()}. Your next quick exam retries it. Your answers, XP and scrap still count.`:!passed?`<b style="color:var(--bad)">Night ${D.night()} failed.</b> You need at least ${need} of ${st.pool.length} right to move on. The bomber still clears the field, but it earns you nothing, and your next quick exam retries night ${D.night()}. Your answers and the XP from them still count.`:"A bomber is clearing the field below. Once it passes, the next night begins."}</p>
     <div class="row" style="justify-content:center"><button class="btn primary" id="again">Another round</button>${P.review.length?`<a class="btn" href="#review">Review ${P.review.length} missed</a>`:""}<a class="btn" href="#home">Home</a></div>
   </div>`;
   document.getElementById("again").onclick=()=>st.again();

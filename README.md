@@ -80,6 +80,7 @@ Every mini-game is played on an old CRT terminal: Port Blitz, OSI Stack, Subnet 
 
 ## Outpost Defense
 
+- **Pass the exam to win the night:** you need at least 5 of 10 right (half, for other round sizes). Score less and the night is failed: the bomber still clears the field, but you earn no scrap or XP from it and no night bonus, and your next quick exam retries the same night. Your answers and the XP from answering still count.
 - **Ammo:** every correct answer sends ammo to the wall. Domains are rated by difficulty, and harder ones also send scrap:
 
   | Domain | Tier | Reward per correct answer |
