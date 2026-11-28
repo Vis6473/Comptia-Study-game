@@ -587,13 +587,13 @@ footer{color:#5F7884}
 /* Scrolling pages (the owner asked): the monitor sticks when its top reaches the top of the window, and the page's
    information scrolls inside the screen. Scanlines and glow sit on the glass (.crt::after), not the scrolling text.
    Quick exams keep their own fitted layout. */
-.crt.crt-page:not(.crt-quiz){--bz:clamp(14px,3vw,34px);position:sticky;top:8px;display:flex;flex-direction:column;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
-.crt.crt-page:not(.crt-quiz) .crt-screen{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(25,240,255,.45) transparent}
-.crt.crt-page:not(.crt-quiz) .crt-screen::-webkit-scrollbar{width:8px}
-.crt.crt-page:not(.crt-quiz) .crt-screen::-webkit-scrollbar-thumb{background:rgba(25,240,255,.4);border-radius:4px}
-.crt.crt-page:not(.crt-quiz) .crt-base{flex:none}
-.crt.crt-page:not(.crt-quiz) .crt-screen::after,.crt.crt-page:not(.crt-quiz) .crt-screen::before{content:none}
-.crt.crt-page:not(.crt-quiz)::after{content:"";position:absolute;top:var(--bz);left:var(--bz);right:var(--bz);bottom:54px;border-radius:26px/22px;pointer-events:none;z-index:2;
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit){--bz:clamp(14px,3vw,34px);position:sticky;top:8px;display:flex;flex-direction:column;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-screen{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(25,240,255,.45) transparent}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-screen::-webkit-scrollbar{width:8px}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-screen::-webkit-scrollbar-thumb{background:rgba(25,240,255,.4);border-radius:4px}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-base{flex:none}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-screen::after,:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit) .crt-screen::before{content:none}
+:is(.crt.crt-page:not(.crt-quiz),.crt.crt-fit)::after{content:"";position:absolute;top:var(--bz);left:var(--bz);right:var(--bz);bottom:54px;border-radius:26px/22px;pointer-events:none;z-index:2;
   background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 30%,rgba(25,240,255,.06),transparent 60%)}
 
 /* While a scrolling monitor is up, the page ends right under it (so the monitor's top stops at the top of the window),
@@ -3065,7 +3065,7 @@ const Music=(()=>{
 // Every page goes on the terminal too (the owner asked): after a view renders, its content is moved into a CRT
 // monitor (moving keeps event handlers). Skipped on the title screen, while an exam is running (focus mode), and for
 // screens that already draw their own terminal (the mini-games).
-function crtify(){const b=document.body.classList;if(b.contains("focus-mode"))b.remove("crt-scroll"); /* exams keep their own bottom padding, so the page can scroll above the dock */if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(!f||f.classList.contains("crt"))return;
+function crtify(){const b=document.body.classList;if(b.contains("focus-mode"))b.remove("crt-scroll"); /* exams keep their own bottom padding, so the page can scroll above the dock */if((b.contains("focus-mode")&&!b.contains("quiz-term"))||b.contains("menu-mode"))return;const f=$app.firstElementChild;if(f&&f.classList.contains("crt-fit")&&!b.contains("focus-mode"))b.add("crt-scroll");if(!f||f.classList.contains("crt"))return;
   const act=document.activeElement,keep=act&&$app.contains(act)?act:null,y=window.scrollY;
   const w=document.createElement("div");w.className="crt crt-page"+(b.contains("quiz-term")?" crt-quiz":"");w.innerHTML='<div class="crt-screen"></div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div>';
   const scr=w.firstChild;while($app.firstChild)scr.appendChild($app.firstChild);
@@ -3076,7 +3076,7 @@ function crtify(){const b=document.body.classList;if(b.contains("focus-mode"))b.
 let crtScroll=null;
 document.addEventListener("scroll",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("crt-screen"))crtScroll={h:location.hash,t:t.scrollTop};},true);
 // Wheel or trackpad over the screen scrolls the page until the monitor sticks at the top, then the screen's contents.
-document.addEventListener("wheel",e=>{if(e.deltaY<=0||e.ctrlKey)return;const scr=e.target.closest&&e.target.closest(".crt-page:not(.crt-quiz) .crt-screen");if(!scr)return;
+document.addEventListener("wheel",e=>{if(e.deltaY<=0||e.ctrlKey)return;const scr=e.target.closest&&e.target.closest(".crt-page:not(.crt-quiz) .crt-screen, .crt-fit .crt-screen");if(!scr)return;
   const room=document.documentElement.scrollHeight-innerHeight-window.scrollY;if(room>1){e.preventDefault();window.scrollBy(0,Math.min(room,e.deltaY*(e.deltaMode===1?16:1)));}},{passive:false});
 new MutationObserver(crtify).observe($app,{childList:true});
 // The music for a route: menu screens, an exam's pages, quick exam nights, mini-games; the mock exam is silent.
@@ -4590,7 +4590,7 @@ const MATCH={
 };
 // The match games run inside a retro green-screen terminal (the owner asked): a monitor bezel, a curved phosphor screen
 // with scanlines, typed-out boot lines, and options as numbered terminal entries. It's always dark.
-const crtWrap=(inner,id)=>`<div class="crt"${id?` id="${id}"`:""}><div class="crt-screen">${inner}</div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div></div>`;
+const crtWrap=(inner,id)=>`<div class="crt crt-fit"${id?` id="${id}"`:""}><div class="crt-screen">${inner}</div><div class="crt-base"><span class="crt-grille"></span><span class="crt-power" aria-hidden="true"></span></div></div>`;
 const crtHead=k=>`<div class="crt-hd">Cyber <b>Zombie</b> Attack &middot; outpost field terminal<br>Copyright 2026 ${esc(EX.name)} defense command<br>-Station ${String(100+EX.id.length*7)}-</div>
   <div class="crt-line">-${esc(MATCH[k].n)} module-</div><div class="crt-rule">${"=".repeat(60)}</div>`;
 // a slimmer header for the other mini-games, whose screens change every step
